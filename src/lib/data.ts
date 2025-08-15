@@ -1,31 +1,3 @@
-import type { KanbanColumnData } from "./types";
-
-export const dashboardStats = [
-  {
-    title: "Applications Sent",
-    value: "24",
-    change: "+15%",
-    icon: "Briefcase",
-  },
-  {
-    title: "Interviews Scheduled",
-    value: "8",
-    change: "+20%",
-    icon: "Calendar",
-  },
-  {
-    title: "Offers Received",
-    value: "2",
-    change: "+100%",
-    icon: "Award",
-  },
-  {
-    title: "Active Searches",
-    value: "35",
-    change: "-5%",
-    icon: "Search",
-  },
-];
 
 export const dailyTasks = [
   { id: "task1", label: "Update resume with latest project", completed: true },

@@ -1,5 +1,4 @@
 
-import { AppLayout } from "@/components/AppLayout";
 import {
   Card,
   CardContent,
@@ -7,7 +6,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { dashboardStats, dailyTasks } from "@/lib/data";
+import { dailyTasks } from "@/lib/data";
+import { getJobApplications } from "@/services/job-applications";
 import { Award, Briefcase, Calendar, Search } from "lucide-react";
 
 const icons: { [key: string]: React.ElementType } = {
@@ -17,9 +17,43 @@ const icons: { [key: string]: React.ElementType } = {
   Search,
 };
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const jobApplications = await getJobApplications();
+
+  const applicationsSent = jobApplications.filter(job => job.stage !== 'Wishlist').length;
+  const interviewsScheduled = jobApplications.filter(job => job.stage === 'Interview').length;
+  const offersReceived = jobApplications.filter(job => job.stage === 'Offer').length;
+  const activeSearches = jobApplications.filter(job => job.stage !== 'Offer' && job.stage !== 'Rejected').length;
+
+  const dashboardStats = [
+    {
+      title: "Applications Sent",
+      value: applicationsSent.toString(),
+      // Note: Change calculation is not implemented as there's no historical data.
+      change: "from last week", 
+      icon: "Briefcase",
+    },
+    {
+      title: "Interviews Scheduled",
+      value: interviewsScheduled.toString(),
+      change: "from last week",
+      icon: "Calendar",
+    },
+    {
+      title: "Offers Received",
+      value: offersReceived.toString(),
+      change: "from last week",
+      icon: "Award",
+    },
+    {
+      title: "Active Searches",
+      value: activeSearches.toString(),
+      change: "from last week",
+      icon: "Search",
+    },
+  ];
+
   return (
-    <AppLayout>
       <div className="flex flex-col gap-8">
         <div>
           <h1 className="font-headline text-3xl font-bold tracking-tight">
@@ -44,7 +78,7 @@ export default function DashboardPage() {
                 <CardContent>
                   <div className="text-2xl font-bold">{stat.value}</div>
                   <p className="text-xs text-muted-foreground">
-                    {stat.change} from last week
+                    {/* Placeholder for change, as we don't have historical data */}
                   </p>
                 </CardContent>
               </Card>
@@ -76,6 +110,5 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-    </AppLayout>
   );
 }

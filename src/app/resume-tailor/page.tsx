@@ -1,9 +1,7 @@
-import { AppLayout } from "@/components/AppLayout";
 import { ResumeTailorForm } from "./ResumeTailorForm";
 
 export default function ResumeTailorPage() {
   return (
-    <AppLayout>
       <div className="flex flex-col gap-8">
         <div>
           <h1 className="font-headline text-3xl font-bold tracking-tight">
@@ -15,6 +13,5 @@ export default function ResumeTailorPage() {
         </div>
         <ResumeTailorForm />
       </div>
-    </AppLayout>
   );
 }
