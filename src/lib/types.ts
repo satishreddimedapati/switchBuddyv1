@@ -2,7 +2,7 @@ export type JobApplication = {
   id: string;
   company: string;
   title: string;
-  stage: 'Wishlist' | 'Applying' | 'Interview' | 'Offer' | 'Rejected';
+  stage: KanbanColumnId;
   logoUrl?: string;
 };
 

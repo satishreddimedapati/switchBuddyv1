@@ -1,8 +1,10 @@
 import { AppLayout } from "@/components/AppLayout";
 import { KanbanBoard } from "@/components/tracker/KanbanBoard";
-import { kanbanData } from "@/lib/data";
+import { getJobApplications } from "@/services/job-applications";
 
-export default function TrackerPage() {
+export default async function TrackerPage() {
+  const jobApplications = await getJobApplications();
+
   return (
     <AppLayout>
       <div className="flex flex-col h-[calc(100vh-theme(spacing.20))]">
@@ -15,7 +17,7 @@ export default function TrackerPage() {
           </p>
         </div>
         <div className="mt-6 flex-grow">
-           <KanbanBoard data={kanbanData} />
+           <KanbanBoard initialData={jobApplications} />
         </div>
       </div>
     </AppLayout>
