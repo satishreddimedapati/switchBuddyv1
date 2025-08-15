@@ -1,9 +1,9 @@
 'use client'
 
 import { DailyTask } from "@/lib/types";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ScheduleTaskForm } from "./ScheduleTaskForm";
-import { format, startOfWeek, addDays, getDay } from 'date-fns';
+import { format, startOfWeek, addDays } from 'date-fns';
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -15,8 +15,8 @@ interface WeeklyTimetableProps {
 const timeSlots = Array.from({ length: 17 }, (_, i) => `${(i + 6).toString().padStart(2, '0')}:00`);
 
 const categoryColors = {
-  schedule: "bg-blue-100 border-blue-200 text-blue-800",
-  interview: "bg-green-100 border-green-200 text-green-800",
+  schedule: "bg-blue-100 border-blue-200 text-blue-800 dark:bg-blue-900/50 dark:border-blue-700 dark:text-blue-200",
+  interview: "bg-green-100 border-green-200 text-green-800 dark:bg-green-900/50 dark:border-green-700 dark:text-green-200",
 };
 
 export function WeeklyTimetable({ tasks, loading }: WeeklyTimetableProps) {
@@ -27,6 +27,18 @@ export function WeeklyTimetable({ tasks, loading }: WeeklyTimetableProps) {
   const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+  const tasksByDateTime = useMemo(() => {
+    const map = new Map<string, DailyTask[]>();
+    tasks.forEach(task => {
+      const key = `${task.date}_${task.time}`;
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+      map.get(key)!.push(task);
+    });
+    return map;
+  }, [tasks]);
 
   const handleCellClick = (date: Date, time: string) => {
     setPrefillData({ date: format(date, 'yyyy-MM-dd'), time });
@@ -47,9 +59,9 @@ export function WeeklyTimetable({ tasks, loading }: WeeklyTimetableProps) {
       <h2 className="font-headline text-2xl font-bold mb-4">This Week</h2>
       <div className="grid grid-cols-8 min-w-[1000px]">
         {/* Header */}
-        <div className="p-2 border-b font-semibold">Time</div>
+        <div className="p-2 border-b font-semibold sticky top-0 bg-card">Time</div>
         {days.map(day => (
-          <div key={day.toISOString()} className="p-2 border-b font-semibold text-center">
+          <div key={day.toISOString()} className="p-2 border-b font-semibold text-center sticky top-0 bg-card">
             {format(day, 'EEE')} <br/>
             <span className="text-sm font-normal text-muted-foreground">{format(day, 'dd')}</span>
           </div>
@@ -60,17 +72,14 @@ export function WeeklyTimetable({ tasks, loading }: WeeklyTimetableProps) {
           <div key={time} className="contents">
             <div className="p-2 border-r border-b font-mono text-sm">{format(new Date(`1970-01-01T${time}`), "h a")}</div>
             {days.map(day => {
-              const tasksInSlot = tasks.filter(task => {
-                const taskDate = task.date; // already in 'yyyy-MM-dd'
-                const cellDate = format(day, 'yyyy-MM-dd');
-                const taskHour = parseInt(task.time.split(':')[0], 10);
-                const cellHour = parseInt(time.split(':')[0], 10);
-                return taskDate === cellDate && taskHour === cellHour;
-              });
+              const cellDate = format(day, 'yyyy-MM-dd');
+              const cellKey = `${cellDate}_${time}`;
+              const tasksInSlot = tasksByDateTime.get(cellKey) || [];
+              
               return (
                 <div 
                   key={day.toISOString()} 
-                  className="p-2 border-r border-b min-h-[60px] cursor-pointer hover:bg-muted/50"
+                  className="p-1 border-r border-b min-h-[60px] cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => handleCellClick(day, time)}
                 >
                   <ul className="space-y-1">
