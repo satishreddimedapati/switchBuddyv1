@@ -3,20 +3,38 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DailySchedule } from "./DailySchedule";
 import { WeeklyTimetable } from "./WeeklyTimetable";
+import { useView, ViewSwitcher } from "./ViewContext";
 
 export function DailyTrackerTabs() {
+  const { view } = useView();
+
   return (
-    <Tabs defaultValue="daily" className="flex-grow flex flex-col">
-      <TabsList className="w-full sm:w-auto self-start">
-        <TabsTrigger value="daily">Daily Schedule</TabsTrigger>
-        <TabsTrigger value="weekly">Weekly Timetable</TabsTrigger>
-      </TabsList>
-      <TabsContent value="daily" className="flex-grow mt-4">
-        <DailySchedule />
-      </TabsContent>
-      <TabsContent value="weekly" className="flex-grow mt-4">
-        <WeeklyTimetable />
-      </TabsContent>
-    </Tabs>
+    <>
+       <div>
+          <div className="flex justify-between items-start">
+             <div>
+                <h1 className="font-headline text-3xl font-bold tracking-tight">
+                Daily Tracker
+                </h1>
+                <p className="text-muted-foreground">
+                Track your daily activities and manage your weekly schedule.
+                </p>
+             </div>
+             <ViewSwitcher />
+          </div>
+        </div>
+      <Tabs defaultValue="daily" className="flex-grow flex flex-col">
+        <TabsList className="w-full sm:w-auto self-start">
+          <TabsTrigger value="daily">Daily</TabsTrigger>
+          <TabsTrigger value="weekly">Weekly</TabsTrigger>
+        </TabsList>
+        <TabsContent value="daily" className="flex-grow mt-4">
+          <DailySchedule />
+        </TabsContent>
+        <TabsContent value="weekly" className="flex-grow mt-4">
+          <WeeklyTimetable />
+        </TabsContent>
+      </Tabs>
+    </>
   );
 }

@@ -14,6 +14,8 @@ import { useAuth } from "@/lib/auth";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { format } from "date-fns";
+import { useView } from "./ViewContext";
+import { DailyCalendarView } from "./DailyCalendarView";
 
 
 export function DailySchedule() {
@@ -22,6 +24,7 @@ export function DailySchedule() {
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<DailyTask | undefined>(undefined);
+  const { view } = useView();
 
   useEffect(() => {
     if (!user) {
@@ -56,6 +59,10 @@ export function DailySchedule() {
     setIsFormOpen(true);
   }
 
+  if (view === 'grid') {
+    return <DailyCalendarView tasks={tasks} loading={loading} onEdit={handleEdit} onAddNew={handleAddNew} />
+  }
+
   const sortedTasks = tasks.sort((a, b) => a.time.localeCompare(b.time));
   const { morning, afternoon, evening } = groupTasksByTimeOfDay(sortedTasks);
 
@@ -66,7 +73,7 @@ export function DailySchedule() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="font-headline text-2xl font-bold">Today's Schedule</h2>
+        <h2 className="font-headline text-2xl font-bold">Today's List</h2>
         <Button onClick={handleAddNew}><PlusCircle /> Schedule Task</Button>
       </div>
 
@@ -111,7 +118,6 @@ export function DailySchedule() {
             )}
         </div>
       )}
-
 
       <ScheduleTaskForm
         isOpen={isFormOpen}

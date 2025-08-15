@@ -10,6 +10,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useView } from "./ViewContext";
+import { groupTasksByTimeOfDay } from "./utils";
+import { TaskItem } from "./TaskItem";
 
 const timeSlots = Array.from({ length: 17 }, (_, i) => `${(i + 6).toString().padStart(2, '0')}:00`);
 
@@ -18,12 +21,60 @@ const categoryColors = {
   interview: "bg-green-100 border-green-200 text-green-800 dark:bg-green-900/50 dark:border-green-700 dark:text-green-200",
 };
 
+function WeeklyListView({ tasks, loading, onEdit }: { tasks: DailyTask[], loading: boolean, onEdit: (task: DailyTask) => void }) {
+    const today = new Date();
+    const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+    const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
+
+    if (loading) {
+        return (
+            <div className="space-y-4">
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-32 w-full" />
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-8">
+            {days.map(day => {
+                const dayTasks = tasks
+                    .filter(t => t.date === format(day, 'yyyy-MM-dd'))
+                    .sort((a, b) => a.time.localeCompare(b.time));
+                
+                if (dayTasks.length === 0) return null;
+
+                return (
+                    <div key={day.toISOString()}>
+                        <h3 className="text-xl font-bold mb-4 border-b pb-2">
+                            {format(day, 'EEEE, MMMM d')}
+                        </h3>
+                        <div className="space-y-4">
+                            {dayTasks.map(task => (
+                                <TaskItem key={task.id} task={task} onEdit={onEdit} />
+                            ))}
+                        </div>
+                    </div>
+                )
+            })}
+             {tasks.length === 0 && !loading && (
+                 <div className="text-center py-10 border rounded-lg">
+                    <p className="text-muted-foreground">No tasks scheduled for this week.</p>
+                </div>
+            )}
+        </div>
+    )
+}
+
 export function WeeklyTimetable() {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<DailyTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<DailyTask | undefined>(undefined);
   const [prefillData, setPrefillData] = useState<{ date: string; time: string } | undefined>(undefined);
+  const { view } = useView();
 
   useEffect(() => {
     if (!user) {
@@ -75,10 +126,30 @@ export function WeeklyTimetable() {
   }, [tasks]);
 
   const handleCellClick = (date: Date, time: string) => {
+    setEditingTask(undefined);
     setPrefillData({ date: format(date, 'yyyy-MM-dd'), time });
     setIsFormOpen(true);
   };
+
+  const handleEdit = (task: DailyTask) => {
+    setEditingTask(task);
+    setPrefillData(undefined);
+    setIsFormOpen(true);
+  };
   
+  if (view === 'list') {
+      return (
+        <>
+            <WeeklyListView tasks={tasks} loading={loading} onEdit={handleEdit} />
+            <ScheduleTaskForm 
+                isOpen={isFormOpen} 
+                onOpenChange={setIsFormOpen}
+                task={editingTask}
+            />
+        </>
+      )
+  }
+
   if (loading) {
     return (
         <div className="space-y-2 overflow-x-auto">
@@ -118,12 +189,12 @@ export function WeeklyTimetable() {
               return (
                 <div 
                   key={day.toISOString()} 
-                  className="p-1 border-r border-b min-h-[60px] cursor-pointer hover:bg-muted/50 transition-colors"
+                  className="p-1 border-r border-b min-h-[60px] cursor-pointer hover:bg-muted/50 transition-colors group/cell"
                   onClick={() => handleCellClick(day, time)}
                 >
                   <ul className="space-y-1">
                     {tasksInSlot.map(task => (
-                        <li key={task.id} className={cn("text-xs p-1 rounded-md border", categoryColors[task.type])}>
+                        <li key={task.id} className={cn("text-xs p-1 rounded-md border", categoryColors[task.type])} onClick={(e) => { e.stopPropagation(); handleEdit(task)}}>
                             {task.title}
                         </li>
                     ))}
@@ -137,6 +208,7 @@ export function WeeklyTimetable() {
       <ScheduleTaskForm 
         isOpen={isFormOpen} 
         onOpenChange={setIsFormOpen}
+        task={editingTask}
         prefillData={prefillData}
       />
     </div>
