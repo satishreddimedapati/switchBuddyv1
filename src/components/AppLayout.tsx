@@ -2,9 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname, redirect } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import {
   SidebarProvider,
   Sidebar,
@@ -22,17 +21,17 @@ import {
   Home,
   Columns3,
   FileText,
-  MessageSquareQuestion,
+  MessageSquareQuote,
   LogOut,
   PanelLeft,
 } from 'lucide-react';
 import { Logo } from './Logo';
 
 const navItems = [
-  { href: '/dashboard', icon: Home, label: 'Dashboard' },
+  { href: '/', icon: Home, label: 'Dashboard' },
   { href: '/tracker', icon: Columns3, label: 'Job Tracker' },
   { href: '/resume-tailor', icon: FileText, label: 'Resume Tailor' },
-  { href: '/interview-prep', icon: MessageSquareQuestion, label: 'Interview Prep' },
+  { href: '/interview-prep', icon: MessageSquareQuote, label: 'Interview Prep' },
 ];
 
 function AppHeader() {
@@ -60,11 +59,6 @@ function AppHeader() {
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  async function handleLogout() {
-    'use server'
-    redirect('/')
-  }
-
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
@@ -80,7 +74,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <SidebarMenuItem key={item.href}>
                   <Link href={item.href} passHref legacyBehavior>
                     <SidebarMenuButton
-                      isActive={pathname.startsWith(item.href)}
+                      isActive={pathname === item.href}
                       tooltip={item.label}
                     >
                       <item.icon className="h-5 w-5" />
@@ -92,26 +86,24 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>
-             <form action={handleLogout} className="w-full">
+             <div className="w-full">
                  <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton asChild>
-                            <button type="submit" className="w-full">
-                                <LogOut className="h-5 w-5" />
-                                <span>Logout</span>
-                            </button>
+                        <SidebarMenuButton>
+                            <LogOut className="h-5 w-5" />
+                            <span>Logout</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                  </SidebarMenu>
-            </form>
+            </div>
             <div className="flex items-center gap-3 p-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-1 group-data-[collapsible=icon]:size-10">
               <Avatar className="group-data-[collapsible=icon]:size-7">
                 <AvatarImage src="https://placehold.co/40x40.png" alt="User" />
                 <AvatarFallback>U</AvatarFallback>
               </Avatar>
               <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-                <span className="text-sm font-semibold text-sidebar-foreground">User</span>
-                <span className="text-xs text-sidebar-foreground/70">user@switchbuddy.com</span>
+                <span className="text-sm font-semibold text-sidebar-foreground">Guest</span>
+                <span className="text-xs text-sidebar-foreground/70">guest@switchbuddy.com</span>
               </div>
             </div>
           </SidebarFooter>
