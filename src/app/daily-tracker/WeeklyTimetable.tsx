@@ -1,5 +1,6 @@
 'use client'
 
+import * as React from "react"
 import { DailyTask } from "@/lib/types";
 import { useState, useMemo } from "react";
 import { ScheduleTaskForm } from "./ScheduleTaskForm";
@@ -47,8 +48,9 @@ export function WeeklyTimetable({ tasks, loading }: WeeklyTimetableProps) {
   
   if (loading) {
     return (
-        <div className="space-y-2">
-            <div className="grid grid-cols-8 min-w-[1000px] gap-2">
+        <div className="space-y-2 overflow-x-auto">
+             <h2 className="font-headline text-2xl font-bold mb-4">This Week</h2>
+            <div className="grid grid-cols-8 min-w-[1000px] gap-px">
                  <Skeleton className="h-12 w-full col-span-8" />
                  {Array.from({length: 17 * 8}).map((_, i) => (
                     <Skeleton key={i} className="h-16 w-full" />
