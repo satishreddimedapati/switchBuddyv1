@@ -52,17 +52,17 @@ function WeeklyListView({ tasks, loading, onEdit }: { tasks: DailyTask[], loadin
         )
     }
 
-    const hasTasks = tasks.length > 0;
+    const hasTasksThisWeek = tasks.length > 0;
 
     return (
         <div className="space-y-8">
             <h2 className="font-headline text-2xl font-bold mb-4">This Week</h2>
-            {hasTasks ? (
+            {hasTasksThisWeek ? (
                 days.map(day => {
                     const dateKey = format(day, 'yyyy-MM-dd');
                     const dayTasks = tasksByDate.get(dateKey) || [];
 
-                    if (dayTasks.length === 0) return null;
+                    if (dayTasks.length === 0) return null; // Don't render day if no tasks
 
                     return (
                         <div key={day.toISOString()}>
@@ -82,7 +82,7 @@ function WeeklyListView({ tasks, loading, onEdit }: { tasks: DailyTask[], loadin
                     <p className="text-muted-foreground">No tasks scheduled for this week.</p>
                 </div>
             )}
-             {!hasTasks && !loading && days.every(day => (tasksByDate.get(format(day, 'yyyy-MM-dd')) || []).length === 0) && (
+             {!hasTasksThisWeek && !loading && (
                 <div className="text-center py-10 border rounded-lg">
                     <p className="text-muted-foreground">No tasks scheduled for this week.</p>
                 </div>
