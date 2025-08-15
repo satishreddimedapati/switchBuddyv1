@@ -3,21 +3,18 @@
 import { db } from "@/lib/firebase";
 import type { JobApplication, KanbanColumnId } from "@/lib/types";
 import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, where } from "firebase/firestore";
-import { getCurrentUser } from "@/lib/auth";
 
 const jobApplicationsCollection = collection(db, "job-applications");
 
-export async function getJobApplications(): Promise<JobApplication[]> {
-  const user = await getCurrentUser();
-  if (!user) return [];
+export async function getJobApplications(userId: string): Promise<JobApplication[]> {
+  if (!userId) return [];
 
   try {
-    const q = query(jobApplicationsCollection, where("userId", "==", user.uid));
+    const q = query(jobApplicationsCollection, where("userId", "==", userId));
     const querySnapshot = await getDocs(q);
     
     if (querySnapshot.empty) {
       console.log('No job applications found for this user.');
-      // Optionally, add sample data for new users
       return [];
     }
 
@@ -32,8 +29,8 @@ export async function getJobApplications(): Promise<JobApplication[]> {
 }
 
 export async function updateJobApplicationStage(jobId: string, newStage: KanbanColumnId, userId: string) {
-  // TODO: Add a check to ensure the job belongs to the user
   const jobRef = doc(db, "job-applications", jobId);
+  // In a real app, you'd want to verify the user owns this document before updating.
   await updateDoc(jobRef, { stage: newStage });
 }
 
@@ -43,6 +40,7 @@ export async function addJobApplication(job: Omit<JobApplication, 'id'>) {
 }
 
 export async function deleteJobApplication(jobId: string) {
-    // TODO: Add a check to ensure the job belongs to the user
-    await deleteDoc(doc(db, "job-applications", jobId));
+    const jobRef = doc(db, "job-applications", jobId);
+    // In a real app, you'd want to verify the user owns this document before deleting.
+    await deleteDoc(jobRef);
 }

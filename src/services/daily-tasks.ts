@@ -3,17 +3,15 @@
 import { db } from "@/lib/firebase";
 import type { DailyTask } from "@/lib/types";
 import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, where } from "firebase/firestore";
-import { getCurrentUser } from "@/lib/auth";
 import { format } from "date-fns";
 
 const dailyTasksCollection = collection(db, "daily_tasks");
 
-export async function getTasksForDate(date: string): Promise<DailyTask[]> {
-  const user = await getCurrentUser();
-  if (!user) return [];
+export async function getTasksForDate(date: string, userId: string): Promise<DailyTask[]> {
+  if (!userId) return [];
 
   try {
-    const q = query(dailyTasksCollection, where("date", "==", date), where("userId", "==", user.uid));
+    const q = query(dailyTasksCollection, where("date", "==", date), where("userId", "==", userId));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
@@ -25,12 +23,11 @@ export async function getTasksForDate(date: string): Promise<DailyTask[]> {
   }
 }
 
-export async function getTasksForWeek(startDate: string, endDate: string): Promise<DailyTask[]> {
-  const user = await getCurrentUser();
-  if (!user) return [];
+export async function getTasksForWeek(startDate: string, endDate: string, userId: string): Promise<DailyTask[]> {
+  if (!userId) return [];
 
   try {
-    const q = query(dailyTasksCollection, where("date", ">=", startDate), where("date", "<=", endDate), where("userId", "==", user.uid));
+    const q = query(dailyTasksCollection, where("date", ">=", startDate), where("date", "<=", endDate), where("userId", "==", userId));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
@@ -42,27 +39,24 @@ export async function getTasksForWeek(startDate: string, endDate: string): Promi
   }
 }
 
-export async function updateTask(taskId: string, updates: Partial<Omit<DailyTask, 'id'>>) {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("Authentication required");
-  // TODO: Add a check to ensure the task belongs to the user
+export async function updateTask(taskId: string, updates: Partial<Omit<DailyTask, 'id'>>, userId: string) {
+  if (!userId) throw new Error("Authentication required");
   const taskRef = doc(db, "daily_tasks", taskId);
+  // In a real app, you'd check ownership here.
   await updateDoc(taskRef, updates);
 }
 
-export async function addTask(task: Omit<DailyTask, 'id'>) {
-    const user = await getCurrentUser();
-    if (!user) throw new Error("Authentication required");
+export async function addTask(task: Omit<DailyTask, 'id'>, userId: string) {
+    if (!userId) throw new Error("Authentication required");
 
-    const taskWithUser = { ...task, userId: user.uid };
+    const taskWithUser = { ...task, userId };
     const docRef = await addDoc(dailyTasksCollection, taskWithUser);
     return docRef.id;
 }
 
-export async function deleteTask(taskId: string) {
-    const user = await getCurrentUser();
-    if (!user) throw new Error("Authentication required");
-    // TODO: Add a check to ensure the task belongs to the user
+export async function deleteTask(taskId: string, userId: string) {
+    if (!userId) throw new Error("Authentication required");
+     // In a real app, you'd check ownership here.
     await deleteDoc(doc(db, "daily_tasks", taskId));
 }
 

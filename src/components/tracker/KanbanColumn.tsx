@@ -1,3 +1,5 @@
+'use client'
+
 import type { JobApplication, KanbanColumnId } from "@/lib/types";
 import { JobApplicationCard } from "./JobApplicationCard";
 import { ScrollArea } from "../ui/scroll-area";

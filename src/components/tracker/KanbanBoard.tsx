@@ -1,23 +1,26 @@
 'use client'
 
-import type { JobApplication, KanbanColumnData, KanbanColumnId } from "@/lib/types";
+import type { JobApplication, KanbanColumnId } from "@/lib/types";
 import { KanbanColumn } from "./KanbanColumn";
 import { useEffect, useState } from "react";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { SortableContext, arrayMove } from "@dnd-kit/sortable";
+import { arrayMove } from "@dnd-kit/sortable";
 import { JobApplicationCard } from "./JobApplicationCard";
 import { createPortal } from "react-dom";
 import { handleUpdateJobStage } from "./actions";
+import { useAuth } from "@/lib/auth";
 
 interface KanbanBoardProps {
   initialData: JobApplication[];
+  onBoardChange: (data: JobApplication[]) => void;
 }
 
 const COLUMN_ORDER: KanbanColumnId[] = ['Wishlist', 'Applying', 'Interview', 'Offer', 'Rejected'];
 
-export function KanbanBoard({ initialData }: KanbanBoardProps) {
-  const [columns, setColumns] = useState<Map<KanbanColumnId, JobApplication[]>>(new Map());
+export function KanbanBoard({ initialData, onBoardChange }: KanbanBoardProps) {
+  const [columns, setColumns] = useState<Map<KanbanColumnId, JobApplication>>(new Map());
   const [activeJob, setActiveJob] = useState<JobApplication | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const newColumns = new Map<KanbanColumnId, JobApplication[]>();
@@ -30,6 +33,12 @@ export function KanbanBoard({ initialData }: KanbanBoardProps) {
       columnJobs.push(job);
       newColumns.set(job.stage, columnJobs);
     });
+
+    // Sort jobs within each column if needed (e.g., by date)
+    newColumns.forEach((jobs, columnId) => {
+        newColumns.set(columnId, jobs.sort((a, b) => initialData.indexOf(a) - initialData.indexOf(b)));
+    });
+
 
     setColumns(newColumns);
   }, [initialData]);
@@ -53,6 +62,7 @@ export function KanbanBoard({ initialData }: KanbanBoardProps) {
     setActiveJob(null);
     const { active, over } = event;
     if (!over) return;
+    if (!user) return;
 
     const activeId = active.id;
     const overId = over.id;
@@ -60,26 +70,24 @@ export function KanbanBoard({ initialData }: KanbanBoardProps) {
     if (activeId === overId) return;
 
     const activeColumnKey = active.data.current?.job.stage as KanbanColumnId;
-    const overColumnKey = (over.data.current?.job?.stage || over.id) as KanbanColumnId;
+    let overColumnKey = over.data.current?.job?.stage as KanbanColumnId;
+    if (over.data.current?.type === 'Column') {
+        overColumnKey = over.id as KanbanColumnId;
+    }
     
     if (!activeColumnKey || !overColumnKey || activeColumnKey === overColumnKey) {
         return;
     }
 
-    setColumns(prev => {
-        const newColumns = new Map(prev);
-        const activeColumn = Array.from(newColumns.get(activeColumnKey) || []);
-        const overColumn = Array.from(newColumns.get(overColumnKey) || []);
+    const jobToMove = initialData.find(j => j.id === activeId);
+    if (!jobToMove) return;
 
-        const activeIndex = activeColumn.findIndex(job => job.id === activeId);
-        const jobToMove = activeColumn[activeIndex];
-
-        // Optimistically update UI
-        newColumns.set(activeColumnKey, activeColumn.filter(job => job.id !== activeId));
-        newColumns.set(overColumnKey, [...overColumn, {...jobToMove, stage: overColumnKey}]);
-
-        return newColumns;
-    });
+    // Optimistically update UI
+    const updatedJobs = initialData.map(job => 
+        job.id === activeId ? { ...job, stage: overColumnKey } : job
+    );
+    onBoardChange(updatedJobs);
+    
 
     // Update database
     await handleUpdateJobStage(activeId.toString(), overColumnKey);
@@ -91,7 +99,6 @@ export function KanbanBoard({ initialData }: KanbanBoardProps) {
     <div className="flex-1 overflow-x-auto">
       <div className="flex gap-6 p-1 pb-4">
         <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-            <SortableContext items={columnIds}>
             {columnIds.map((columnId) => (
               <KanbanColumn
                 key={columnId}
@@ -99,7 +106,6 @@ export function KanbanBoard({ initialData }: KanbanBoardProps) {
                 jobs={columns.get(columnId) || []}
               />
             ))}
-            </SortableContext>
             {createPortal(
             <DragOverlay>
               {activeJob && (

@@ -13,15 +13,16 @@ export default function TrackerPage() {
   const [jobApplications, setJobApplications] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchJobs() {
-      if (user) {
-        setLoading(true);
-        const jobs = await getJobApplications();
-        setJobApplications(jobs);
-        setLoading(false);
-      }
+  const fetchJobs = async () => {
+    if (user) {
+      setLoading(true);
+      const jobs = await getJobApplications(user.uid);
+      setJobApplications(jobs);
+      setLoading(false);
     }
+  }
+
+  useEffect(() => {
     fetchJobs();
   }, [user]);
 
@@ -36,10 +37,7 @@ export default function TrackerPage() {
                 Manage your applications from wishlist to offer.
               </p>
             </div>
-            <AddJobApplicationForm onApplicationAdded={async () => {
-              const jobs = await getJobApplications();
-              setJobApplications(jobs);
-            }} />
+            <AddJobApplicationForm onApplicationAdded={fetchJobs} />
         </div>
         <div className="mt-6 flex-grow">
           {loading ? (
@@ -50,7 +48,7 @@ export default function TrackerPage() {
                 <Skeleton className="h-[500px] w-72" />
              </div>
           ) : (
-            <KanbanBoard initialData={jobApplications} />
+            <KanbanBoard initialData={jobApplications} onBoardChange={setJobApplications} />
           )}
         </div>
       </div>

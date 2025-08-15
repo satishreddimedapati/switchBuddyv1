@@ -6,6 +6,7 @@ import { auth } from './firebase';
 import { useRouter, usePathname } from 'next/navigation';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
+import { Loader2 } from 'lucide-react';
 
 interface AuthContextType {
   user: User | null;
@@ -23,10 +24,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // User is signed in.
         setUser(user);
-
-        // Check if user exists in Firestore, if not create a document
         const userRef = doc(db, 'users', user.uid);
         const userSnap = await getDoc(userRef);
         if (!userSnap.exists()) {
@@ -36,7 +34,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           });
         }
       } else {
-        // User is signed out.
         setUser(null);
       }
       setLoading(false);
@@ -60,7 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
-      {loading ? <div className="flex h-screen items-center justify-center"><p>Loading...</p></div> : children}
+      {loading ? <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin h-8 w-8" /></div> : children}
     </AuthContext.Provider>
   );
 };
@@ -73,14 +70,18 @@ export const useAuth = () => {
   return context;
 };
 
-// This is a server-side utility to get the current user
-// Note: This is a placeholder and for real-world scenarios,
-// you would use Firebase Admin SDK on the server to verify the user's token.
-// For this project, we'll keep it simple and assume client-side auth state is sufficient for server actions.
+// This server-side utility is tricky with client-side auth.
+// We'll manage getting the user on the server differently.
+// For server actions, we'll need to re-authenticate or pass the user ID.
+import { getAuth } from 'firebase/auth';
+import { app } from '@/lib/firebase';
+
 export const getCurrentUser = (): Promise<User | null> => {
+  // This is a new Promise-based wrapper around onAuthStateChanged
+  // It's designed to be called in Server Actions to get the current user.
   return new Promise((resolve, reject) => {
     const unsubscribe = onAuthStateChanged(
-      auth,
+      getAuth(app),
       (user) => {
         unsubscribe();
         resolve(user);

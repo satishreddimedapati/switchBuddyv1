@@ -1,12 +1,9 @@
 "use server";
 
 import { z } from "zod";
-import { addJobApplication, updateJobApplicationStage } from "@/services/job-applications";
+import { addJobApplication, updateJobApplicationStage as updateStage } from "@/services/job-applications";
 import { revalidatePath } from "next/cache";
 import { KanbanColumnId } from "@/lib/types";
-import { auth } from "firebase-admin";
-import { getAuth } from "firebase/auth";
-import { app } from "@/lib/firebase";
 import { getCurrentUser } from "@/lib/auth";
 
 const AddJobApplicationSchema = z.object({
@@ -78,7 +75,7 @@ export async function handleUpdateJobStage(jobId: string, newStage: KanbanColumn
     }
     
     try {
-        await updateJobApplicationStage(jobId, newStage, user.uid);
+        await updateStage(jobId, newStage, user.uid);
         revalidatePath('/tracker');
         return { message: 'Job stage updated' };
     } catch (error) {
