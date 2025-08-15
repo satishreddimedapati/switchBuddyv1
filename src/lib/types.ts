@@ -1,3 +1,4 @@
+
 import {z} from 'zod';
 
 export type JobApplication = {
@@ -39,24 +40,15 @@ export type DailyTask = z.infer<typeof DailyTaskSchema>;
 
 // Schema for a scheduled task item in the output
 export const ScheduledTaskSchema = z.object({
-  id: z.string().describe('The original ID of the task.'),
-  title: z.string(),
-  time: z
-    .string()
-    .describe('The newly scheduled time for the task, in HH:mm format.'),
-  type: z.enum(['task', 'break']),
-  description: z.string().optional(),
+  time: z.string().describe('The time for the task, e.g., "06:00 AM".'),
+  task: z.string().describe('The name or description of the task.'),
+  motivation: z.string().describe('A short motivational note for the task.'),
 });
 
-// Input for generating a daily plan
+// Input for generating a daily plan - now simplified
 export const GenerateDailyPlanInputSchema = z.object({
-  tasks: z.array(DailyTaskSchema).describe('The list of tasks to be scheduled.'),
-  startTime: z
-    .string()
-    .describe('The start of the available time window (e.g., "09:00").'),
-  endTime: z
-    .string()
-    .describe('The end of the available time window (e.g., "21:00").'),
+  // This can be extended later if we need to pass user preferences
+  userId: z.string().optional(), // Keeping it simple for now
 });
 export type GenerateDailyPlanInput = z.infer<
   typeof GenerateDailyPlanInputSchema
@@ -67,7 +59,7 @@ export const GenerateDailyPlanOutputSchema = z.object({
   optimizedSchedule: z
     .array(ScheduledTaskSchema)
     .describe(
-      'An optimized schedule, including the original tasks and short breaks. Breaks should be about 10-15 minutes long.'
+      'An optimized, full-day schedule from 6:00 AM to 10:00 PM.'
     ),
 });
 export type GenerateDailyPlanOutput = z.infer<

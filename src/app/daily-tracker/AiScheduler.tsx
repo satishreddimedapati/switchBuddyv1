@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -23,7 +24,7 @@ import {collection, onSnapshot, query, where} from 'firebase/firestore';
 import {format} from 'date-fns';
 import {useEffect, useState, useTransition} from 'react';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
-import {BrainCircuit, CheckCircle2, Loader2, Sparkles} from 'lucide-react';
+import {BrainCircuit, CheckCircle2, Coffee, Lightbulb, Loader2, Sparkles, Target} from 'lucide-react';
 import {Skeleton} from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { addTask, updateTask } from '@/services/daily-tasks';
@@ -77,19 +78,11 @@ export function AiScheduler() {
   }, [user]);
 
   const handleGeneratePlan = () => {
-    if (!tasks.length) {
-      setPlanError('There are no tasks to schedule for today.');
-      return;
-    }
     startPlanTransition(async () => {
       setPlanError(null);
       setPlanResult(null);
       try {
-        const result = await generateDailyPlan({
-          tasks,
-          startTime: '09:00',
-          endTime: '18:00',
-        });
+        const result = await generateDailyPlan({});
         if (result) {
           setPlanResult(result);
         } else {
@@ -101,25 +94,6 @@ export function AiScheduler() {
       }
     });
   };
-
-  const handleApplyPlan = () => {
-    if (!planResult || !user) return;
-    
-    planResult.optimizedSchedule.forEach(async (scheduledTask) => {
-        if (scheduledTask.type === 'task') {
-            await updateTask(scheduledTask.id, { time: scheduledTask.time }, user.uid);
-        } else if (scheduledTask.type === 'break') {
-            await addTask({
-                title: scheduledTask.title,
-                time: scheduledTask.time,
-                date: format(new Date(), 'yyyy-MM-dd'),
-                type: 'schedule',
-                completed: false,
-                description: 'A short break to recharge.'
-            }, user.uid)
-        }
-    })
-  }
 
   const handleGenerateSummary = () => {
     if (!tasks.length) {
@@ -145,42 +119,39 @@ export function AiScheduler() {
     });
   };
 
+  const getTaskIcon = (taskTitle: string) => {
+    const lowerCaseTitle = taskTitle.toLowerCase();
+    if (lowerCaseTitle.includes('break') || lowerCaseTitle.includes('coffee') || lowerCaseTitle.includes('lunch') || lowerCaseTitle.includes('dinner')) return <Coffee className="h-5 w-5 text-amber-600" />;
+    if (lowerCaseTitle.includes('reflect') || lowerCaseTitle.includes('review')) return <Lightbulb className="h-5 w-5 text-purple-600" />;
+    if (lowerCaseTitle.includes('practice') || lowerCaseTitle.includes('system design') || lowerCaseTitle.includes('coding') || lowerCaseTitle.includes('interview')) return <Target className="h-5 w-5 text-blue-600" />;
+    return <Sparkles className="h-5 w-5 text-gray-500" />;
+  }
+
   return (
     <div className="space-y-8">
       {/* Smart Daily Plan Generator */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <BrainCircuit /> Smart Daily Plan Generator
+            <BrainCircuit /> Your AI-Generated Daily Battle Plan
           </CardTitle>
           <CardDescription>
-            Let AI create an optimized, time-based plan for your day based on
-            your existing tasks. It will even add breaks for you.
+            Tired of planning? Let your AI coach build a strict, motivational schedule to keep you on track and push you to succeed.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {loadingTasks ? (
-            <Skeleton className="h-10 w-48" />
-          ) : (
-            <>
-              <Button
-                onClick={handleGeneratePlan}
-                disabled={isGeneratingPlan || !tasks.length}
-              >
-                {isGeneratingPlan ? (
-                  <Loader2 className="mr-2 animate-spin" />
-                ) : (
-                  <Sparkles className="mr-2" />
-                )}
-                Generate Today's Plan
-              </Button>
-              {!tasks.length && !loadingTasks && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  No tasks scheduled for today. Add some tasks in the 'Daily' tab first.
-                </p>
-              )}
-            </>
-          )}
+          
+          <Button
+            onClick={handleGeneratePlan}
+            disabled={isGeneratingPlan}
+          >
+            {isGeneratingPlan ? (
+              <Loader2 className="mr-2 animate-spin" />
+            ) : (
+              <Sparkles className="mr-2" />
+            )}
+            Generate My Battle Plan
+          </Button>
 
           {planError && (
             <Alert variant="destructive" className="mt-4">
@@ -194,46 +165,45 @@ export function AiScheduler() {
                 <Skeleton className="h-8 w-full" />
                 <Skeleton className="h-8 w-full" />
                 <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
             </div>
           )}
 
           {planResult && (
             <div className="mt-6">
-              <h3 className="font-semibold mb-2">Your Optimized Schedule:</h3>
-              <ul className="space-y-2">
+              <ul className="space-y-1">
                 {planResult.optimizedSchedule.map((item, index) => (
                   <li
                     key={index}
-                    className={cn("flex items-center gap-4 rounded-md p-2",
-                        item.type === 'break' ? 'bg-amber-100/50' : 'bg-muted/50'
-                    )}
+                    className="flex items-start gap-4 rounded-md p-3 border-b last:border-b-0"
                   >
-                    <span className="font-mono text-sm text-muted-foreground w-16">
+                    <span className="font-mono text-sm text-muted-foreground w-20 pt-0.5">
                       {item.time}
                     </span>
-                    <span className="font-medium">{item.title}</span>
+                    <div className="flex-grow flex items-start gap-4">
+                      <div className="pt-0.5">{getTaskIcon(item.task)}</div>
+                      <div>
+                        <p className="font-medium leading-tight">{item.task}</p>
+                        <p className="text-xs text-muted-foreground italic mt-1">&quot;{item.motivation}&quot;</p>
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>
             </div>
           )}
         </CardContent>
-        {planResult && (
-            <CardFooter className='border-t pt-6'>
-                <Button onClick={handleApplyPlan}>Apply This Schedule</Button>
-            </CardFooter>
-        )}
       </Card>
 
       {/* Daily Summary & Next-Day Recommendations */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <CheckCircle2 /> Daily Summary &amp; Next-Day Plan
+            <CheckCircle2 /> Daily Debrief &amp; Tomorrow's Targets
           </CardTitle>
           <CardDescription>
-            Get a motivational summary of your achievements and see the top 3
-            priorities for tomorrow.
+            Review today&apos;s progress and get your top 3 priorities for tomorrow, so you always know what to focus on.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -249,7 +219,7 @@ export function AiScheduler() {
               ) : (
                 <Sparkles className="mr-2" />
               )}
-              Generate Daily Summary
+              Generate Daily Debrief
             </Button>
           )}
            {summaryError && (

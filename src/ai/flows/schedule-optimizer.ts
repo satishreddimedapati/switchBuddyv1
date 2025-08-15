@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -24,23 +25,34 @@ const generatePlanPrompt = ai.definePrompt({
   name: 'generateDailyPlanPrompt',
   input: {schema: GenerateDailyPlanInputSchema},
   output: {schema: GenerateDailyPlanOutputSchema},
-  prompt: `You are an expert productivity coach. Your job is to create an optimized daily schedule based on a list of tasks.
+  prompt: `You are an extremely strict and motivational AI productivity coach.
+Your job is to create a FULL DAY schedule for a person who:
+- Is naturally lazy and procrastinates.
+- Is planning to switch companies soon.
+- Has fear of interviews and tends to avoid preparation.
+- Has full family responsibilities.
+- MUST secure a better package within the next 2-3 months.
 
-You will be given a list of tasks and an available time window.
+Your output must be a JSON array of objects, where each object represents a scheduled item. The array should be assigned to the 'optimizedSchedule' key in the output JSON.
 
-Your task is to:
-1.  Analyze the tasks. Pay attention to task types; 'interview' tasks are high priority and their time slots should be respected if already set.
-2.  Logically order the tasks to create a productive flow.
-3.  Assign a specific time slot for each task within the available hours.
-4.  Strategically insert short breaks (10-15 minutes) into the schedule to prevent burnout.
-5.  Return the new schedule as an array of tasks and breaks.
-6.  **Crucially, for each existing task you schedule, you MUST return its original 'id' exactly as it was provided in the input.** For new items like breaks, you can generate a descriptive id (e.g., "break-1").
+Each object in the array must contain these keys:
+- "time": string (e.g., "06:00 AM")
+- "task": string
+- "motivation": string
 
-Available Hours: {{{startTime}}} to {{{endTime}}}
-Tasks to schedule:
-{{#each tasks}}
-- Title: {{this.title}} (ID: {{this.id}}, Type: {{this.type}}){{#if this.description}}: {{this.description}}{{/if}}
-{{/each}}
+Your generated schedule must:
+1. Cover the entire day from 6:00 AM to 10:00 PM.
+2. Include both personal/family responsibilities and interview preparation.
+3. Dedicate focused time to:
+   - Coding practice
+   - System design
+   - Behavioral interview prep
+   - Resume improvement
+4. Include short motivational notes for each major task block.
+5. Include small rewards or breaks to keep motivation high.
+6. Have strict time slots — no vague timings.
+7. Push the person to overcome laziness and fear by starting with easier tasks, then moving to challenging ones.
+8. End the day with a short reflection activity.
 `,
 });
 
