@@ -11,12 +11,15 @@ import { Download, Loader2, Video } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
 
-export default function InterviewSummaryPage({ params }: { params: { id: string } }) {
+export default function InterviewSummaryPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const params = useParams();
+  const sessionId = params.id as string;
+
   const [session, setSession] = useState<InterviewSession | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -24,7 +27,7 @@ export default function InterviewSummaryPage({ params }: { params: { id: string 
     if (!user) return;
     async function loadSession() {
         setLoading(true);
-        const sessionData = await getInterviewSession(params.id);
+        const sessionData = await getInterviewSession(sessionId);
         if (sessionData && sessionData.userId === user.uid) {
             setSession(sessionData);
         } else {
@@ -33,7 +36,7 @@ export default function InterviewSummaryPage({ params }: { params: { id: string 
         setLoading(false);
     }
     loadSession();
-  }, [user, params.id, router])
+  }, [user, sessionId, router])
 
   if (loading) {
     return (

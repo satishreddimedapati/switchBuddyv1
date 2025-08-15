@@ -9,7 +9,7 @@ import { getInterviewPlan, updateInterviewPlan } from "@/services/interview-plan
 import { getInterviewSession, updateInterviewSession } from "@/services/interview-sessions";
 import { InterviewPlan, InterviewSession, InterviewSessionQuestion } from "@/lib/types";
 import { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { evaluateInterviewAnswers } from "@/ai/flows/interview-practice";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -41,11 +41,12 @@ function InterviewTimer({ durationMinutes, onTimeUp }: { durationMinutes: number
 }
 
 
-export default function InterviewSessionPage({ params }: { params: { id: string } }) {
+export default function InterviewSessionPage() {
     const { user } = useAuth();
     const router = useRouter();
+    const params = useParams();
     const { toast } = useToast();
-    const sessionId = params.id;
+    const sessionId = params.id as string;
 
     const [session, setSession] = useState<InterviewSession | null>(null);
     const [plan, setPlan] = useState<InterviewPlan | null>(null);
