@@ -4,7 +4,7 @@ import { AddJobApplicationForm } from "@/components/tracker/AddJobApplicationFor
 import { KanbanBoard } from "@/components/tracker/KanbanBoard";
 import { getJobApplications } from "@/services/job-applications";
 import { useAuth } from "@/lib/auth";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type { JobApplication } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -13,18 +13,26 @@ export default function TrackerPage() {
   const [jobApplications, setJobApplications] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     if (user) {
       setLoading(true);
-      const jobs = await getJobApplications(user.uid);
-      setJobApplications(jobs);
+      try {
+        const jobs = await getJobApplications(user.uid);
+        setJobApplications(jobs);
+      } catch (error) {
+        console.error("Failed to fetch job applications", error);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setJobApplications([]);
       setLoading(false);
     }
-  }
+  }, [user]);
 
   useEffect(() => {
     fetchJobs();
-  }, [user]);
+  }, [fetchJobs]);
 
   return (
       <div className="flex flex-col h-[calc(100vh-theme(spacing.20))]">
