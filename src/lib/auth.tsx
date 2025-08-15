@@ -4,7 +4,6 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { onAuthStateChanged, User, getAuth } from 'firebase/auth';
 import { auth, db, app } from './firebase';
 import { useRouter, usePathname } from 'next/navigation';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 
 interface AuthContextType {
@@ -21,28 +20,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setUser(user);
-        const userRef = doc(db, 'users', user.uid);
-        const userSnap = await getDoc(userRef);
-        if (!userSnap.exists()) {
-          await setDoc(userRef, {
-            email: user.email,
-            createdAt: new Date(),
-          });
-        }
-      } else {
-        setUser(null);
-      }
+    // This listener is the single source of truth for the user's auth state.
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
       setLoading(false);
     });
 
+    // Cleanup the listener when the component unmounts.
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading) return; // Don't redirect until the auth state is known.
 
     const isAuthPage = pathname === '/login' || pathname === '/signup';
 
@@ -56,7 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
-      {loading ? <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin h-8 w-8" /></div> : children}
+      {children}
     </AuthContext.Provider>
   );
 };
