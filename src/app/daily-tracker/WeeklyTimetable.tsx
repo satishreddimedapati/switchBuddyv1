@@ -4,7 +4,7 @@ import * as React from "react"
 import { DailyTask } from "@/lib/types";
 import { useState, useMemo, useEffect } from "react";
 import { ScheduleTaskForm } from "./ScheduleTaskForm";
-import { format, startOfWeek, addDays, endOfWeek, subWeeks, addWeeks, parse } from 'date-fns';
+import { format, startOfWeek, addDays, endOfWeek, subWeeks, addWeeks, parse, isWithinInterval } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
@@ -47,7 +47,7 @@ function WeekNavigator({ currentDate, setCurrentDate }: { currentDate: Date, set
 
 export function WeeklyTimetable() {
   const { user } = useAuth();
-  const [tasks, setTasks] = useState<DailyTask[]>([]);
+  const [allTasks, setAllTasks] = useState<DailyTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<DailyTask | undefined>(undefined);
@@ -55,42 +55,44 @@ export function WeeklyTimetable() {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const { weekStart, weekEnd, weekDays } = useMemo(() => {
-    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-    const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
-    const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-    return { weekStart, weekEnd, weekDays };
+    const start = startOfWeek(currentDate, { weekStartsOn: 1 });
+    const end = endOfWeek(currentDate, { weekStartsOn: 1 });
+    const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
+    return { weekStart: start, weekEnd: end, weekDays: days };
   }, [currentDate]);
   
   useEffect(() => {
     if (!user) {
-        setTasks([]);
+        setAllTasks([]);
         setLoading(false);
         return;
     };
     
     setLoading(true);
     
-    const formattedWeekStart = format(weekStart, 'yyyy-MM-dd');
-    const formattedWeekEnd = format(weekEnd, 'yyyy-MM-dd');
-
     const q = query(
         collection(db, "daily_tasks"), 
-        where("userId", "==", user.uid),
-        where("date", ">=", formattedWeekStart),
-        where("date", "<=", formattedWeekEnd)
+        where("userId", "==", user.uid)
     );
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const fetchedTasks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyTask));
-        setTasks(fetchedTasks);
+        setAllTasks(fetchedTasks);
         setLoading(false);
     }, (error) => {
-        console.error("Error fetching week's tasks: ", error);
+        console.error("Error fetching tasks: ", error);
         setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [user, weekStart, weekEnd]);
+  }, [user]);
+
+  const tasksForCurrentWeek = useMemo(() => {
+      return allTasks.filter(task => {
+          const taskDate = new Date(task.date);
+          return isWithinInterval(taskDate, { start: weekStart, end: weekEnd });
+      });
+  }, [allTasks, weekStart, weekEnd]);
   
   const handleEdit = (task: DailyTask) => {
     setEditingTask(task);
@@ -112,14 +114,14 @@ export function WeeklyTimetable() {
   
   const tasksByDateTime = useMemo(() => {
     const map = new Map<string, DailyTask[]>();
-    tasks.forEach(task => {
+    tasksForCurrentWeek.forEach(task => {
         const key = `${task.date}_${task.time.substring(0, 2)}:00`;
         const existing = map.get(key) || [];
         existing.push(task);
         map.set(key, existing);
     });
     return map;
-  }, [tasks]);
+  }, [tasksForCurrentWeek]);
 
     if (loading) {
         return (
