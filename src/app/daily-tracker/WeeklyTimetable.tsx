@@ -2,16 +2,14 @@
 
 import * as React from "react"
 import { DailyTask } from "@/lib/types";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ScheduleTaskForm } from "./ScheduleTaskForm";
-import { format, startOfWeek, addDays } from 'date-fns';
+import { format, startOfWeek, addDays, endOfWeek } from 'date-fns';
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-
-interface WeeklyTimetableProps {
-  tasks: DailyTask[];
-  loading: boolean;
-}
+import { useAuth } from "@/lib/auth";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const timeSlots = Array.from({ length: 17 }, (_, i) => `${(i + 6).toString().padStart(2, '0')}:00`);
 
@@ -20,14 +18,49 @@ const categoryColors = {
   interview: "bg-green-100 border-green-200 text-green-800 dark:bg-green-900/50 dark:border-green-700 dark:text-green-200",
 };
 
-export function WeeklyTimetable({ tasks, loading }: WeeklyTimetableProps) {
+export function WeeklyTimetable() {
+  const { user } = useAuth();
+  const [tasks, setTasks] = useState<DailyTask[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [prefillData, setPrefillData] = useState<{ date: string; time: string } | undefined>(undefined);
 
+  useEffect(() => {
+    if (!user) {
+        setTasks([]);
+        setLoading(false);
+        return;
+    };
+    
+    setLoading(true);
+
+    const now = new Date();
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 }); // Monday
+    const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+    
+    const q = query(
+        collection(db, "daily_tasks"), 
+        where("userId", "==", user.uid),
+        where("date", ">=", format(weekStart, 'yyyy-MM-dd')),
+        where("date", "<=", format(weekEnd, 'yyyy-MM-dd'))
+    );
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const fetchedTasks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyTask));
+        setTasks(fetchedTasks);
+        setLoading(false);
+    }, (error) => {
+        console.error("Error fetching week's tasks: ", error);
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+  
   const today = new Date();
   const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday
 
-  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
 
   const tasksByDateTime = useMemo(() => {
     const map = new Map<string, DailyTask[]>();
