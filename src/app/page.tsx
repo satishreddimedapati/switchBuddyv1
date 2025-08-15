@@ -29,8 +29,11 @@ export default function DashboardPage() {
     async function fetchJobs() {
       if (user) {
         setLoading(true);
-        const jobs = await getJobApplications();
+        const jobs = await getJobApplications(user.uid);
         setJobApplications(jobs);
+        setLoading(false);
+      } else {
+        setJobApplications([]);
         setLoading(false);
       }
     }
