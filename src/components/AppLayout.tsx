@@ -24,12 +24,14 @@ import {
   MessageSquareQuote,
   LogOut,
   PanelLeft,
+  CalendarCheck,
 } from 'lucide-react';
 import { Logo } from './Logo';
 
 const navItems = [
   { href: '/', icon: Home, label: 'Dashboard' },
   { href: '/tracker', icon: Columns3, label: 'Job Tracker' },
+  { href: '/daily-tracker', icon: CalendarCheck, label: 'Daily Tracker' },
   { href: '/resume-tailor', icon: FileText, label: 'Resume Tailor' },
   { href: '/interview-prep', icon: MessageSquareQuote, label: 'Interview Prep' },
 ];

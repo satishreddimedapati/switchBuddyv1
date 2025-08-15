@@ -13,3 +13,13 @@ export type KanbanColumnData = {
   title: string;
   jobs: JobApplication[];
 };
+
+export type DailyTask = {
+    id: string;
+    time: string; // e.g., "08:00"
+    title: string;
+    description?: string;
+    type: 'schedule' | 'interview';
+    date: string; // e.g., "YYYY-MM-DD"
+    completed: boolean;
+};

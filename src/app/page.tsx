@@ -5,8 +5,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { dailyTasks } from "@/lib/data";
 import { getJobApplications } from "@/services/job-applications";
 import { Award, Briefcase, Calendar, Search } from "lucide-react";
 
@@ -29,26 +27,21 @@ export default async function DashboardPage() {
     {
       title: "Applications Sent",
       value: applicationsSent.toString(),
-      // Note: Change calculation is not implemented as there's no historical data.
-      change: "from last week", 
       icon: "Briefcase",
     },
     {
       title: "Interviews Scheduled",
       value: interviewsScheduled.toString(),
-      change: "from last week",
       icon: "Calendar",
     },
     {
       title: "Offers Received",
       value: offersReceived.toString(),
-      change: "from last week",
       icon: "Award",
     },
     {
       title: "Active Searches",
       value: activeSearches.toString(),
-      change: "from last week",
       icon: "Search",
     },
   ];
@@ -85,30 +78,6 @@ export default async function DashboardPage() {
             );
           })}
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">Daily Tracker</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Stay motivated! Complete your daily tasks to get closer to your dream job.
-            </p>
-            <div className="space-y-4">
-              {dailyTasks.map((task) => (
-                <div key={task.id} className="flex items-center space-x-3">
-                  <Checkbox id={task.id} defaultChecked={task.completed} />
-                  <label
-                    htmlFor={task.id}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {task.label}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
   );
 }
