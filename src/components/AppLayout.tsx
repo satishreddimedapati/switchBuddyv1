@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   SidebarProvider,
@@ -27,6 +27,11 @@ import {
   CalendarCheck,
 } from 'lucide-react';
 import { Logo } from './Logo';
+import { useAuth } from '@/lib/auth';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from './ui/button';
 
 const navItems = [
   { href: '/', icon: Home, label: 'Dashboard' },
@@ -49,22 +54,61 @@ function AppHeader() {
             <div className="w-full flex-1">
               {/* Optional: Add search or other header items here */}
             </div>
-            <Avatar>
-              <AvatarImage src="https://placehold.co/40x40.png" alt="User" />
-              <AvatarFallback>U</AvatarFallback>
-            </Avatar>
+             <UserAvatar />
         </header>
     );
 }
 
+function UserAvatar() {
+    const { user } = useAuth();
+    const fallback = user?.email?.charAt(0).toUpperCase() || 'U';
 
-export function AppLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+    return (
+        <Avatar>
+            <AvatarImage src={`https://placehold.co/40x40.png?text=${fallback}`} alt="User" />
+            <AvatarFallback>{fallback}</AvatarFallback>
+        </Avatar>
+    );
+}
 
-  return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <Sidebar>
+function AuthArea({ children }: { children: React.ReactNode }) {
+    const { user, loading } = useAuth();
+    const pathname = usePathname();
+    const showLayout = !loading && user && !['/login', '/signup'].includes(pathname);
+    
+    if (!showLayout) return <>{children}</>;
+
+    return (
+        <SidebarProvider>
+            <div className="flex min-h-screen w-full">
+                <AppSidebar />
+                <div className="flex flex-1 flex-col">
+                    <AppHeader />
+                    <SidebarInset className="p-4 sm:p-6">{children}</SidebarInset>
+                </div>
+            </div>
+        </SidebarProvider>
+    );
+}
+
+function AppSidebar() {
+    const pathname = usePathname();
+    const { user } = useAuth();
+    const router = useRouter();
+    const { toast } = useToast();
+
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            toast({ title: "Logged Out", description: "You have been logged out successfully." });
+            router.push('/login');
+        } catch (error: any) {
+            toast({ title: "Error", description: "Failed to log out.", variant: 'destructive' });
+        }
+    };
+    
+    return (
+         <Sidebar>
           <SidebarHeader>
             <div className="p-2">
                 <Logo />
@@ -92,7 +136,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
              <div className="w-full">
                  <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton>
+                        <SidebarMenuButton onClick={handleLogout}>
                             <LogOut className="h-5 w-5" />
                             <span>Logout</span>
                         </SidebarMenuButton>
@@ -100,22 +144,45 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                  </SidebarMenu>
             </div>
             <div className="flex items-center gap-3 p-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-1 group-data-[collapsible=icon]:size-10">
-              <Avatar className="group-data-[collapsible=icon]:size-7">
-                <AvatarImage src="https://placehold.co/40x40.png" alt="User" />
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
+              <UserAvatar />
               <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-                <span className="text-sm font-semibold text-sidebar-foreground">Guest</span>
-                <span className="text-xs text-sidebar-foreground/70">guest@switchbuddy.com</span>
+                <span className="text-sm font-semibold text-sidebar-foreground truncate">{user?.email}</span>
+                <span className="text-xs text-sidebar-foreground/70">User</span>
               </div>
             </div>
           </SidebarFooter>
         </Sidebar>
-        <div className="flex flex-1 flex-col">
-            <AppHeader />
-            <SidebarInset className="p-4 sm:p-6">{children}</SidebarInset>
-        </div>
-      </div>
-    </SidebarProvider>
+    );
+}
+
+
+export function AppLayout({ children }: { children: React.ReactNode }) {
+    const { user, loading } = useAuth();
+    const pathname = usePathname();
+    const isAuthPage = pathname === '/login' || pathname === '/signup';
+
+    if (loading) {
+        return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin h-8 w-8" /></div>
+    }
+
+    if (isAuthPage) {
+        return <>{children}</>;
+    }
+    
+    if (!user) {
+        // This case is largely handled by the AuthProvider redirect, but serves as a fallback.
+        return null;
+    }
+
+    return (
+        <SidebarProvider>
+            <div className="flex min-h-screen w-full">
+                <AppSidebar />
+                <div className="flex flex-1 flex-col">
+                    <AppHeader />
+                    <SidebarInset className="p-4 sm:p-6">{children}</SidebarInset>
+                </div>
+            </div>
+        </SidebarProvider>
   );
 }

@@ -4,6 +4,10 @@ import { z } from "zod";
 import { addJobApplication, updateJobApplicationStage } from "@/services/job-applications";
 import { revalidatePath } from "next/cache";
 import { KanbanColumnId } from "@/lib/types";
+import { auth } from "firebase-admin";
+import { getAuth } from "firebase/auth";
+import { app } from "@/lib/firebase";
+import { getCurrentUser } from "@/lib/auth";
 
 const AddJobApplicationSchema = z.object({
   company: z.string().min(1, "Company name cannot be empty."),
@@ -20,6 +24,14 @@ export async function handleAddJobApplication(
   prevState: FormState,
   formData: FormData
 ): Promise<FormState> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return {
+        message: "You must be logged in to add a job application.",
+        error: true,
+    }
+  }
+
   const validatedFields = AddJobApplicationSchema.safeParse({
     company: formData.get("company"),
     title: formData.get("title"),
@@ -40,7 +52,8 @@ export async function handleAddJobApplication(
         company, 
         title, 
         stage,
-        logoUrl: `https://placehold.co/40x40.png` 
+        logoUrl: `https://placehold.co/40x40.png`,
+        userId: user.uid,
     });
     
     revalidatePath("/tracker");
@@ -59,8 +72,13 @@ export async function handleAddJobApplication(
 
 
 export async function handleUpdateJobStage(jobId: string, newStage: KanbanColumnId) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return { message: 'Authentication required', error: true };
+    }
+    
     try {
-        await updateJobApplicationStage(jobId, newStage);
+        await updateJobApplicationStage(jobId, newStage, user.uid);
         revalidatePath('/tracker');
         return { message: 'Job stage updated' };
     } catch (error) {

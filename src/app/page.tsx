@@ -1,3 +1,4 @@
+"use client"
 
 import {
   Card,
@@ -7,6 +8,10 @@ import {
 } from "@/components/ui/card";
 import { getJobApplications } from "@/services/job-applications";
 import { Award, Briefcase, Calendar, Search } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { useEffect, useState } from "react";
+import type { JobApplication } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const icons: { [key: string]: React.ElementType } = {
   Briefcase,
@@ -15,8 +20,22 @@ const icons: { [key: string]: React.ElementType } = {
   Search,
 };
 
-export default async function DashboardPage() {
-  const jobApplications = await getJobApplications();
+export default function DashboardPage() {
+  const { user } = useAuth();
+  const [jobApplications, setJobApplications] = useState<JobApplication[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchJobs() {
+      if (user) {
+        setLoading(true);
+        const jobs = await getJobApplications();
+        setJobApplications(jobs);
+        setLoading(false);
+      }
+    }
+    fetchJobs();
+  }, [user]);
 
   const applicationsSent = jobApplications.filter(job => job.stage !== 'Wishlist').length;
   const interviewsScheduled = jobApplications.filter(job => job.stage === 'Interview').length;
@@ -58,25 +77,29 @@ export default async function DashboardPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {dashboardStats.map((stat) => {
-            const Icon = icons[stat.icon];
-            return (
-              <Card key={stat.title}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    {stat.title}
-                  </CardTitle>
-                  {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {/* Placeholder for change, as we don't have historical data */}
-                  </p>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {loading ? (
+            Array.from({length: 4}).map((_, i) => <Skeleton key={i} className="h-28 w-full" />)
+          ) : (
+            dashboardStats.map((stat) => {
+              const Icon = icons[stat.icon];
+              return (
+                <Card key={stat.title}>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      {stat.title}
+                    </CardTitle>
+                    {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stat.value}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {/* Placeholder for change, as we don't have historical data */}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
         </div>
       </div>
   );

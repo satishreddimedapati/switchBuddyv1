@@ -47,7 +47,11 @@ function SubmitButton() {
 
 const columnOptions: KanbanColumnId[] = ['Wishlist', 'Applying', 'Interview', 'Offer', 'Rejected'];
 
-export function AddJobApplicationForm() {
+interface AddJobApplicationFormProps {
+    onApplicationAdded: () => void;
+}
+
+export function AddJobApplicationForm({ onApplicationAdded }: AddJobApplicationFormProps) {
   const initialState: FormState = { message: "", error: false };
   const [state, formAction] = useFormState(handleAddJobApplication, initialState);
   const [isOpen, setIsOpen] = useState(false);
@@ -67,9 +71,10 @@ export function AddJobApplicationForm() {
           description: state.message,
         });
         setIsOpen(false);
+        onApplicationAdded();
       }
     }
-  }, [state, toast]);
+  }, [state, toast, onApplicationAdded]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

@@ -4,6 +4,7 @@ export type JobApplication = {
   title: string;
   stage: KanbanColumnId;
   logoUrl?: string;
+  userId: string;
 };
 
 export type KanbanColumnId = 'Wishlist' | 'Applying' | 'Interview' | 'Offer' | 'Rejected';
@@ -22,4 +23,5 @@ export type DailyTask = {
     type: 'schedule' | 'interview';
     date: string; // e.g., "YYYY-MM-DD"
     completed: boolean;
+    userId: string;
 };
