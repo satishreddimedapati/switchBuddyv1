@@ -54,9 +54,11 @@ export function WeeklyTimetable() {
   const [prefillData, setPrefillData] = useState<{ date: string; time: string } | undefined>(undefined);
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const weekDays = useMemo(() => {
+  const { weekStart, weekEnd, weekDays } = useMemo(() => {
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-    return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+    const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+    const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+    return { weekStart, weekEnd, weekDays };
   }, [currentDate]);
   
   useEffect(() => {
@@ -68,8 +70,6 @@ export function WeeklyTimetable() {
     
     setLoading(true);
     
-    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-    const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
     const formattedWeekStart = format(weekStart, 'yyyy-MM-dd');
     const formattedWeekEnd = format(weekEnd, 'yyyy-MM-dd');
 
@@ -90,7 +90,7 @@ export function WeeklyTimetable() {
     });
 
     return () => unsubscribe();
-  }, [user, currentDate]);
+  }, [user, weekStart, weekEnd]);
   
   const handleEdit = (task: DailyTask) => {
     setEditingTask(task);
