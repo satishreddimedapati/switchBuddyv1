@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Loader2, Video } from 'lucide-react';
 import { addInterviewSession } from '@/services/interview-sessions';
+import { generateInterviewQuestions } from '@/ai/flows/interview-practice';
 
 const planSchema = z.object({
   topic: z.string().min(1, 'Topic is required.'),
@@ -24,6 +25,12 @@ const planSchema = z.object({
 });
 
 type PlanFormValues = z.infer<typeof planSchema>;
+
+const getNumberOfQuestions = (duration: number) => {
+    if (duration <= 15) return 3;
+    if (duration <= 30) return 5;
+    return 8;
+}
 
 export default function NewInterviewPlanPage() {
     const { user } = useAuth();
@@ -48,19 +55,37 @@ export default function NewInterviewPlanPage() {
         }
         setIsSubmitting(true);
         try {
+            // 1. Create the plan
             const planId = await addInterviewPlan({ ...data, userId: user.uid, completedInterviews: 0 });
             
+            toast({ title: 'Plan Created!', description: "Now generating your interview questions..." });
+            
+            // 2. Generate questions
+            const numberOfQuestions = getNumberOfQuestions(data.durationMinutes);
+            const questionResult = await generateInterviewQuestions({
+                topic: data.topic,
+                difficulty: data.difficulty,
+                numberOfQuestions: numberOfQuestions,
+            });
+
+            if (!questionResult || questionResult.questions.length === 0) {
+                 toast({ title: 'Error', description: 'Could not generate interview questions. Please try again.', variant: 'destructive' });
+                 setIsSubmitting(false);
+                 return;
+            }
+            
+            // 3. Create the session with pre-generated questions
             const newSession = {
                 userId: user.uid,
                 planId: planId,
                 interviewNumber: 1,
                 status: 'in-progress' as const,
-                questions: [],
+                questions: questionResult.questions.map((q, i) => ({ qNo: i + 1, question: q })),
             };
 
             const sessionId = await addInterviewSession(newSession);
 
-            toast({ title: 'Success', description: 'Your interview plan has been created!' });
+            toast({ title: 'Success', description: 'Your interview is ready!' });
             router.push(`/interview-prep/session/${sessionId}`);
 
         } catch (error) {

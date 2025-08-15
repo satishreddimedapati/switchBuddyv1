@@ -170,20 +170,28 @@ export function toSerializableInterviewSession(docData: any): Omit<InterviewSess
 }
 
 
-// Genkit Flow: Generate Interview Question
+// Genkit Flow: Generate single Interview Question (DEPRECATED)
 export const InterviewQuestionRequestSchema = z.object({
     topic: z.string(),
     difficulty: z.enum(['Easy', 'Medium', 'Hard']),
 });
 export type InterviewQuestionRequest = z.infer<typeof InterviewQuestionRequestSchema>;
 
-export const InterviewQuestionResponseSchema = z.object({
-    question: z.string().describe("The generated interview question."),
+// Genkit Flow: Generate multiple interview questions
+export const GenerateInterviewQuestionsRequestSchema = z.object({
+    topic: z.string(),
+    difficulty: z.enum(['Easy', 'Medium', 'Hard']),
+    numberOfQuestions: z.number().int().min(1),
 });
-export type InterviewQuestionResponse = z.infer<typeof InterviewQuestionResponseSchema>;
+export type GenerateInterviewQuestionsRequest = z.infer<typeof GenerateInterviewQuestionsRequestSchema>;
+
+export const GenerateInterviewQuestionsResponseSchema = z.object({
+    questions: z.array(z.string()).describe("An array of generated interview questions."),
+});
+export type GenerateInterviewQuestionsResponse = z.infer<typeof GenerateInterviewQuestionsResponseSchema>;
 
 
-// Genkit Flow: Evaluate Answer
+// Genkit Flow: Evaluate single answer (DEPRECATED)
 export const AnswerEvaluationRequestSchema = z.object({
     question: z.string(),
     answer: z.string(),
@@ -195,3 +203,26 @@ export const AnswerEvaluationResponseSchema = z.object({
     rating: z.number().min(1).max(10).describe("A rating from 1 to 10."),
 });
 export type AnswerEvaluationResponse = z.infer<typeof AnswerEvaluationResponseSchema>;
+
+// Genkit Flow: Evaluate multiple answers
+const QAPairSchema = z.object({
+    qNo: z.number(),
+    question: z.string(),
+    answer: z.string(),
+});
+
+export const EvaluateInterviewAnswersRequestSchema = z.object({
+    qa_pairs: z.array(QAPairSchema),
+});
+export type EvaluateInterviewAnswersRequest = z.infer<typeof EvaluateInterviewAnswersRequestSchema>;
+
+const EvaluationSchema = z.object({
+    qNo: z.number(),
+    feedback: z.string().describe("Constructive feedback on the answer."),
+    rating: z.number().min(1).max(10).describe("A rating from 1 to 10."),
+});
+
+export const EvaluateInterviewAnswersResponseSchema = z.object({
+    evaluations: z.array(EvaluationSchema).describe("An array of evaluations for each question-answer pair."),
+});
+export type EvaluateInterviewAnswersResponse = z.infer<typeof EvaluateInterviewAnswersResponseSchema>;

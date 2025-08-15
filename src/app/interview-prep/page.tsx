@@ -14,6 +14,7 @@ import { addInterviewSession, getInterviewSessions } from "@/services/interview-
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { generateInterviewQuestions } from "@/ai/flows/interview-practice";
 
 function NoActivePlan() {
     return (
@@ -30,6 +31,12 @@ function NoActivePlan() {
     )
 }
 
+const getNumberOfQuestions = (duration: number) => {
+    if (duration <= 15) return 3;
+    if (duration <= 30) return 5;
+    return 8;
+}
+
 function ActivePlanCard({ plan }: { plan: InterviewPlan }) {
     const { user } = useAuth();
     const router = useRouter();
@@ -37,17 +44,33 @@ function ActivePlanCard({ plan }: { plan: InterviewPlan }) {
     const [isStarting, startTransition] = useTransition();
 
     const handleStartNext = () => {
-        if (!user) return;
+        if (!user || !plan.id) return;
         startTransition(async () => {
             try {
+                toast({ title: 'Starting new interview...', description: 'Generating questions now.' });
+
+                const numberOfQuestions = getNumberOfQuestions(plan.durationMinutes);
+                const questionResult = await generateInterviewQuestions({
+                    topic: plan.topic,
+                    difficulty: plan.difficulty,
+                    numberOfQuestions: numberOfQuestions,
+                });
+
+                if (!questionResult || questionResult.questions.length === 0) {
+                    toast({ title: 'Error', description: 'Could not generate interview questions. Please try again.', variant: 'destructive' });
+                    return;
+                }
+
                 const newSession = {
                     userId: user.uid,
                     planId: plan.id!,
                     interviewNumber: (plan.completedInterviews || 0) + 1,
                     status: 'in-progress' as const,
-                    questions: [],
+                    questions: questionResult.questions.map((q, i) => ({ qNo: i + 1, question: q })),
                 };
                 const sessionId = await addInterviewSession(newSession);
+
+                toast({ title: 'Success!', description: 'Your interview is ready.' });
                 router.push(`/interview-prep/session/${sessionId}`);
             } catch (error) {
                 console.error("Failed to start new session:", error);
