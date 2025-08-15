@@ -2,27 +2,32 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Users should be able to create their own user document and read/update it.
-    // They should not be able to see other users' documents.
+    // Users can create their own user document upon signup
+    // and can only read or update their own document.
     match /users/{userId} {
-      allow read, update: if request.auth != null && request.auth.uid == userId;
+      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null;
     }
 
-    // A user can read and write job applications that belong to them.
+    // Users can only read and write their own job applications.
     match /job-applications/{jobId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
 
-    // A user can read and write daily tasks that belong to them.
+    // Users can only read and write their own daily tasks.
     match /daily_tasks/{taskId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
-    
-    // A user can read and write interview plans that belong to them.
+
+    // Users can only read and write their own interview plans.
     match /interview_plans/{planId} {
-        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+       allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Placeholder for interview_sessions, allowing authenticated users to manage their own sessions.
+    // We will build this out fully later.
+    match /interview_sessions/{sessionId} {
+       allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
   }
 }
