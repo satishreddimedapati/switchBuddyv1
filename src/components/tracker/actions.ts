@@ -4,7 +4,7 @@ import { z } from "zod";
 import { addJobApplication, updateJobApplicationStage as updateStage } from "@/services/job-applications";
 import { revalidatePath } from "next/cache";
 import { KanbanColumnId } from "@/lib/types";
-import { getCurrentUser } from "@/lib/auth";
+import { auth } from "@/lib/firebase";
 
 const AddJobApplicationSchema = z.object({
   company: z.string().min(1, "Company name cannot be empty."),
@@ -21,7 +21,7 @@ export async function handleAddJobApplication(
   prevState: FormState,
   formData: FormData
 ): Promise<FormState> {
-  const user = await getCurrentUser();
+  const user = auth.currentUser;
   if (!user) {
     return {
         message: "You must be logged in to add a job application.",
@@ -69,7 +69,7 @@ export async function handleAddJobApplication(
 
 
 export async function handleUpdateJobStage(jobId: string, newStage: KanbanColumnId) {
-    const user = await getCurrentUser();
+    const user = auth.currentUser;
     if (!user) {
         return { message: 'Authentication required', error: true };
     }

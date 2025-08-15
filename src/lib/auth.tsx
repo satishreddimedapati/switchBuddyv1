@@ -2,8 +2,9 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, User, getAuth } from 'firebase/auth';
-import { auth, db, app } from './firebase';
+import { auth, db } from './firebase';
 import { useRouter, usePathname } from 'next/navigation';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 
 interface AuthContextType {
@@ -20,18 +21,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
-    // This listener is the single source of truth for the user's auth state.
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
     });
 
-    // Cleanup the listener when the component unmounts.
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (loading) return; // Don't redirect until the auth state is known.
+    if (loading) return;
 
     const isAuthPage = pathname === '/login' || pathname === '/signup';
 
@@ -42,6 +41,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, loading, pathname, router]);
 
+
+  if (loading) {
+      return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin h-8 w-8" /></div>
+  }
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
@@ -56,20 +59,4 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
-
-export const getCurrentUser = (): Promise<User | null> => {
-  // This is a new Promise-based wrapper around onAuthStateChanged
-  // It's designed to be called in Server Actions to get the current user.
-  return new Promise((resolve, reject) => {
-    const authInstance = getAuth(app);
-    const unsubscribe = onAuthStateChanged(
-      authInstance,
-      (user) => {
-        unsubscribe();
-        resolve(user);
-      },
-      reject
-    );
-  });
 };
