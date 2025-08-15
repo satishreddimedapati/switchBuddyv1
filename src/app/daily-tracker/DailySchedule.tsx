@@ -14,9 +14,6 @@ import { useAuth } from "@/lib/auth";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { format } from "date-fns";
-import { useView } from "./ViewContext";
-import { DailyCalendarView } from "./DailyCalendarView";
-
 
 export function DailySchedule() {
   const { user } = useAuth();
@@ -24,7 +21,6 @@ export function DailySchedule() {
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<DailyTask | undefined>(undefined);
-  const { view } = useView();
 
   useEffect(() => {
     if (!user) {
@@ -66,19 +62,6 @@ export function DailySchedule() {
 
   const sortedTasks = tasks.sort((a, b) => a.time.localeCompare(b.time));
   
-  if (view === 'grid') {
-    return (
-        <>
-            <DailyCalendarView tasks={sortedTasks} loading={loading} onEdit={handleEdit} onAddNew={handleAddNew} />
-            <ScheduleTaskForm
-                isOpen={isFormOpen}
-                onOpenChange={handleFormClose}
-                task={editingTask}
-            />
-        </>
-    );
-  }
-
   const { morning, afternoon, evening } = groupTasksByTimeOfDay(sortedTasks);
 
   const totalTasks = tasks.length;

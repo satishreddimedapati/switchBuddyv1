@@ -3,11 +3,9 @@
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
 import {DailySchedule} from './DailySchedule';
 import {WeeklyTimetable} from './WeeklyTimetable';
-import {useView, ViewSwitcher} from './ViewContext';
 import {AiScheduler} from './AiScheduler';
 
 export function DailyTrackerTabs() {
-  const {view} = useView();
 
   return (
     <>
@@ -21,7 +19,6 @@ export function DailyTrackerTabs() {
               Track your daily activities and manage your weekly schedule.
             </p>
           </div>
-          <ViewSwitcher />
         </div>
       </div>
       <Tabs defaultValue="daily" className="flex-grow flex flex-col">
