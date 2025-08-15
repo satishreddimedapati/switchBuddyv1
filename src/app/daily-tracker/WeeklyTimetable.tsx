@@ -59,7 +59,8 @@ function WeeklyListView({ tasks, loading, onEdit, days }: { tasks: DailyTask[], 
                 const dateKey = format(day, 'yyyy-MM-dd');
                 const dayTasks = tasksByDate.get(dateKey) || [];
 
-                if (dayTasks.length === 0) return null; 
+                if (dayTasks.length === 0 && !hasTasksThisWeek) return null;
+                if (dayTasks.length === 0) return null;
 
                 return (
                     <div key={day.toISOString()}>
@@ -129,11 +130,14 @@ export function WeeklyTimetable() {
     
     setLoading(true);
     
+    const formattedWeekStart = format(weekStart, 'yyyy-MM-dd');
+    const formattedWeekEnd = format(weekEnd, 'yyyy-MM-dd');
+
     const q = query(
         collection(db, "daily_tasks"), 
         where("userId", "==", user.uid),
-        where("date", ">=", format(weekStart, 'yyyy-MM-dd')),
-        where("date", "<=", format(weekEnd, 'yyyy-MM-dd'))
+        where("date", ">=", formattedWeekStart),
+        where("date", "<=", formattedWeekEnd)
     );
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -257,3 +261,5 @@ export function WeeklyTimetable() {
     </div>
   );
 }
+
+    
