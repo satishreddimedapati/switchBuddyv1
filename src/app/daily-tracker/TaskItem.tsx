@@ -106,7 +106,7 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
                   <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This action cannot be undone. This will permanently delete this task.
-                  </Aler  tDialogDescription>
+                  </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
