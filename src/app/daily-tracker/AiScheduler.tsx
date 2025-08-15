@@ -123,8 +123,8 @@ export function AiScheduler() {
   const getTaskIcon = (taskTitle: string) => {
     const lowerCaseTitle = taskTitle.toLowerCase();
     if (lowerCaseTitle.includes('break') || lowerCaseTitle.includes('coffee') || lowerCaseTitle.includes('lunch') || lowerCaseTitle.includes('dinner')) return <Coffee className="h-5 w-5 text-amber-600" />;
-    if (lowerCaseTitle.includes('reflect') || lowerCaseTitle.includes('review')) return <Lightbulb className="h-5 w-5 text-purple-600" />;
-    if (lowerCaseTitle.includes('practice') || lowerCaseTitle.includes('system design') || lowerCaseTitle.includes('coding') || lowerCaseTitle.includes('interview')) return <Target className="h-5 w-5 text-blue-600" />;
+    if (lowerCaseTitle.includes('reflect') || lowerCaseTitle.includes('review') || lowerCaseTitle.includes('checkpoint')) return <Lightbulb className="h-5 w-5 text-purple-600" />;
+    if (lowerCaseTitle.includes('practice') || lowerCaseTitle.includes('system design') || lowerCaseTitle.includes('coding') || lowerCaseTitle.includes('interview') || lowerCaseTitle.includes('application')) return <Target className="h-5 w-5 text-blue-600" />;
     return <Sparkles className="h-5 w-5 text-gray-500" />;
   }
 
@@ -137,7 +137,7 @@ export function AiScheduler() {
             <BrainCircuit /> Your AI-Generated Daily Battle Plan
           </CardTitle>
           <CardDescription>
-            Tired of planning? Let your AI coach build a strict, motivational schedule to keep you on track and push you to succeed.
+            Your AI mission commander will build a strict, motivational schedule to keep you on track and push you to succeed. No excuses.
           </CardDescription>
         </CardHeader>
         <CardContent>
