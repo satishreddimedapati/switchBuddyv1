@@ -43,6 +43,8 @@ export const ScheduledTaskSchema = z.object({
   task: z.string().describe('The name or description of the task.'),
   motivation: z.string().describe('A short motivational note for the task.'),
 });
+export type ScheduledTask = z.infer<typeof ScheduledTaskSchema>;
+
 
 // Input for generating a daily plan - now simplified
 export const GenerateDailyPlanInputSchema = z.object({});

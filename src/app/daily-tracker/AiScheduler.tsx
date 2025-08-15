@@ -7,7 +7,7 @@ import {
 import {
   generateDailySummary,
 } from '@/ai/flows/schedule-optimizer';
-import { GenerateDailyPlanOutput, GenerateDailySummaryOutput } from '@/lib/types';
+import { GenerateDailyPlanOutput, GenerateDailySummaryOutput, ScheduledTask } from '@/lib/types';
 import {Button} from '@/components/ui/button';
 import {
   Card,
@@ -21,17 +21,19 @@ import {useAuth} from '@/lib/auth';
 import {db} from '@/lib/firebase';
 import {DailyTask} from '@/lib/types';
 import {collection, onSnapshot, query, where} from 'firebase/firestore';
-import {format} from 'date-fns';
+import {format as formatDateFns, parse} from 'date-fns';
 import {useEffect, useState, useTransition} from 'react';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
-import {BrainCircuit, CheckCircle2, Coffee, Lightbulb, Loader2, Sparkles, Target, CalendarPlus} from 'lucide-react';
+import {BrainCircuit, CheckCircle2, Coffee, Lightbulb, Loader2, Plus, Sparkles, Target, CalendarPlus} from 'lucide-react';
 import {Skeleton} from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { addTask, updateTask } from '@/services/daily-tasks';
 import { InterviewTopicScheduler } from './InterviewTopicScheduler';
+import { useToast } from '@/hooks/use-toast';
 
 export function AiScheduler() {
   const {user} = useAuth();
+  const { toast } = useToast();
   const [tasks, setTasks] = useState<DailyTask[]>([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
 
@@ -44,6 +46,9 @@ export function AiScheduler() {
   const [summaryResult, setSummaryResult] =
     useState<GenerateDailySummaryOutput | null>(null);
   const [summaryError, setSummaryError] = useState<string | null>(null);
+  
+  const [isAddingTask, startAddTaskTransition] = useTransition();
+
 
   useEffect(() => {
     if (!user) {
@@ -53,7 +58,7 @@ export function AiScheduler() {
     }
 
     setLoadingTasks(true);
-    const today = format(new Date(), 'yyyy-MM-dd');
+    const today = formatDateFns(new Date(), 'yyyy-MM-dd');
     const q = query(
       collection(db, 'daily_tasks'),
       where('date', '==', today),
@@ -95,6 +100,42 @@ export function AiScheduler() {
       }
     });
   };
+  
+  const handleAddTask = (item: ScheduledTask) => {
+    if (!user) return;
+    startAddTaskTransition(async () => {
+        try {
+            const today = new Date();
+            // The AI returns time like "06:00 AM". We parse it to a Date object then format to "HH:mm"
+            const parsedTime = parse(item.time, 'hh:mm a', new Date());
+            const formattedTime = formatDateFns(parsedTime, 'HH:mm');
+
+            const newTask: Omit<DailyTask, 'id'> = {
+                title: item.task,
+                description: item.motivation,
+                date: formatDateFns(today, 'yyyy-MM-dd'),
+                time: formattedTime,
+                type: 'schedule',
+                completed: false,
+            };
+            
+            await addTask(newTask, user.uid);
+
+            toast({
+                title: "Task Added!",
+                description: `"${item.task}" was added to your schedule for today.`
+            });
+
+        } catch (error) {
+            console.error("Failed to add task:", error);
+            toast({
+                title: "Error",
+                description: "Could not add task to schedule.",
+                variant: 'destructive',
+            })
+        }
+    })
+  }
 
   const handleGenerateSummary = () => {
     if (!tasks.length) {
@@ -137,7 +178,7 @@ export function AiScheduler() {
             <BrainCircuit /> Your AI-Generated Daily Battle Plan
           </CardTitle>
           <CardDescription>
-            Your AI mission commander will build a strict, motivational schedule to keep you on track and push you to succeed. No excuses.
+            Tired of planning? Let your AI coach build a strict, motivational schedule to keep you on track and push you to succeed.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -189,6 +230,9 @@ export function AiScheduler() {
                         <p className="text-xs text-muted-foreground italic mt-1">&quot;{item.motivation}&quot;</p>
                       </div>
                     </div>
+                     <Button variant="ghost" size="icon" onClick={() => handleAddTask(item)} disabled={isAddingTask} aria-label="Add to schedule">
+                        <Plus className="h-4 w-4" />
+                    </Button>
                   </li>
                 ))}
               </ul>
