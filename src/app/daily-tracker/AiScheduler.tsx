@@ -2,12 +2,11 @@
 
 import {
   generateDailyPlan,
-  GenerateDailyPlanOutput,
 } from '@/ai/flows/schedule-optimizer';
 import {
   generateDailySummary,
-  GenerateDailySummaryOutput,
 } from '@/ai/flows/schedule-optimizer';
+import { GenerateDailyPlanOutput, GenerateDailySummaryOutput } from '@/lib/types';
 import {Button} from '@/components/ui/button';
 import {
   Card,
@@ -85,15 +84,20 @@ export function AiScheduler() {
     startPlanTransition(async () => {
       setPlanError(null);
       setPlanResult(null);
-      const result = await generateDailyPlan({
-        tasks,
-        startTime: '09:00',
-        endTime: '18:00',
-      });
-      if (result) {
-        setPlanResult(result);
-      } else {
-        setPlanError('The AI could not generate a plan. Please try again.');
+      try {
+        const result = await generateDailyPlan({
+          tasks,
+          startTime: '09:00',
+          endTime: '18:00',
+        });
+        if (result) {
+          setPlanResult(result);
+        } else {
+          setPlanError('The AI could not generate a plan. Please try again.');
+        }
+      } catch (error) {
+        console.error(error);
+        setPlanError('An error occured while generating the plan.');
       }
     });
   };
@@ -125,13 +129,18 @@ export function AiScheduler() {
     startSummaryTransition(async () => {
       setSummaryError(null);
       setSummaryResult(null);
-      const result = await generateDailySummary({tasks});
-      if (result) {
-        setSummaryResult(result);
-      } else {
-        setSummaryError(
-          'The AI could not generate a summary. Please try again.'
-        );
+      try {
+        const result = await generateDailySummary({tasks});
+        if (result) {
+          setSummaryResult(result);
+        } else {
+          setSummaryError(
+            'The AI could not generate a summary. Please try again.'
+          );
+        }
+      } catch (error) {
+        console.error(error);
+        setSummaryError('An error occured while generating the summary.');
       }
     });
   };
