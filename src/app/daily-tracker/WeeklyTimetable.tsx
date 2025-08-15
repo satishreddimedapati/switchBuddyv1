@@ -5,7 +5,7 @@ import * as React from "react"
 import { DailyTask } from "@/lib/types";
 import { useState, useMemo, useEffect } from "react";
 import { ScheduleTaskForm } from "./ScheduleTaskForm";
-import { format, startOfWeek, addDays, endOfWeek } from 'date-fns';
+import { format, startOfWeek, addDays, endOfWeek, subWeeks, addWeeks } from 'date-fns';
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth";
@@ -13,6 +13,8 @@ import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useView } from "./ViewContext";
 import { TaskItem } from "./TaskItem";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const timeSlots = Array.from({ length: 17 }, (_, i) => `${(i + 6).toString().padStart(2, '0')}:00`);
 
@@ -36,10 +38,7 @@ function groupTasksByDate(tasks: DailyTask[]): Map<string, DailyTask[]> {
     return grouped;
 }
 
-function WeeklyListView({ tasks, loading, onEdit }: { tasks: DailyTask[], loading: boolean, onEdit: (task: DailyTask) => void }) {
-    const today = new Date();
-    const weekStart = startOfWeek(today, { weekStartsOn: 1 });
-    const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+function WeeklyListView({ tasks, loading, onEdit, days }: { tasks: DailyTask[], loading: boolean, onEdit: (task: DailyTask) => void, days: Date[] }) {
     const tasksByDate = useMemo(() => groupTasksByDate(tasks), [tasks]);
 
     if (loading) {
@@ -56,13 +55,12 @@ function WeeklyListView({ tasks, loading, onEdit }: { tasks: DailyTask[], loadin
 
     return (
         <div className="space-y-8">
-            <h2 className="font-headline text-2xl font-bold mb-4">This Week</h2>
             {hasTasksThisWeek ? (
                 days.map(day => {
                     const dateKey = format(day, 'yyyy-MM-dd');
                     const dayTasks = tasksByDate.get(dateKey) || [];
 
-                    if (dayTasks.length === 0) return null; // Don't render day if no tasks
+                    if (dayTasks.length === 0) return null; 
 
                     return (
                         <div key={day.toISOString()}>
@@ -77,16 +75,34 @@ function WeeklyListView({ tasks, loading, onEdit }: { tasks: DailyTask[], loadin
                         </div>
                     )
                 })
-            ) : (
-                 <div className="text-center py-10 border rounded-lg">
-                    <p className="text-muted-foreground">No tasks scheduled for this week.</p>
-                </div>
-            )}
-             {!hasTasksThisWeek && !loading && (
+            ) : null}
+            {!hasTasksThisWeek && !loading && (
                 <div className="text-center py-10 border rounded-lg">
                     <p className="text-muted-foreground">No tasks scheduled for this week.</p>
                 </div>
             )}
+        </div>
+    )
+}
+
+function WeekNavigator({ currentDate, setCurrentDate }: { currentDate: Date, setCurrentDate: (date: Date) => void }) {
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+
+    return (
+        <div className="flex justify-between items-center mb-4">
+            <h2 className="font-headline text-2xl font-bold">
+                {format(weekStart, 'MMMM d')} - {format(weekEnd, 'MMMM d, yyyy')}
+            </h2>
+            <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={() => setCurrentDate(subWeeks(currentDate, 1))}>
+                    <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" onClick={() => setCurrentDate(new Date())}>Today</Button>
+                <Button variant="outline" size="icon" onClick={() => setCurrentDate(addWeeks(currentDate, 1))}>
+                    <ChevronRight className="h-4 w-4" />
+                </Button>
+            </div>
         </div>
     )
 }
@@ -99,6 +115,11 @@ export function WeeklyTimetable() {
   const [editingTask, setEditingTask] = useState<DailyTask | undefined>(undefined);
   const [prefillData, setPrefillData] = useState<{ date: string; time: string } | undefined>(undefined);
   const { view } = useView();
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   
   useEffect(() => {
     if (!user) {
@@ -108,8 +129,6 @@ export function WeeklyTimetable() {
     };
     
     setLoading(true);
-    const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-    const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
     
     const q = query(
         collection(db, "daily_tasks"), 
@@ -128,11 +147,8 @@ export function WeeklyTimetable() {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, currentDate]);
   
-  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-
   const tasksByDateTime = useMemo(() => {
     const map = new Map<string, DailyTask[]>();
     tasks.forEach(task => {
@@ -166,7 +182,8 @@ export function WeeklyTimetable() {
   if (view === 'list') {
       return (
         <>
-            <WeeklyListView tasks={tasks} loading={loading} onEdit={handleEdit} />
+            <WeekNavigator currentDate={currentDate} setCurrentDate={setCurrentDate} />
+            <WeeklyListView tasks={tasks} loading={loading} onEdit={handleEdit} days={days} />
             <ScheduleTaskForm 
                 isOpen={isFormOpen} 
                 onOpenChange={handleFormClose}
@@ -180,7 +197,7 @@ export function WeeklyTimetable() {
   if (loading) {
     return (
         <div className="space-y-2 overflow-x-auto">
-             <h2 className="font-headline text-2xl font-bold mb-4">This Week</h2>
+             <WeekNavigator currentDate={currentDate} setCurrentDate={setCurrentDate} />
             <div className="grid grid-cols-8 min-w-[1000px] gap-px">
                  <Skeleton className="h-12 w-full col-span-8" />
                  {Array.from({length: 17 * 8}).map((_, i) => (
@@ -193,7 +210,7 @@ export function WeeklyTimetable() {
 
   return (
     <div className="overflow-x-auto">
-      <h2 className="font-headline text-2xl font-bold mb-4">This Week</h2>
+      <WeekNavigator currentDate={currentDate} setCurrentDate={setCurrentDate} />
       <div className="grid grid-cols-8 min-w-[1000px] border rounded-lg">
         {/* Header */}
         <div className="p-2 border-b font-semibold sticky top-0 bg-card z-10">Time</div>
