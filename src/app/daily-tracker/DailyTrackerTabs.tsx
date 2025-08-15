@@ -5,7 +5,7 @@ import { DailySchedule } from "./DailySchedule";
 import { WeeklyTimetable } from "./WeeklyTimetable";
 import { DailyTask } from "@/lib/types";
 import { useEffect, useState } from "react";
-import { onSnapshot, collection, query, where } from "firebase/firestore";
+import { onSnapshot, collection, query, where, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { useAuth } from "@/lib/auth";
@@ -42,15 +42,17 @@ export function DailyTrackerTabs() {
     });
 
     // Listener for this week's tasks
-    const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }); // Monday
-    const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
+    const now = new Date();
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 }); // Monday
+    const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
     
     const weekQuery = query(
         collection(db, "daily_tasks"), 
         where("userId", "==", user.uid),
-        where("date", ">=", format(weekStart, 'yyyy-MM-dd')), 
+        where("date", ">=", format(weekStart, 'yyyy-MM-dd')),
         where("date", "<=", format(weekEnd, 'yyyy-MM-dd'))
     );
+
     const unsubscribeWeek = onSnapshot(weekQuery, (querySnapshot) => {
         const tasks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyTask));
         setWeekTasks(tasks);
