@@ -17,12 +17,6 @@ interface InterviewPlanCardProps {
     plan: InterviewPlan;
 }
 
-const getNumberOfQuestions = (duration: number) => {
-    if (duration <= 15) return 3;
-    if (duration <= 30) return 5;
-    return 8;
-}
-
 export function InterviewPlanCard({ plan }: InterviewPlanCardProps) {
     const { user } = useAuth();
     const router = useRouter();
@@ -38,11 +32,10 @@ export function InterviewPlanCard({ plan }: InterviewPlanCardProps) {
             try {
                 toast({ title: 'Starting new interview...', description: 'Generating questions now.' });
 
-                const numberOfQuestions = getNumberOfQuestions(plan.durationMinutes);
                 const questionResult = await generateInterviewQuestions({
                     topic: plan.topic,
                     difficulty: plan.difficulty,
-                    numberOfQuestions: numberOfQuestions,
+                    numberOfQuestions: plan.numberOfQuestions,
                 });
 
                 if (!questionResult || questionResult.questions.length === 0) {
