@@ -1,3 +1,4 @@
+
 'use client'
 
 import * as React from "react"
@@ -75,6 +76,8 @@ export function WeeklyTimetable() {
   const [editingTask, setEditingTask] = useState<DailyTask | undefined>(undefined);
   const [prefillData, setPrefillData] = useState<{ date: string; time: string } | undefined>(undefined);
   const { view } = useView();
+  
+  const weekStart = useMemo(() => startOfWeek(new Date(), { weekStartsOn: 1 }), []);
 
   useEffect(() => {
     if (!user) {
@@ -85,9 +88,7 @@ export function WeeklyTimetable() {
     
     setLoading(true);
 
-    const now = new Date();
-    const weekStart = startOfWeek(now, { weekStartsOn: 1 }); // Monday
-    const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
     
     const q = query(
         collection(db, "daily_tasks"), 
@@ -106,11 +107,8 @@ export function WeeklyTimetable() {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, weekStart]);
   
-  const today = new Date();
-  const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday
-
   const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
 
   const tasksByDateTime = useMemo(() => {
