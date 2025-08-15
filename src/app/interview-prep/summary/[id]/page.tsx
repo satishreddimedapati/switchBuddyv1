@@ -3,42 +3,65 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, Video } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/lib/auth";
+import { InterviewSession } from "@/lib/types";
+import { getInterviewSession } from "@/services/interview-sessions";
+import { Download, Loader2, Video } from "lucide-react";
+import { format } from "date-fns";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-// This is a placeholder for the interview summary page.
-// We will build out the full functionality in subsequent steps.
 
 export default function InterviewSummaryPage({ params }: { params: { id: string } }) {
-  
-  const mockSummary = {
-    interviewNumber: 3,
-    date: '2023-10-28',
-    overallScore: 8.5,
-    questions: [
-        { 
-            question: "What is the difference between `let`, `const`, and `var` in JavaScript?", 
-            answer: "My answer about variable scoping and immutability...",
-            aiReview: "A good summary, but you could have gone into more detail on hoisting for `var`.",
-            rating: 8,
-        },
-        { 
-            question: "Explain the concept of the CSS Box Model.", 
-            answer: "My description of content, padding, border, and margin...",
-            aiReview: "Excellent and thorough. You covered all the key components clearly.",
-            rating: 9,
+  const { user } = useAuth();
+  const router = useRouter();
+  const [session, setSession] = useState<InterviewSession | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    async function loadSession() {
+        setLoading(true);
+        const sessionData = await getInterviewSession(params.id);
+        if (sessionData && sessionData.userId === user.uid) {
+            setSession(sessionData);
+        } else {
+            router.push('/interview-prep'); // Redirect if not found or not owned
         }
-    ]
+        setLoading(false);
+    }
+    loadSession();
+  }, [user, params.id, router])
+
+  if (loading) {
+    return (
+        <div className="flex flex-col gap-8">
+            <Skeleton className="h-12 w-1/2" />
+            <div className="grid md:grid-cols-3 gap-4">
+                <Skeleton className="h-96 md:col-span-2" />
+                <div className="space-y-4">
+                    <Skeleton className="h-32" />
+                    <Skeleton className="h-32" />
+                </div>
+            </div>
+        </div>
+    );
+  }
+
+  if (!session) {
+    return <p>Interview not found.</p>
   }
 
   return (
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="font-headline text-3xl font-bold tracking-tight">
-          Interview #{mockSummary.interviewNumber} Summary
+          Interview #{session.interviewNumber} Summary
         </h1>
         <p className="text-muted-foreground">
-          Completed on {mockSummary.date}
+          Completed on {session.completedAt ? format(new Date(session.completedAt), 'PPP') : 'N/A'}
         </p>
       </div>
 
@@ -50,18 +73,22 @@ export default function InterviewSummaryPage({ params }: { params: { id: string 
             </CardHeader>
             <CardContent>
                  <Accordion type="single" collapsible className="w-full">
-                    {mockSummary.questions.map((item, index) => (
+                    {session.questions.map((item, index) => (
                         <AccordionItem value={`item-${index}`} key={index}>
                             <AccordionTrigger>
                                 <div className="flex justify-between w-full pr-4">
-                                    <span>{`Q${index + 1}: ${item.question.substring(0, 50)}...`}</span>
-                                    <span className="font-semibold">{item.rating}/10</span>
+                                    <span className="text-left flex-1">{`Q${index + 1}: ${item.question.substring(0, 50)}...`}</span>
+                                    <span className="font-semibold">{item.rating || 'N/A'}/10</span>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="space-y-4">
-                                <p><strong>Your Answer:</strong> {item.answer}</p>
+                                <div className="p-3 border rounded-md">
+                                    <p><strong>Your Answer:</strong></p>
+                                    <p className="text-muted-foreground">{item.answer || 'No answer provided.'}</p>
+                                </div>
                                 <div className="p-3 bg-muted/50 rounded-md">
-                                    <p><strong>AI Review:</strong> {item.aiReview}</p>
+                                    <p><strong>AI Review:</strong></p>
+                                    <p className="text-muted-foreground">{item.aiReview || 'No review available.'}</p>
                                 </div>
                             </AccordionContent>
                         </AccordionItem>
@@ -76,7 +103,7 @@ export default function InterviewSummaryPage({ params }: { params: { id: string 
                     <CardTitle>Overall Score</CardTitle>
                 </CardHeader>
                 <CardContent className="text-center">
-                    <p className="text-5xl font-bold">{mockSummary.overallScore}</p>
+                    <p className="text-5xl font-bold">{session.overallScore?.toFixed(1) || 'N/A'}</p>
                     <p className="text-muted-foreground">out of 10</p>
                 </CardContent>
             </Card>
@@ -85,10 +112,10 @@ export default function InterviewSummaryPage({ params }: { params: { id: string 
                     <CardTitle>Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-2">
-                     <Button><Download className="mr-2" /> Download PDF</Button>
+                     <Button disabled><Download className="mr-2" /> Download PDF</Button>
                     <Button variant="secondary" asChild>
                         <Link href="/interview-prep">
-                            <Video className="mr-2" /> Start Next Interview
+                            <Video className="mr-2" /> Back to Prep Dashboard
                         </Link>
                     </Button>
                 </CardContent>

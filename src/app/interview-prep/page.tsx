@@ -5,19 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
-import type { InterviewPlan } from "@/lib/types";
+import type { InterviewPlan, InterviewSession } from "@/lib/types";
 import { getInterviewPlans } from "@/services/interview-plans";
-import { FileText, PlusCircle, Video } from "lucide-react";
+import { FileText, PlusCircle, Video, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-
-// Mock data until we have real data
-const mockPastInterviews = [
-    { id: '1', number: 1, date: '2023-10-26', score: 7.5, status: 'Completed' },
-    { id: '2', number: 2, date: '2023-10-27', score: 8.2, status: 'Completed' },
-    { id: '3', number: 3, date: '2023-10-28', score: 0, status: 'Pending' },
-];
-
+import { useEffect, useState, useTransition } from "react";
+import { addInterviewSession, getInterviewSessions } from "@/services/interview-sessions";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 function NoActivePlan() {
     return (
@@ -35,6 +31,35 @@ function NoActivePlan() {
 }
 
 function ActivePlanCard({ plan }: { plan: InterviewPlan }) {
+    const { user } = useAuth();
+    const router = useRouter();
+    const { toast } = useToast();
+    const [isStarting, startTransition] = useTransition();
+
+    const handleStartNext = () => {
+        if (!user) return;
+        startTransition(async () => {
+            try {
+                const newSession = {
+                    userId: user.uid,
+                    planId: plan.id!,
+                    interviewNumber: (plan.completedInterviews || 0) + 1,
+                    status: 'in-progress' as const,
+                    questions: [],
+                };
+                const sessionId = await addInterviewSession(newSession);
+                router.push(`/interview-prep/session/${sessionId}`);
+            } catch (error) {
+                console.error("Failed to start new session:", error);
+                toast({
+                    title: "Error",
+                    description: "Could not start the next interview session.",
+                    variant: "destructive"
+                });
+            }
+        });
+    }
+
     return (
          <Card className="bg-accent/20 border-accent">
             <CardHeader>
@@ -61,11 +86,9 @@ function ActivePlanCard({ plan }: { plan: InterviewPlan }) {
                     </div>
                 </div>
                  <div className="flex justify-end">
-                    <Button asChild>
-                         <Link href={`/interview-prep/session/new?planId=${plan.id}`}>
-                            <Video />
-                            Start Next Interview
-                        </Link>
+                    <Button onClick={handleStartNext} disabled={isStarting}>
+                         {isStarting ? <Loader2 className="animate-spin" /> : <Video />}
+                         Start Next Interview
                     </Button>
                 </div>
             </CardContent>
@@ -77,20 +100,32 @@ function ActivePlanCard({ plan }: { plan: InterviewPlan }) {
 export default function InterviewPrepPage() {
     const { user } = useAuth();
     const [plans, setPlans] = useState<InterviewPlan[]>([]);
+    const [sessions, setSessions] = useState<InterviewSession[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        async function fetchPlans() {
-            if (!user) return;
+        async function fetchAllData() {
+            if (!user) {
+                setLoading(false);
+                return;
+            };
             setLoading(true);
-            const userPlans = await getInterviewPlans(user.uid);
-            setPlans(userPlans);
-            setLoading(false);
+            try {
+                const [userPlans, userSessions] = await Promise.all([
+                    getInterviewPlans(user.uid),
+                    getInterviewSessions(user.uid)
+                ]);
+                setPlans(userPlans);
+                setSessions(userSessions.filter(s => s.status === 'completed'));
+            } catch (error) {
+                console.error("Failed to fetch interview data", error);
+            } finally {
+                setLoading(false);
+            }
         }
-        fetchPlans();
+        fetchAllData();
     }, [user])
 
-    // For now, we assume the first plan is the active one.
     const activePlan = plans.find(p => p.completedInterviews < p.totalInterviews);
     const totalPlanned = activePlan?.totalInterviews || 0;
     const totalCompleted = activePlan?.completedInterviews || 0;
@@ -114,7 +149,7 @@ export default function InterviewPrepPage() {
                     <Progress value={(totalCompleted / (totalPlanned || 1)) * 100} />
                     <p className="text-sm text-muted-foreground">
                        {totalCompleted > 0 ? `You have completed ${totalCompleted} of ${totalPlanned} interviews.` : "No interviews completed yet."} 
-                       {totalPlanned > totalCompleted && ` ${totalPlanned - totalCompleted} more to go!`}
+                       {activePlan && totalPlanned > totalCompleted && ` ${totalPlanned - totalCompleted} more to go!`}
                     </p>
                 </CardContent>
             </Card>
@@ -139,14 +174,14 @@ export default function InterviewPrepPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {mockPastInterviews.map(interview => (
+                            {sessions.map(interview => (
                                 <TableRow key={interview.id}>
-                                    <TableCell>{interview.number}</TableCell>
-                                    <TableCell>{interview.date}</TableCell>
-                                    <TableCell>{interview.score > 0 ? interview.score : 'N/A'}</TableCell>
+                                    <TableCell>{interview.interviewNumber}</TableCell>
+                                    <TableCell>{interview.completedAt ? format(new Date(interview.completedAt), 'PPP') : 'N/A'}</TableCell>
+                                    <TableCell>{interview.overallScore ? interview.overallScore.toFixed(1) : 'N/A'}</TableCell>
                                     <TableCell>{interview.status}</TableCell>
                                     <TableCell className="text-right space-x-2">
-                                        <Button variant="outline" size="sm" disabled={interview.status === 'Pending'}><FileText className="mr-2 h-4 w-4" /> View PDF</Button>
+                                        <Button variant="outline" size="sm" disabled={interview.status !== 'completed'}><FileText className="mr-2 h-4 w-4" /> View PDF</Button>
                                         <Button variant="outline" size="sm" asChild>
                                            <Link href={`/interview-prep/summary/${interview.id}`}>
                                                 <Video className="mr-2 h-4 w-4" /> Review Online
@@ -155,9 +190,14 @@ export default function InterviewPrepPage() {
                                     </TableCell>
                                 </TableRow>
                             ))}
-                             {mockPastInterviews.length === 0 && (
+                             {sessions.length === 0 && !loading && (
                                 <TableRow>
                                     <TableCell colSpan={5} className="text-center h-24">No past interviews found.</TableCell>
+                                </TableRow>
+                            )}
+                             {loading && (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center h-24"><Loader2 className="animate-spin mx-auto" /></TableCell>
                                 </TableRow>
                             )}
                         </TableBody>

@@ -14,6 +14,7 @@ import { addInterviewPlan } from '@/services/interview-plans';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Loader2, Video } from 'lucide-react';
+import { addInterviewSession } from '@/services/interview-sessions';
 
 const planSchema = z.object({
   topic: z.string().min(1, 'Topic is required.'),
@@ -48,8 +49,20 @@ export default function NewInterviewPlanPage() {
         setIsSubmitting(true);
         try {
             const planId = await addInterviewPlan({ ...data, userId: user.uid, completedInterviews: 0 });
+            
+            const newSession = {
+                userId: user.uid,
+                planId: planId,
+                interviewNumber: 1,
+                status: 'in-progress' as const,
+                questions: [],
+            };
+
+            const sessionId = await addInterviewSession(newSession);
+
             toast({ title: 'Success', description: 'Your interview plan has been created!' });
-            router.push(`/interview-prep/session/new?planId=${planId}`);
+            router.push(`/interview-prep/session/${sessionId}`);
+
         } catch (error) {
             console.error(error);
             toast({ title: 'Error', description: 'Failed to create interview plan. Check Firestore rules.', variant: 'destructive' });
