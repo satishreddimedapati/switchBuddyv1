@@ -15,9 +15,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Logo } from "@/components/Logo";
 
-export default async function LoginPage() {
-  
-  async function login() {
+export default async function SignupPage() {
+
+  async function signup() {
     'use server'
     redirect('/dashboard')
   }
@@ -28,15 +28,19 @@ export default async function LoginPage() {
         <Card className="shadow-2xl">
           <CardHeader className="text-center">
             <div className="mb-4 flex justify-center">
-               <Logo />
+              <Logo />
             </div>
-            <CardTitle className="font-headline text-3xl">Welcome Back</CardTitle>
+            <CardTitle className="font-headline text-3xl">Create an Account</CardTitle>
             <CardDescription>
-              Sign in to continue your job search journey.
+              Start your journey with SwitchBuddy today.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={login} className="space-y-4">
+            <form action={signup} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input id="name" type="text" placeholder="Your Name" required />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -50,16 +54,16 @@ export default async function LoginPage() {
                 <Label htmlFor="password">Password</Label>
                 <Input id="password" type="password" required />
               </div>
-               <Button type="submit" className="w-full !mt-6 bg-primary text-primary-foreground hover:bg-primary/90">
-                Login
+              <Button type="submit" className="w-full !mt-6 bg-primary text-primary-foreground hover:bg-primary/90">
+                Create Account
               </Button>
             </form>
           </CardContent>
           <CardFooter className="flex justify-center text-sm">
             <p>
-              Don&apos;t have an account?&nbsp;
-              <Link href="/signup" className="font-semibold text-primary underline-offset-4 hover:underline">
-                Sign up
+              Already have an account?&nbsp;
+              <Link href="/" className="font-semibold text-primary underline-offset-4 hover:underline">
+                Login
               </Link>
             </p>
           </CardFooter>
