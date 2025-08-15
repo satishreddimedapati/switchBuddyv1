@@ -50,8 +50,8 @@ export default function EditInterviewPlanPage() {
                     topic: plan.topic,
                     difficulty: plan.difficulty,
                     durationMinutes: plan.durationMinutes,
+                    numberOfQuestions: plan.numberOfQuestions,
                     totalInterviews: plan.totalInterviews,
-                    numberOfQuestions: plan.questions?.length || 5, // Fallback if not stored
                 });
             } else {
                 toast({ title: "Error", description: "Plan not found or you don't have permission to edit it.", variant: "destructive" });

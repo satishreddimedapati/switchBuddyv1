@@ -28,7 +28,7 @@ export async function getInterviewPlans(userId: string): Promise<InterviewPlan[]
   }
 }
 
-export async function getInterviewPlan(planId: string): Promise<InterviewPlan | null> {
+export async function getInterviewPlan(planId: string): Promise<Omit<InterviewPlan, 'questions'> | null> {
     try {
         const planRef = doc(db, "interview_plans", planId);
         const docSnap = await getDoc(planRef);
@@ -36,10 +36,11 @@ export async function getInterviewPlan(planId: string): Promise<InterviewPlan | 
         if (docSnap.exists()) {
             const data = docSnap.data();
             const serializableData = toSerializableInterviewPlan(data);
+            const { questions, ...planData } = serializableData;
             return {
                 id: docSnap.id,
-                ...serializableData
-            } as InterviewPlan
+                ...planData
+            } as Omit<InterviewPlan, 'questions'>;
         } else {
             console.log("No such document!");
             return null;
@@ -64,7 +65,6 @@ export async function addInterviewPlan(plan: Omit<InterviewPlan, 'id' | 'created
 
 export async function updateInterviewPlan(planId: string, updates: Partial<Omit<InterviewPlan, 'id' | 'userId'>>, userId: string) {
   const planRef = doc(db, "interview_plans", planId);
-  // Add an ownership check in a real app
   const planDoc = await getDoc(planRef);
   if (!planDoc.exists() || planDoc.data().userId !== userId) {
       throw new Error("Permission denied or plan not found.");
@@ -73,7 +73,6 @@ export async function updateInterviewPlan(planId: string, updates: Partial<Omit<
 }
 
 export async function deleteInterviewPlan(planId: string, userId: string) {
-  // Add an ownership check in a real app
   const planRef = doc(db, "interview_plans", planId);
     const planDoc = await getDoc(planRef);
     if (!planDoc.exists() || planDoc.data().userId !== userId) {
