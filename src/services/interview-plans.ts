@@ -2,7 +2,8 @@
 
 import { db } from "@/lib/firebase";
 import type { InterviewPlan } from "@/lib/types";
-import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, where, serverTimestamp } from "firebase/firestore";
+import { toSerializableInterviewPlan } from "@/lib/types";
+import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, where, serverTimestamp, getDoc } from "firebase/firestore";
 
 const plansCollection = collection(db, "interview_plans");
 
@@ -13,17 +14,43 @@ export async function getInterviewPlans(userId: string): Promise<InterviewPlan[]
     const q = query(plansCollection, where("userId", "==", userId));
     const querySnapshot = await getDocs(q);
     
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as InterviewPlan));
+    return querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        const serializableData = toSerializableInterviewPlan(data);
+        return {
+            id: doc.id,
+            ...serializableData,
+        } as InterviewPlan;
+    });
   } catch (error) {
     console.error("Error fetching interview plans: ", error);
     return [];
   }
 }
 
-export async function addInterviewPlan(plan: Omit<InterviewPlan, 'id'>) {
+export async function getInterviewPlan(planId: string): Promise<InterviewPlan | null> {
+    try {
+        const planRef = doc(db, "interview_plans", planId);
+        const docSnap = await getDoc(planRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            const serializableData = toSerializableInterviewPlan(data);
+            return {
+                id: docSnap.id,
+                ...serializableData
+            } as InterviewPlan
+        } else {
+            return null;
+        }
+    } catch (error) {
+        console.error("Error fetching interview plan:", error);
+        return null;
+    }
+}
+
+
+export async function addInterviewPlan(plan: Omit<InterviewPlan, 'id' | 'createdAt'>) {
     if (!plan.userId) {
         throw new Error("Authentication required to add a plan.");
     }

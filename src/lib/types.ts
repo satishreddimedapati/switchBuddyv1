@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import type { Timestamp } from 'firebase/firestore';
 
 export type JobApplication = {
   id: string;
@@ -118,8 +119,20 @@ export const InterviewPlanSchema = z.object({
   durationMinutes: z.number().int(),
   totalInterviews: z.number().int(),
   completedInterviews: z.number().int(),
+  createdAt: z.union([z.instanceof(Date), z.string()]), // Allow Date or ISO string
 });
+
 export type InterviewPlan = z.infer<typeof InterviewPlanSchema>;
+
+// Helper to convert Firestore data to a serializable InterviewPlan
+export function toSerializableInterviewPlan(docData: any): Omit<InterviewPlan, 'id'> {
+    const { createdAt, ...rest } = docData;
+    return {
+        ...rest,
+        createdAt: (createdAt as Timestamp).toDate().toISOString(),
+    };
+}
+
 
 // Firestore: interview_sessions
 export const InterviewSessionQuestionSchema = z.object({
