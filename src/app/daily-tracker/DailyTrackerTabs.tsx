@@ -7,7 +7,7 @@ import { DailyTask } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { onSnapshot, collection, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { format, startOfWeek, addDays, endOfWeek } from 'date-fns';
+import { format, startOfWeek, endOfWeek } from 'date-fns';
 
 export function DailyTrackerTabs() {
   const [todayTasks, setTodayTasks] = useState<DailyTask[]>([]);
@@ -23,17 +23,26 @@ export function DailyTrackerTabs() {
       const tasks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyTask));
       setTodayTasks(tasks);
       setLoadingToday(false);
+    }, (error) => {
+        console.error("Error fetching today's tasks: ", error);
+        setLoadingToday(false);
     });
 
     // Listener for this week's tasks
-    const todayDate = new Date();
-    const weekStart = startOfWeek(todayDate, { weekStartsOn: 1 }); // Monday
-    const weekEnd = endOfWeek(todayDate, { weekStartsOn: 1 });
+    const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }); // Monday
+    const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
     
-    const weekQuery = query(collection(db, "daily_tasks"), where("date", ">=", format(weekStart, 'yyyy-MM-dd')), where("date", "<=", format(weekEnd, 'yyyy-MM-dd')));
+    const weekQuery = query(
+        collection(db, "daily_tasks"), 
+        where("date", ">=", format(weekStart, 'yyyy-MM-dd')), 
+        where("date", "<=", format(weekEnd, 'yyyy-MM-dd'))
+    );
     const unsubscribeWeek = onSnapshot(weekQuery, (querySnapshot) => {
         const tasks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyTask));
         setWeekTasks(tasks);
+        setLoadingWeek(false);
+    }, (error) => {
+        console.error("Error fetching week's tasks: ", error);
         setLoadingWeek(false);
     });
 
@@ -49,10 +58,10 @@ export function DailyTrackerTabs() {
         <TabsTrigger value="daily">Daily Schedule</TabsTrigger>
         <TabsTrigger value="weekly">Weekly Timetable</TabsTrigger>
       </TabsList>
-      <TabsContent value="daily" className="flex-grow">
+      <TabsContent value="daily" className="flex-grow mt-4">
         <DailySchedule tasks={todayTasks} loading={loadingToday} />
       </TabsContent>
-      <TabsContent value="weekly" className="flex-grow">
+      <TabsContent value="weekly" className="flex-grow mt-4">
         <WeeklyTimetable tasks={weekTasks} loading={loadingWeek} />
       </TabsContent>
     </Tabs>
