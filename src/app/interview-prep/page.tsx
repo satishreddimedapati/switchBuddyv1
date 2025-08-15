@@ -101,11 +101,11 @@ function ActivePlanCard({ plan }: { plan: InterviewPlan }) {
                     </div>
                     <div>
                         <p className="font-semibold">Planned</p>
-                        <p className="text-muted-foreground">{plan.totalInterviews} interviews</p>
+                        <p className="text-muted-foreground">{plan.totalInterviews}</p>
                     </div>
                      <div>
                         <p className="font-semibold">Completed</p>
-                        <p className="text-muted-foreground">{plan.completedInterviews} interviews</p>
+                        <p className="text-muted-foreground">{plan.completedInterviews}</p>
                     </div>
                 </div>
                  <div className="flex justify-end">
@@ -134,10 +134,9 @@ export default function InterviewPrepPage() {
             };
             setLoading(true);
             try {
-                const [userPlans, userSessions] = await Promise.all([
-                    getInterviewPlans(user.uid),
-                    getInterviewSessions(user.uid)
-                ]);
+                const userPlans = await getInterviewPlans(user.uid);
+                const userSessions = await getInterviewSessions(user.uid);
+                
                 setPlans(userPlans);
                 setSessions(userSessions.filter(s => s.status === 'completed'));
             } catch (error) {
@@ -149,7 +148,7 @@ export default function InterviewPrepPage() {
         fetchAllData();
     }, [user])
 
-    const activePlan = plans.find(p => p.completedInterviews < p.totalInterviews);
+    const activePlan = plans.find(p => (p.completedInterviews || 0) < p.totalInterviews);
     const totalPlanned = activePlan?.totalInterviews || 0;
     const totalCompleted = activePlan?.completedInterviews || 0;
 
@@ -171,7 +170,7 @@ export default function InterviewPrepPage() {
                 <CardContent className="space-y-2">
                     <Progress value={(totalCompleted / (totalPlanned || 1)) * 100} />
                     <p className="text-sm text-muted-foreground">
-                       {totalCompleted > 0 ? `You have completed ${totalCompleted} of ${totalPlanned} interviews.` : "No interviews completed yet."} 
+                       {totalCompleted > 0 ? `You have completed ${totalCompleted} of ${totalPlanned || 'many'} interviews.` : "No interviews completed yet."} 
                        {activePlan && totalPlanned > totalCompleted && ` ${totalPlanned - totalCompleted} more to go!`}
                     </p>
                 </CardContent>
