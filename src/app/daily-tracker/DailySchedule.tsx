@@ -59,11 +59,26 @@ export function DailySchedule() {
     setIsFormOpen(true);
   }
 
-  if (view === 'grid') {
-    return <DailyCalendarView tasks={tasks} loading={loading} onEdit={handleEdit} onAddNew={handleAddNew} />
-  }
+  const handleFormClose = () => {
+    setIsFormOpen(false);
+    setEditingTask(undefined);
+  };
 
   const sortedTasks = tasks.sort((a, b) => a.time.localeCompare(b.time));
+  
+  if (view === 'grid') {
+    return (
+        <>
+            <DailyCalendarView tasks={sortedTasks} loading={loading} onEdit={handleEdit} onAddNew={handleAddNew} />
+            <ScheduleTaskForm
+                isOpen={isFormOpen}
+                onOpenChange={handleFormClose}
+                task={editingTask}
+            />
+        </>
+    );
+  }
+
   const { morning, afternoon, evening } = groupTasksByTimeOfDay(sortedTasks);
 
   const totalTasks = tasks.length;
@@ -121,7 +136,7 @@ export function DailySchedule() {
 
       <ScheduleTaskForm
         isOpen={isFormOpen}
-        onOpenChange={setIsFormOpen}
+        onOpenChange={handleFormClose}
         task={editingTask}
       />
     </div>

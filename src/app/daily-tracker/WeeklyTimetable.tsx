@@ -12,7 +12,6 @@ import { useAuth } from "@/lib/auth";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useView } from "./ViewContext";
-import { groupTasksByTimeOfDay } from "./utils";
 import { TaskItem } from "./TaskItem";
 
 const timeSlots = Array.from({ length: 17 }, (_, i) => `${(i + 6).toString().padStart(2, '0')}:00`);
@@ -24,7 +23,7 @@ const categoryColors = {
 
 function WeeklyListView({ tasks, loading, onEdit }: { tasks: DailyTask[], loading: boolean, onEdit: (task: DailyTask) => void }) {
     const today = new Date();
-    const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+    const weekStart = useMemo(() => startOfWeek(today, { weekStartsOn: 1 }), [today]);
     const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
 
     if (loading) {
@@ -44,18 +43,24 @@ function WeeklyListView({ tasks, loading, onEdit }: { tasks: DailyTask[], loadin
                     .filter(t => t.date === format(day, 'yyyy-MM-dd'))
                     .sort((a, b) => a.time.localeCompare(b.time));
                 
-                if (dayTasks.length === 0) return null;
+                if (dayTasks.length === 0 && !loading) return null;
 
                 return (
                     <div key={day.toISOString()}>
                         <h3 className="text-xl font-bold mb-4 border-b pb-2">
                             {format(day, 'EEEE, MMMM d')}
                         </h3>
-                        <div className="space-y-4">
-                            {dayTasks.map(task => (
-                                <TaskItem key={task.id} task={task} onEdit={onEdit} />
-                            ))}
-                        </div>
+                         {dayTasks.length > 0 ? (
+                            <div className="space-y-4">
+                                {dayTasks.map(task => (
+                                    <TaskItem key={task.id} task={task} onEdit={onEdit} />
+                                ))}
+                            </div>
+                        ) : (
+                             <div className="text-center py-4">
+                                <p className="text-sm text-muted-foreground">No tasks scheduled for this day.</p>
+                            </div>
+                        )}
                     </div>
                 )
             })}
@@ -88,7 +93,7 @@ export function WeeklyTimetable() {
     
     setLoading(true);
 
-    const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
     
     const q = query(
         collection(db, "daily_tasks"), 
@@ -134,6 +139,12 @@ export function WeeklyTimetable() {
     setPrefillData(undefined);
     setIsFormOpen(true);
   };
+
+  const handleFormClose = () => {
+    setIsFormOpen(false);
+    setEditingTask(undefined);
+    setPrefillData(undefined);
+  }
   
   if (view === 'list') {
       return (
@@ -141,8 +152,9 @@ export function WeeklyTimetable() {
             <WeeklyListView tasks={tasks} loading={loading} onEdit={handleEdit} />
             <ScheduleTaskForm 
                 isOpen={isFormOpen} 
-                onOpenChange={setIsFormOpen}
+                onOpenChange={handleFormClose}
                 task={editingTask}
+                prefillData={prefillData}
             />
         </>
       )
@@ -205,7 +217,7 @@ export function WeeklyTimetable() {
       </div>
       <ScheduleTaskForm 
         isOpen={isFormOpen} 
-        onOpenChange={setIsFormOpen}
+        onOpenChange={handleFormClose}
         task={editingTask}
         prefillData={prefillData}
       />
