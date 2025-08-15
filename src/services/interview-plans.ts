@@ -28,7 +28,7 @@ export async function getInterviewPlans(userId: string): Promise<InterviewPlan[]
   }
 }
 
-export async function getInterviewPlan(planId: string): Promise<Omit<InterviewPlan, 'questions'> | null> {
+export async function getInterviewPlan(planId: string): Promise<InterviewPlan | null> {
     try {
         const planRef = doc(db, "interview_plans", planId);
         const docSnap = await getDoc(planRef);
@@ -36,11 +36,10 @@ export async function getInterviewPlan(planId: string): Promise<Omit<InterviewPl
         if (docSnap.exists()) {
             const data = docSnap.data();
             const serializableData = toSerializableInterviewPlan(data);
-            const { questions, ...planData } = serializableData;
             return {
                 id: docSnap.id,
-                ...planData
-            } as Omit<InterviewPlan, 'questions'>;
+                ...serializableData
+            } as InterviewPlan;
         } else {
             console.log("No such document!");
             return null;
@@ -63,7 +62,7 @@ export async function addInterviewPlan(plan: Omit<InterviewPlan, 'id' | 'created
     return docRef.id;
 }
 
-export async function updateInterviewPlan(planId: string, updates: Partial<Omit<InterviewPlan, 'id' | 'userId'>>, userId: string) {
+export async function updateInterviewPlan(planId: string, updates: Partial<Omit<InterviewPlan, 'id' | 'userId' | 'createdAt'>>, userId: string) {
   const planRef = doc(db, "interview_plans", planId);
   const planDoc = await getDoc(planRef);
   if (!planDoc.exists() || planDoc.data().userId !== userId) {

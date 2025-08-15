@@ -67,7 +67,7 @@ export default function InterviewSessionPage() {
             if (sessionData && sessionData.userId === user.uid) {
                 setSession(sessionData);
                 const planData = await getInterviewPlan(sessionData.planId);
-                setPlan(planData);
+                setPlan(planData as InterviewPlan);
                 // Initialize answers state
                 const initialAnswers: {[key: number]: string} = {};
                 sessionData.questions.forEach(q => {
@@ -92,7 +92,7 @@ export default function InterviewSessionPage() {
     }
     
     const handleEndInterview = async () => {
-        if (!session || !plan) return;
+        if (!session || !plan || !user) return;
         
         startEndingTransition(async () => {
             try {
@@ -122,7 +122,7 @@ export default function InterviewSessionPage() {
                     overallScore, 
                     completedAt: new Date().toISOString() 
                 });
-                await updateInterviewPlan(plan.id!, { completedInterviews: (plan.completedInterviews || 0) + 1 });
+                await updateInterviewPlan(plan.id!, { completedInterviews: (plan.completedInterviews || 0) + 1 }, user.uid);
                 
                 toast({ title: 'Evaluation Complete!', description: 'Redirecting to your summary page.'});
                 router.push(`/interview-prep/summary/${sessionId}`);
