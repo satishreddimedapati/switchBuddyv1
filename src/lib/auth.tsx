@@ -1,11 +1,10 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from './firebase';
+import { onAuthStateChanged, User, getAuth } from 'firebase/auth';
+import { auth, db, app } from './firebase';
 import { useRouter, usePathname } from 'next/navigation';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from './firebase';
 import { Loader2 } from 'lucide-react';
 
 interface AuthContextType {
@@ -70,18 +69,13 @@ export const useAuth = () => {
   return context;
 };
 
-// This server-side utility is tricky with client-side auth.
-// We'll manage getting the user on the server differently.
-// For server actions, we'll need to re-authenticate or pass the user ID.
-import { getAuth } from 'firebase/auth';
-import { app } from '@/lib/firebase';
-
 export const getCurrentUser = (): Promise<User | null> => {
   // This is a new Promise-based wrapper around onAuthStateChanged
   // It's designed to be called in Server Actions to get the current user.
   return new Promise((resolve, reject) => {
+    const authInstance = getAuth(app);
     const unsubscribe = onAuthStateChanged(
-      getAuth(app),
+      authInstance,
       (user) => {
         unsubscribe();
         resolve(user);

@@ -25,6 +25,7 @@ import {
   LogOut,
   PanelLeft,
   CalendarCheck,
+  Loader2,
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { useAuth } from '@/lib/auth';
@@ -68,26 +69,6 @@ function UserAvatar() {
             <AvatarImage src={`https://placehold.co/40x40.png?text=${fallback}`} alt="User" />
             <AvatarFallback>{fallback}</AvatarFallback>
         </Avatar>
-    );
-}
-
-function AuthArea({ children }: { children: React.ReactNode }) {
-    const { user, loading } = useAuth();
-    const pathname = usePathname();
-    const showLayout = !loading && user && !['/login', '/signup'].includes(pathname);
-    
-    if (!showLayout) return <>{children}</>;
-
-    return (
-        <SidebarProvider>
-            <div className="flex min-h-screen w-full">
-                <AppSidebar />
-                <div className="flex flex-1 flex-col">
-                    <AppHeader />
-                    <SidebarInset className="p-4 sm:p-6">{children}</SidebarInset>
-                </div>
-            </div>
-        </SidebarProvider>
     );
 }
 
