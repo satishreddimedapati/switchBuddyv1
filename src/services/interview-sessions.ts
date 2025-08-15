@@ -10,7 +10,7 @@ const sessionsCollection = collection(db, "interview_sessions");
 export async function getInterviewSessions(userId: string): Promise<InterviewSession[]> {
     if (!userId) return [];
     try {
-        const q = query(sessionsCollection, where("userId", "==", userId), orderBy("startedAt", "desc"));
+        const q = query(sessionsCollection, where("userId", "==", userId));
         const querySnapshot = await getDocs(q);
         return querySnapshot.docs.map(doc => {
             const data = doc.data();

@@ -140,7 +140,17 @@ export default function InterviewPrepPage() {
                 ]);
                 
                 setPlans(userPlans);
-                setPastSessions(userSessions.filter(s => s.status === 'completed'));
+                const completedSessions = userSessions.filter(s => s.status === 'completed');
+                
+                // Sort sessions by completed date, most recent first
+                completedSessions.sort((a, b) => {
+                    const dateA = a.completedAt ? new Date(a.completedAt) : new Date(0);
+                    const dateB = b.completedAt ? new Date(b.completedAt) : new Date(0);
+                    return dateB.getTime() - dateA.getTime();
+                });
+
+                setPastSessions(completedSessions);
+
             } catch (error) {
                 console.error("Failed to fetch interview data", error);
             } finally {

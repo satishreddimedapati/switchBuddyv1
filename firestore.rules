@@ -1,30 +1,20 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Users can only read/write their own user document
     match /users/{userId} {
-      allow read, write: if request.auth.uid == userId;
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    
-    // Users can only read/write their own job applications
     match /job-applications/{jobId} {
-      allow read, write: if request.auth.uid == request.resource.data.userId;
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
-
-    // Users can only read/write their own daily tasks
     match /daily_tasks/{taskId} {
-      allow read, write: if request.auth.uid == request.resource.data.userId;
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
-    
-    // Users can only read/write their own interview plans
     match /interview_plans/{planId} {
-      allow read, write: if request.auth.uid == request.resource.data.userId;
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
-    
-    // Users can only read/write their own interview sessions
     match /interview_sessions/{sessionId} {
-      allow read, write: if request.auth.uid == request.resource.data.userId;
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
   }
 }
