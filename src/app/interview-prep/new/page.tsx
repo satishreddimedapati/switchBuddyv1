@@ -41,7 +41,7 @@ export default function NewInterviewPlanPage() {
     });
 
     const onSubmit = async (data: PlanFormValues) => {
-        if (!user) {
+        if (!user || !user.uid) {
             toast({ title: 'Error', description: 'You must be logged in to create a plan.', variant: 'destructive' });
             return;
         }
@@ -52,7 +52,7 @@ export default function NewInterviewPlanPage() {
             router.push(`/interview-prep/session/new?planId=${planId}`);
         } catch (error) {
             console.error(error);
-            toast({ title: 'Error', description: 'Failed to create interview plan.', variant: 'destructive' });
+            toast({ title: 'Error', description: 'Failed to create interview plan. Check Firestore rules.', variant: 'destructive' });
             setIsSubmitting(false);
         }
     };
