@@ -8,17 +8,27 @@ import { useEffect, useState } from "react";
 import { onSnapshot, collection, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { format, startOfWeek, endOfWeek } from 'date-fns';
+import { useAuth } from "@/lib/auth";
 
 export function DailyTrackerTabs() {
+  const { user } = useAuth();
   const [todayTasks, setTodayTasks] = useState<DailyTask[]>([]);
   const [weekTasks, setWeekTasks] = useState<DailyTask[]>([]);
   const [loadingToday, setLoadingToday] = useState(true);
   const [loadingWeek, setLoadingWeek] = useState(true);
 
   useEffect(() => {
+    if (!user) {
+        setLoadingToday(false);
+        setLoadingWeek(false);
+        setTodayTasks([]);
+        setWeekTasks([]);
+        return;
+    };
+
     // Listener for today's tasks
     const today = format(new Date(), 'yyyy-MM-dd');
-    const todayQuery = query(collection(db, "daily_tasks"), where("date", "==", today));
+    const todayQuery = query(collection(db, "daily_tasks"), where("date", "==", today), where("userId", "==", user.uid));
     const unsubscribeToday = onSnapshot(todayQuery, (querySnapshot) => {
       const tasks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyTask));
       setTodayTasks(tasks);
@@ -34,6 +44,7 @@ export function DailyTrackerTabs() {
     
     const weekQuery = query(
         collection(db, "daily_tasks"), 
+        where("userId", "==", user.uid),
         where("date", ">=", format(weekStart, 'yyyy-MM-dd')), 
         where("date", "<=", format(weekEnd, 'yyyy-MM-dd'))
     );
@@ -50,7 +61,7 @@ export function DailyTrackerTabs() {
       unsubscribeToday();
       unsubscribeWeek();
     };
-  }, []);
+  }, [user]);
 
   return (
     <Tabs defaultValue="daily" className="flex-grow flex flex-col">

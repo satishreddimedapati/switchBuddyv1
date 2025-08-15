@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { DailyTask } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,10 +14,11 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Loader2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { addTask, updateTask, deleteTask, getSampleDailyTasks } from '@/services/daily-tasks'; // Assuming deleteTask exists
+import { addTask, updateTask, deleteTask } from '@/services/daily-tasks';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/lib/auth';
 
 const timeSlots = Array.from({ length: 17 }, (_, i) => `${(i + 6).toString().padStart(2, '0')}:00`);
 
@@ -40,6 +41,7 @@ interface ScheduleTaskFormProps {
 
 export function ScheduleTaskForm({ isOpen, onOpenChange, task, prefillData }: ScheduleTaskFormProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -60,34 +62,40 @@ export function ScheduleTaskForm({ isOpen, onOpenChange, task, prefillData }: Sc
   });
 
   useEffect(() => {
-    if (task) {
-      reset({
-        title: task.title,
-        description: task.description || '',
-        date: new Date(task.date),
-        time: task.time,
-        type: task.type,
-      });
-    } else if (prefillData) {
-        reset({
+    if (isOpen) {
+        if (task) {
+          reset({
+            title: task.title,
+            description: task.description || '',
+            date: new Date(task.date),
+            time: task.time,
+            type: task.type,
+          });
+        } else if (prefillData) {
+            reset({
+                title: '',
+                description: '',
+                date: new Date(prefillData.date),
+                time: prefillData.time,
+                type: 'schedule',
+            })
+        } else {
+          reset({
             title: '',
             description: '',
-            date: new Date(prefillData.date),
-            time: prefillData.time,
+            date: new Date(),
+            time: '09:00',
             type: 'schedule',
-        })
-    } else {
-      reset({
-        title: '',
-        description: '',
-        date: new Date(),
-        time: '09:00',
-        type: 'schedule',
-      });
+          });
+        }
     }
   }, [task, prefillData, reset, isOpen]);
 
   const onSubmit = async (data: TaskFormValues) => {
+    if (!user) {
+        toast({ title: 'Error', description: 'You must be logged in to manage tasks.', variant: 'destructive' });
+        return;
+    }
     setIsSubmitting(true);
     try {
       const taskData = {
@@ -97,10 +105,10 @@ export function ScheduleTaskForm({ isOpen, onOpenChange, task, prefillData }: Sc
       };
 
       if (task) {
-        await updateTask(task.id, taskData);
+        await updateTask(task.id, taskData, user.uid);
         toast({ title: 'Success', description: 'Task updated successfully.' });
       } else {
-        await addTask(taskData);
+        await addTask(taskData, user.uid);
         toast({ title: 'Success', description: 'Task added successfully.' });
       }
       onOpenChange(false);
@@ -113,10 +121,13 @@ export function ScheduleTaskForm({ isOpen, onOpenChange, task, prefillData }: Sc
   };
   
   const handleDelete = async () => {
-    if (!task) return;
+    if (!task || !user) {
+        toast({ title: 'Error', description: 'You must be logged in to delete a task.', variant: 'destructive' });
+        return;
+    };
     setIsSubmitting(true);
     try {
-        await deleteTask(task.id);
+        await deleteTask(task.id, user.uid);
         toast({ title: "Task Deleted", description: "The task has been removed." });
         onOpenChange(false);
     } catch (error) {
@@ -132,8 +143,11 @@ export function ScheduleTaskForm({ isOpen, onOpenChange, task, prefillData }: Sc
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{task ? 'Edit Task' : 'Schedule New Task'}</DialogTitle>
+          <DialogDescription>
+            Organize your day by adding a new task to your schedule.
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4">
           <div>
             <Label htmlFor="title">Title</Label>
             <Input id="title" {...register('title')} />
@@ -222,10 +236,11 @@ export function ScheduleTaskForm({ isOpen, onOpenChange, task, prefillData }: Sc
                 {errors.type && <p className="text-destructive text-sm mt-1">{errors.type.message}</p>}
              </div>
 
-          <DialogFooter>
+          <DialogFooter className="pt-4">
             {task && (
-                <Button variant="destructive" type="button" onClick={handleDelete} disabled={isSubmitting}>
+                <Button variant="destructive" type="button" onClick={handleDelete} disabled={isSubmitting} className="mr-auto">
                     {isSubmitting ? <Loader2 className="animate-spin" /> : <Trash2 />}
+                     <span className="sr-only">Delete</span>
                 </Button>
             )}
             <DialogClose asChild>

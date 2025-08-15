@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { useAuth } from "@/lib/auth";
 
 interface TaskItemProps {
   task: DailyTask;
@@ -34,10 +35,12 @@ const categoryColors = {
 
 export function TaskItem({ task, onEdit }: TaskItemProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleToggleComplete = async (checked: boolean) => {
+    if (!user) return;
     try {
-      await updateTask(task.id, { completed: checked });
+      await updateTask(task.id, { completed: checked }, user.uid);
       toast({
         title: "Task Updated",
         description: `Task marked as ${checked ? 'complete' : 'incomplete'}.`,
@@ -53,8 +56,9 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
   };
 
   const handleDelete = async () => {
+    if (!user) return;
     try {
-        await deleteTask(task.id);
+        await deleteTask(task.id, user.uid);
         toast({ title: "Task Deleted", description: "The task has been removed." });
     } catch (error) {
         console.error("Failed to delete task:", error);
@@ -68,7 +72,7 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
         <div className="flex-shrink-0 pt-1">
           <Checkbox
             checked={task.completed}
-            onCheckedChange={handleToggleComplete}
+            onCheckedChange={(checked) => handleToggleComplete(Boolean(checked))}
             aria-label="Mark task as complete"
           />
         </div>
@@ -102,7 +106,7 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
                   <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This action cannot be undone. This will permanently delete this task.
-                  </AlertDialogDescription>
+                  </Aler  tDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
