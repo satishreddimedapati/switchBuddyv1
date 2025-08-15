@@ -144,9 +144,9 @@ export default function InterviewPrepPage() {
                 
                 // Sort sessions by completed date, most recent first
                 completedSessions.sort((a, b) => {
-                    const dateA = a.completedAt ? new Date(a.completedAt) : new Date(0);
-                    const dateB = b.completedAt ? new Date(b.completedAt) : new Date(0);
-                    return dateB.getTime() - dateA.getTime();
+                    const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+                    const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+                    return dateB - dateA;
                 });
 
                 setPastSessions(completedSessions);

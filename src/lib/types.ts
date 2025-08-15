@@ -159,14 +159,24 @@ export type InterviewSession = z.infer<typeof InterviewSessionSchema>;
 
 export function toSerializableInterviewSession(docData: any): Omit<InterviewSession, 'id'> {
     const { startedAt, completedAt, ...rest } = docData;
-    const serializable: Omit<InterviewSession, 'id'> = {
-        ...rest,
-        startedAt: (startedAt as Timestamp).toDate().toISOString(),
-    };
-    if (completedAt) {
-        serializable.completedAt = (completedAt as Timestamp).toDate().toISOString();
+    const serializable: Omit<InterviewSession, 'id'> & { completedAt?: string, startedAt?: string } = { ...rest };
+
+    if (startedAt) {
+      if (typeof startedAt === 'string') {
+        serializable.startedAt = startedAt;
+      } else if (startedAt.toDate) { // Check if it's a Firestore Timestamp
+        serializable.startedAt = (startedAt as Timestamp).toDate().toISOString();
+      }
     }
-    return serializable;
+
+    if (completedAt) {
+        if (typeof completedAt === 'string') {
+            serializable.completedAt = completedAt;
+        } else if (completedAt.toDate) { // Check if it's a Firestore Timestamp
+            serializable.completedAt = (completedAt as Timestamp).toDate().toISOString();
+        }
+    }
+    return serializable as Omit<InterviewSession, 'id'>;
 }
 
 
