@@ -48,8 +48,12 @@ export function WeeklyTimetable({ tasks, loading }: WeeklyTimetableProps) {
   if (loading) {
     return (
         <div className="space-y-2">
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-64 w-full" />
+            <div className="grid grid-cols-8 min-w-[1000px] gap-2">
+                 <Skeleton className="h-12 w-full col-span-8" />
+                 {Array.from({length: 17 * 8}).map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                 ))}
+            </div>
         </div>
     )
   }
@@ -57,11 +61,11 @@ export function WeeklyTimetable({ tasks, loading }: WeeklyTimetableProps) {
   return (
     <div className="overflow-x-auto">
       <h2 className="font-headline text-2xl font-bold mb-4">This Week</h2>
-      <div className="grid grid-cols-8 min-w-[1000px]">
+      <div className="grid grid-cols-8 min-w-[1000px] border rounded-lg">
         {/* Header */}
-        <div className="p-2 border-b font-semibold sticky top-0 bg-card">Time</div>
+        <div className="p-2 border-b font-semibold sticky top-0 bg-card z-10">Time</div>
         {days.map(day => (
-          <div key={day.toISOString()} className="p-2 border-b font-semibold text-center sticky top-0 bg-card">
+          <div key={day.toISOString()} className="p-2 border-b font-semibold text-center sticky top-0 bg-card z-10">
             {format(day, 'EEE')} <br/>
             <span className="text-sm font-normal text-muted-foreground">{format(day, 'dd')}</span>
           </div>
@@ -69,8 +73,8 @@ export function WeeklyTimetable({ tasks, loading }: WeeklyTimetableProps) {
 
         {/* Body */}
         {timeSlots.map(time => (
-          <div key={time} className="contents">
-            <div className="p-2 border-r border-b font-mono text-sm">{format(new Date(`1970-01-01T${time}`), "h a")}</div>
+          <React.Fragment key={time}>
+            <div className="p-2 border-r border-b font-mono text-sm flex items-center justify-center">{format(new Date(`1970-01-01T${time}`), "h a")}</div>
             {days.map(day => {
               const cellDate = format(day, 'yyyy-MM-dd');
               const cellKey = `${cellDate}_${time}`;
@@ -92,7 +96,7 @@ export function WeeklyTimetable({ tasks, loading }: WeeklyTimetableProps) {
                 </div>
               )
             })}
-          </div>
+          </React.Fragment>
         ))}
       </div>
       <ScheduleTaskForm 
