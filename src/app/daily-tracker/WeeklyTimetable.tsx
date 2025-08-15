@@ -4,30 +4,24 @@ import * as React from "react"
 import { DailyTask } from "@/lib/types";
 import { useState, useMemo, useEffect } from "react";
 import { ScheduleTaskForm } from "./ScheduleTaskForm";
-import { format, startOfWeek, addDays, endOfWeek, subWeeks, addWeeks } from 'date-fns';
+import { format, startOfWeek, addDays, endOfWeek, subWeeks, addWeeks, parse } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { TaskItem } from "./TaskItem";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-function groupTasksByDate(tasks: DailyTask[]): Map<string, DailyTask[]> {
-    const grouped = new Map<string, DailyTask[]>();
-    tasks.forEach(task => {
-        const dateKey = task.date;
-        const tasksForDate = grouped.get(dateKey) || [];
-        tasksForDate.push(task);
-        grouped.set(dateKey, tasksForDate);
-    });
-    // Sort tasks within each day by time
-    grouped.forEach((dayTasks, dateKey) => {
-        grouped.set(dateKey, dayTasks.sort((a, b) => a.time.localeCompare(b.time)));
-    });
-    return grouped;
-}
+const timeSlots = Array.from({ length: 17 }, (_, i) => {
+    const hour = i + 6;
+    return `${hour.toString().padStart(2, '0')}:00`;
+});
 
+const categoryColors: { [key in DailyTask['type']]: string } = {
+  schedule: "bg-blue-100 border-blue-400 text-blue-800",
+  interview: "bg-green-100 border-green-400 text-green-800",
+};
 
 function WeekNavigator({ currentDate, setCurrentDate }: { currentDate: Date, setCurrentDate: (date: Date) => void }) {
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
@@ -60,7 +54,7 @@ export function WeeklyTimetable() {
   const [prefillData, setPrefillData] = useState<{ date: string; time: string } | undefined>(undefined);
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const days = useMemo(() => {
+  const weekDays = useMemo(() => {
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
     return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   }, [currentDate]);
@@ -104,56 +98,91 @@ export function WeeklyTimetable() {
     setIsFormOpen(true);
   };
 
+  const handleCellClick = (date: Date, time: string) => {
+    setEditingTask(undefined);
+    setPrefillData({ date: format(date, 'yyyy-MM-dd'), time });
+    setIsFormOpen(true);
+  };
+
   const handleFormClose = () => {
     setIsFormOpen(false);
     setEditingTask(undefined);
     setPrefillData(undefined);
   }
   
-  const tasksByDate = useMemo(() => groupTasksByDate(tasks), [tasks]);
+  const tasksByDateTime = useMemo(() => {
+    const map = new Map<string, DailyTask[]>();
+    tasks.forEach(task => {
+        const key = `${task.date}_${task.time.substring(0, 2)}:00`;
+        const existing = map.get(key) || [];
+        existing.push(task);
+        map.set(key, existing);
+    });
+    return map;
+  }, [tasks]);
 
     if (loading) {
         return (
             <div className="space-y-4">
                 <WeekNavigator currentDate={currentDate} setCurrentDate={setCurrentDate} />
-                <Skeleton className="h-32 w-full" />
-                <Skeleton className="h-32 w-full" />
-                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-[70vh] w-full" />
             </div>
         )
     }
 
-    const hasTasksThisWeek = tasks.length > 0;
-
     return (
       <>
           <WeekNavigator currentDate={currentDate} setCurrentDate={setCurrentDate} />
-           <div className="space-y-8">
-            {days.map(day => {
-                const dateKey = format(day, 'yyyy-MM-dd');
-                const dayTasks = tasksByDate.get(dateKey) || [];
-                
-                if (dayTasks.length === 0) return null;
-
-                return (
-                    <div key={day.toISOString()}>
-                        <h3 className="text-xl font-bold mb-4 border-b pb-2">
-                            {format(day, 'EEEE, MMMM d')}
-                        </h3>
-                        <div className="space-y-4">
-                            {dayTasks.map(task => (
-                                <TaskItem key={task.id} task={task} onEdit={handleEdit} />
-                            ))}
+            <div className="relative grid grid-cols-[auto_1fr] border-t border-l border-border rounded-lg overflow-hidden">
+                {/* Time Gutter */}
+                <div className="bg-card">
+                    <div className="h-12 border-b border-border"></div>
+                    {timeSlots.map(time => (
+                        <div key={time} className="h-20 flex items-center justify-center p-2 border-b border-r border-border">
+                            <span className="text-xs text-muted-foreground">{format(parse(time, 'HH:mm', new Date()), 'h a')}</span>
                         </div>
-                    </div>
-                )
-            })}
-             {!hasTasksThisWeek && !loading && (
-                <div className="text-center py-10 border rounded-lg">
-                    <p className="text-muted-foreground">No tasks scheduled for this week.</p>
+                    ))}
                 </div>
-            )}
-        </div>
+
+                <div className="grid grid-cols-7">
+                    {/* Header */}
+                    {weekDays.map(day => (
+                        <div key={day.toISOString()} className="h-12 text-center p-2 border-b border-r border-border">
+                            <div className="font-bold text-sm">{format(day, 'EEE')}</div>
+                            <div className="text-muted-foreground">{format(day, 'd')}</div>
+                        </div>
+                    ))}
+
+                    {/* Grid */}
+                    {weekDays.map(day => (
+                        <div key={day.toISOString()} className="relative border-r border-border">
+                            {timeSlots.map(time => {
+                                const key = `${format(day, 'yyyy-MM-dd')}_${time}`;
+                                const dayTasks = tasksByDateTime.get(key) || [];
+                                
+                                return (
+                                <div 
+                                    key={time} 
+                                    className="h-20 border-b border-border p-1 relative hover:bg-muted/50 cursor-pointer"
+                                    onClick={() => handleCellClick(day, time)}
+                                >
+                                    {dayTasks.map(task => (
+                                        <div 
+                                            key={task.id}
+                                            onClick={(e) => { e.stopPropagation(); handleEdit(task); }}
+                                            className={cn("text-[11px] leading-tight p-1 rounded-md border-l-4 cursor-pointer hover:opacity-80", categoryColors[task.type], task.completed && "opacity-50")}
+                                        >
+                                            <p className="font-bold truncate">{task.title}</p>
+                                            <p className="truncate">{task.description}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )})}
+                        </div>
+                    ))}
+                </div>
+            </div>
+           
           <ScheduleTaskForm 
               isOpen={isFormOpen} 
               onOpenChange={handleFormClose}
