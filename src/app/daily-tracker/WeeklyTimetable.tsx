@@ -60,7 +60,13 @@ export function WeeklyTimetable({ tasks, loading }: WeeklyTimetableProps) {
           <div key={time} className="contents">
             <div className="p-2 border-r border-b font-mono text-sm">{format(new Date(`1970-01-01T${time}`), "h a")}</div>
             {days.map(day => {
-              const tasksInSlot = tasks.filter(task => task.date === format(day, 'yyyy-MM-dd') && task.time.startsWith(time.split(':')[0]));
+              const tasksInSlot = tasks.filter(task => {
+                const taskDate = task.date; // already in 'yyyy-MM-dd'
+                const cellDate = format(day, 'yyyy-MM-dd');
+                const taskHour = parseInt(task.time.split(':')[0], 10);
+                const cellHour = parseInt(time.split(':')[0], 10);
+                return taskDate === cellDate && taskHour === cellHour;
+              });
               return (
                 <div 
                   key={day.toISOString()} 
