@@ -58,7 +58,7 @@ export async function deleteTask(taskId: string) {
 }
 
 // Sample data to be used when the database is empty or inaccessible.
-export function getSampleDailyTasks(date: string): DailyTask[] {
+export async function getSampleDailyTasks(date: string): Promise<DailyTask[]> {
   if (date === format(new Date(), 'yyyy-MM-dd')) {
     return [
       { id: 'task1', time: '09:00', title: 'Update resume with latest project', description: 'Focus on the new React project.', type: 'schedule', date, completed: true },
