@@ -1,0 +1,28 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users should be able to create their own user document and read/update it.
+    // They should not be able to see other users' documents.
+    match /users/{userId} {
+      allow read, update: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null;
+    }
+
+    // A user can read and write job applications that belong to them.
+    match /job-applications/{jobId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // A user can read and write daily tasks that belong to them.
+    match /daily_tasks/{taskId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    
+    // A user can read and write interview plans that belong to them.
+    match /interview_plans/{planId} {
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+  }
+}
