@@ -25,6 +25,7 @@ export default function TrackerPage() {
         setLoading(false);
       }
     } else {
+      // If there's no user, don't attempt to fetch and clear existing data.
       setJobApplications([]);
       setLoading(false);
     }
