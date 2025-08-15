@@ -59,7 +59,10 @@ function WeeklyListView({ tasks, loading, onEdit, days }: { tasks: DailyTask[], 
                 const dateKey = format(day, 'yyyy-MM-dd');
                 const dayTasks = tasksByDate.get(dateKey) || [];
 
+                if (dayTasks.length === 0 && !hasTasksThisWeek) return null;
+                
                 if (dayTasks.length === 0) return null;
+
 
                 return (
                     <div key={day.toISOString()}>
@@ -115,10 +118,10 @@ export function WeeklyTimetable() {
   const { view } = useView();
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
-  const weekEnd = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
-  
-  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
+  const days = useMemo(() => {
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+    return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  }, [currentDate]);
   
   useEffect(() => {
     if (!user) {
@@ -129,6 +132,8 @@ export function WeeklyTimetable() {
     
     setLoading(true);
     
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
     const formattedWeekStart = format(weekStart, 'yyyy-MM-dd');
     const formattedWeekEnd = format(weekEnd, 'yyyy-MM-dd');
 
@@ -149,7 +154,7 @@ export function WeeklyTimetable() {
     });
 
     return () => unsubscribe();
-  }, [user, weekStart, weekEnd]);
+  }, [user, currentDate]);
   
   const tasksByDateTime = useMemo(() => {
     const map = new Map<string, DailyTask[]>();
