@@ -25,8 +25,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { KanbanColumnId } from "@/lib/types";
-import { useEffect, useState, useActionState } from "react";
+import { useEffect, useState, useActionState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 
 
 function SubmitButton() {
@@ -52,8 +53,13 @@ interface AddJobApplicationFormProps {
 }
 
 export function AddJobApplicationForm({ onApplicationAdded }: AddJobApplicationFormProps) {
+  const { user } = useAuth();
+  const formRef = useRef<HTMLFormElement>(null);
   const initialState: FormState = { message: "", error: false };
-  const [state, formAction] = useActionState(handleAddJobApplication, initialState);
+  
+  const handleAddJobWithUserId = handleAddJobApplication.bind(null, user?.uid || '');
+  const [state, formAction] = useActionState(handleAddJobWithUserId, initialState);
+
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
@@ -72,6 +78,7 @@ export function AddJobApplicationForm({ onApplicationAdded }: AddJobApplicationF
         });
         setIsOpen(false);
         onApplicationAdded();
+        formRef.current?.reset();
       }
     }
   }, [state, toast, onApplicationAdded]);
@@ -88,7 +95,7 @@ export function AddJobApplicationForm({ onApplicationAdded }: AddJobApplicationF
             Enter the details of the new job you're tracking.
           </DialogDescription>
         </DialogHeader>
-        <form action={formAction} className="grid gap-4 py-4">
+        <form ref={formRef} action={formAction} className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="company" className="text-right">
                 Company

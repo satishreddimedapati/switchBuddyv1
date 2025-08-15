@@ -18,7 +18,7 @@ interface KanbanBoardProps {
 const COLUMN_ORDER: KanbanColumnId[] = ['Wishlist', 'Applying', 'Interview', 'Offer', 'Rejected'];
 
 export function KanbanBoard({ initialData, onBoardChange }: KanbanBoardProps) {
-  const [columns, setColumns] = useState<Map<KanbanColumnId, JobApplication>>(new Map());
+  const [columns, setColumns] = useState<Map<KanbanColumnId, JobApplication[]>>(new Map());
   const [activeJob, setActiveJob] = useState<JobApplication | null>(null);
   const { user } = useAuth();
 
@@ -90,7 +90,7 @@ export function KanbanBoard({ initialData, onBoardChange }: KanbanBoardProps) {
     
 
     // Update database
-    await handleUpdateJobStage(activeId.toString(), overColumnKey);
+    await handleUpdateJobStage(activeId.toString(), overColumnKey, user.uid);
   }
 
   const columnIds = Array.from(columns.keys());
