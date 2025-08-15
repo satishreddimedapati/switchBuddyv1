@@ -105,3 +105,68 @@ export const GenerateInterviewTopicScheduleOutputSchema = z.object({
   schedule: z.array(InterviewPrepTaskSchema).describe("The generated day-by-day interview preparation schedule."),
 });
 export type GenerateInterviewTopicScheduleOutput = z.infer<typeof GenerateInterviewTopicScheduleOutputSchema>;
+
+
+// MOCK INTERVIEW SCHEMAS
+
+// Firestore: interview_plans
+export const InterviewPlanSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  topic: z.enum(['Coding', 'System Design', 'Behavioral', 'Mixed']),
+  difficulty: z.enum(['Easy', 'Medium', 'Hard']),
+  durationMinutes: z.number().int(),
+  totalInterviews: z.number().int(),
+  completedInterviews: z.number().int(),
+});
+export type InterviewPlan = z.infer<typeof InterviewPlanSchema>;
+
+// Firestore: interview_sessions
+export const InterviewSessionQuestionSchema = z.object({
+    qNo: z.number(),
+    question: z.string(),
+    answer: z.string().optional(),
+    aiReview: z.string().optional(),
+    rating: z.number().min(1).max(10).optional(),
+});
+export type InterviewSessionQuestion = z.infer<typeof InterviewSessionQuestionSchema>;
+
+export const InterviewSessionSchema = z.object({
+    id: z.string(),
+    userId: z.string(),
+    planId: z.string(),
+    interviewNumber: z.number(),
+    status: z.enum(['in-progress', 'completed', 'draft']),
+    questions: z.array(InterviewSessionQuestionSchema),
+    overallScore: z.number().optional(),
+    startedAt: z.any(), // Using any for Firestore Timestamps
+    completedAt: z.any().optional(),
+});
+export type InterviewSession = z.infer<typeof InterviewSessionSchema>;
+
+
+// Genkit Flow: Generate Interview Question
+export const InterviewQuestionRequestSchema = z.object({
+    topic: z.enum(['Coding', 'System Design', 'Behavioral', 'Mixed']),
+    difficulty: z.enum(['Easy', 'Medium', 'Hard']),
+});
+export type InterviewQuestionRequest = z.infer<typeof InterviewQuestionRequestSchema>;
+
+export const InterviewQuestionResponseSchema = z.object({
+    question: z.string().describe("The generated interview question."),
+});
+export type InterviewQuestionResponse = z.infer<typeof InterviewQuestionResponseSchema>;
+
+
+// Genkit Flow: Evaluate Answer
+export const AnswerEvaluationRequestSchema = z.object({
+    question: z.string(),
+    answer: z.string(),
+});
+export type AnswerEvaluationRequest = z.infer<typeof AnswerEvaluationRequestSchema>;
+
+export const AnswerEvaluationResponseSchema = z.object({
+    feedback: z.string().describe("Constructive feedback on the answer."),
+    rating: z.number().min(1).max(10).describe("A rating from 1 to 10."),
+});
+export type AnswerEvaluationResponse = z.infer<typeof AnswerEvaluationResponseSchema>;
