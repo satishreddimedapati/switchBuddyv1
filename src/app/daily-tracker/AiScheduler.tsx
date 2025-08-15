@@ -24,10 +24,11 @@ import {collection, onSnapshot, query, where} from 'firebase/firestore';
 import {format} from 'date-fns';
 import {useEffect, useState, useTransition} from 'react';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
-import {BrainCircuit, CheckCircle2, Coffee, Lightbulb, Loader2, Sparkles, Target} from 'lucide-react';
+import {BrainCircuit, CheckCircle2, Coffee, Lightbulb, Loader2, Sparkles, Target, CalendarPlus} from 'lucide-react';
 import {Skeleton} from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { addTask, updateTask } from '@/services/daily-tasks';
+import { InterviewTopicScheduler } from './InterviewTopicScheduler';
 
 export function AiScheduler() {
   const {user} = useAuth();
@@ -193,6 +194,21 @@ export function AiScheduler() {
               </ul>
             </div>
           )}
+        </CardContent>
+      </Card>
+      
+      {/* Interview Topic Scheduler */}
+      <Card>
+        <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+                <CalendarPlus /> Interview Topic Scheduler
+            </CardTitle>
+            <CardDescription>
+                Generate a day-by-day interview preparation schedule for a user-selected topic.
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <InterviewTopicScheduler />
         </CardContent>
       </Card>
 

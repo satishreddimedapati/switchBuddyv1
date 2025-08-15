@@ -1,4 +1,3 @@
-
 import {z} from 'zod';
 
 export type JobApplication = {
@@ -46,10 +45,7 @@ export const ScheduledTaskSchema = z.object({
 });
 
 // Input for generating a daily plan - now simplified
-export const GenerateDailyPlanInputSchema = z.object({
-  // This can be extended later if we need to pass user preferences
-  userId: z.string().optional(), // Keeping it simple for now
-});
+export const GenerateDailyPlanInputSchema = z.object({});
 export type GenerateDailyPlanInput = z.infer<
   typeof GenerateDailyPlanInputSchema
 >;
@@ -88,3 +84,22 @@ export const GenerateDailySummaryOutputSchema = z.object({
 export type GenerateDailySummaryOutput = z.infer<
   typeof GenerateDailySummaryOutputSchema
 >;
+
+// Interview Topic Scheduler Schemas
+export const GenerateInterviewTopicScheduleInputSchema = z.object({
+  topic: z.string().describe('The interview topic, e.g., ".NET", "Angular", "Python"'),
+  numberOfDays: z.number().int().positive().describe('The number of days to generate a schedule for.'),
+  startDate: z.string().describe('The start date in YYYY-MM-DD format.'),
+});
+export type GenerateInterviewTopicScheduleInput = z.infer<typeof GenerateInterviewTopicScheduleInputSchema>;
+
+export const InterviewPrepTaskSchema = z.object({
+    date: z.string().describe("The date for the subtopic in YYYY-MM-DD format."),
+    topic: z.string().describe("The main topic being studied."),
+    subtopic: z.string().describe("A specific interview prep subtopic for that day.")
+});
+
+export const GenerateInterviewTopicScheduleOutputSchema = z.object({
+  schedule: z.array(InterviewPrepTaskSchema).describe("The generated day-by-day interview preparation schedule."),
+});
+export type GenerateInterviewTopicScheduleOutput = z.infer<typeof GenerateInterviewTopicScheduleOutputSchema>;
