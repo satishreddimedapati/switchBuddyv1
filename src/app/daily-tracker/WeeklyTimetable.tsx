@@ -55,28 +55,26 @@ function WeeklyListView({ tasks, loading, onEdit, days }: { tasks: DailyTask[], 
 
     return (
         <div className="space-y-8">
-            {hasTasksThisWeek ? (
-                days.map(day => {
-                    const dateKey = format(day, 'yyyy-MM-dd');
-                    const dayTasks = tasksByDate.get(dateKey) || [];
+            {days.map(day => {
+                const dateKey = format(day, 'yyyy-MM-dd');
+                const dayTasks = tasksByDate.get(dateKey) || [];
 
-                    if (dayTasks.length === 0) return null; 
+                if (dayTasks.length === 0) return null; 
 
-                    return (
-                        <div key={day.toISOString()}>
-                            <h3 className="text-xl font-bold mb-4 border-b pb-2">
-                                {format(day, 'EEEE, MMMM d')}
-                            </h3>
-                            <div className="space-y-4">
-                                {dayTasks.map(task => (
-                                    <TaskItem key={task.id} task={task} onEdit={onEdit} />
-                                ))}
-                            </div>
+                return (
+                    <div key={day.toISOString()}>
+                        <h3 className="text-xl font-bold mb-4 border-b pb-2">
+                            {format(day, 'EEEE, MMMM d')}
+                        </h3>
+                        <div className="space-y-4">
+                            {dayTasks.map(task => (
+                                <TaskItem key={task.id} task={task} onEdit={onEdit} />
+                            ))}
                         </div>
-                    )
-                })
-            ) : null}
-            {!hasTasksThisWeek && !loading && (
+                    </div>
+                )
+            })}
+             {!hasTasksThisWeek && !loading && (
                 <div className="text-center py-10 border rounded-lg">
                     <p className="text-muted-foreground">No tasks scheduled for this week.</p>
                 </div>
@@ -117,9 +115,10 @@ export function WeeklyTimetable() {
   const { view } = useView();
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
-  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
+  const weekEnd = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
+  
+  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
   
   useEffect(() => {
     if (!user) {
@@ -147,7 +146,7 @@ export function WeeklyTimetable() {
     });
 
     return () => unsubscribe();
-  }, [user, currentDate]);
+  }, [user, weekStart, weekEnd]);
   
   const tasksByDateTime = useMemo(() => {
     const map = new Map<string, DailyTask[]>();
