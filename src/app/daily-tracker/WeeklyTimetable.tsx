@@ -23,8 +23,8 @@ const categoryColors = {
 
 function WeeklyListView({ tasks, loading, onEdit }: { tasks: DailyTask[], loading: boolean, onEdit: (task: DailyTask) => void }) {
     const today = new Date();
-    const weekStart = useMemo(() => startOfWeek(today, { weekStartsOn: 1 }), [today]);
-    const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
+    const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+    const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
     if (loading) {
         return (
@@ -82,7 +82,7 @@ export function WeeklyTimetable() {
   const [prefillData, setPrefillData] = useState<{ date: string; time: string } | undefined>(undefined);
   const { view } = useView();
   
-  const weekStart = useMemo(() => startOfWeek(new Date(), { weekStartsOn: 1 }), []);
+  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
 
   useEffect(() => {
     if (!user) {
@@ -92,7 +92,6 @@ export function WeeklyTimetable() {
     };
     
     setLoading(true);
-
     const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
     
     const q = query(
@@ -114,7 +113,7 @@ export function WeeklyTimetable() {
     return () => unsubscribe();
   }, [user, weekStart]);
   
-  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
+  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   const tasksByDateTime = useMemo(() => {
     const map = new Map<string, DailyTask[]>();
