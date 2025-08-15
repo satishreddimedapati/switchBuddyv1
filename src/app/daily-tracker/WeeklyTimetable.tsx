@@ -21,10 +21,26 @@ const categoryColors = {
   interview: "bg-green-100 border-green-200 text-green-800 dark:bg-green-900/50 dark:border-green-700 dark:text-green-200",
 };
 
+function groupTasksByDate(tasks: DailyTask[]): Map<string, DailyTask[]> {
+    const grouped = new Map<string, DailyTask[]>();
+    tasks.forEach(task => {
+        const dateKey = task.date;
+        const tasksForDate = grouped.get(dateKey) || [];
+        tasksForDate.push(task);
+        grouped.set(dateKey, tasksForDate);
+    });
+    // Sort tasks within each day by time
+    grouped.forEach((dayTasks, dateKey) => {
+        grouped.set(dateKey, dayTasks.sort((a, b) => a.time.localeCompare(b.time)));
+    });
+    return grouped;
+}
+
 function WeeklyListView({ tasks, loading, onEdit }: { tasks: DailyTask[], loading: boolean, onEdit: (task: DailyTask) => void }) {
     const today = new Date();
     const weekStart = startOfWeek(today, { weekStartsOn: 1 });
     const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+    const tasksByDate = useMemo(() => groupTasksByDate(tasks), [tasks]);
 
     if (loading) {
         return (
@@ -36,35 +52,31 @@ function WeeklyListView({ tasks, loading, onEdit }: { tasks: DailyTask[], loadin
         )
     }
 
+    const hasTasks = tasks.length > 0;
+
     return (
         <div className="space-y-8">
-            {days.map(day => {
-                const dayTasks = tasks
-                    .filter(t => t.date === format(day, 'yyyy-MM-dd'))
-                    .sort((a, b) => a.time.localeCompare(b.time));
-                
-                if (dayTasks.length === 0 && !loading) return null;
+            {hasTasks ? (
+                days.map(day => {
+                    const dateKey = format(day, 'yyyy-MM-dd');
+                    const dayTasks = tasksByDate.get(dateKey) || [];
 
-                return (
-                    <div key={day.toISOString()}>
-                        <h3 className="text-xl font-bold mb-4 border-b pb-2">
-                            {format(day, 'EEEE, MMMM d')}
-                        </h3>
-                         {dayTasks.length > 0 ? (
+                    if (dayTasks.length === 0) return null;
+
+                    return (
+                        <div key={day.toISOString()}>
+                            <h3 className="text-xl font-bold mb-4 border-b pb-2">
+                                {format(day, 'EEEE, MMMM d')}
+                            </h3>
                             <div className="space-y-4">
                                 {dayTasks.map(task => (
                                     <TaskItem key={task.id} task={task} onEdit={onEdit} />
                                 ))}
                             </div>
-                        ) : (
-                             <div className="text-center py-4">
-                                <p className="text-sm text-muted-foreground">No tasks scheduled for this day.</p>
-                            </div>
-                        )}
-                    </div>
-                )
-            })}
-             {tasks.length === 0 && !loading && (
+                        </div>
+                    )
+                })
+            ) : (
                  <div className="text-center py-10 border rounded-lg">
                     <p className="text-muted-foreground">No tasks scheduled for this week.</p>
                 </div>
