@@ -33,12 +33,13 @@ Your task is to:
 2.  Logically order the tasks to create a productive flow.
 3.  Assign a specific time slot for each task within the available hours.
 4.  Strategically insert short breaks (10-15 minutes) into the schedule to prevent burnout.
-5.  Return the new schedule as an array of tasks and breaks. Ensure the 'type' for breaks is "break".
+5.  Return the new schedule as an array of tasks and breaks.
+6.  **Crucially, for each existing task you schedule, you MUST return its original 'id' exactly as it was provided in the input.** For new items like breaks, you can generate a descriptive id (e.g., "break-1").
 
 Available Hours: {{{startTime}}} to {{{endTime}}}
 Tasks to schedule:
 {{#each tasks}}
-- {{this.title}} ({{this.type}}){{#if this.description}}: {{this.description}}{{/if}}
+- Title: {{this.title}} (ID: {{this.id}}, Type: {{this.type}}){{#if this.description}}: {{this.description}}{{/if}}
 {{/each}}
 `,
 });
