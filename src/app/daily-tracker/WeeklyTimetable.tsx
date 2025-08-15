@@ -59,7 +59,6 @@ function WeeklyListView({ tasks, loading, onEdit, days }: { tasks: DailyTask[], 
                 const dateKey = format(day, 'yyyy-MM-dd');
                 const dayTasks = tasksByDate.get(dateKey) || [];
 
-                if (dayTasks.length === 0 && !hasTasksThisWeek) return null;
                 if (dayTasks.length === 0) return null;
 
                 return (
@@ -91,7 +90,7 @@ function WeekNavigator({ currentDate, setCurrentDate }: { currentDate: Date, set
     return (
         <div className="flex justify-between items-center mb-4">
             <h2 className="font-headline text-2xl font-bold">
-                {format(weekStart, 'MMMM d')} - {format(weekEnd, 'MMMM d, yyyy')}
+                {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
             </h2>
             <div className="flex items-center gap-2">
                 <Button variant="outline" size="icon" onClick={() => setCurrentDate(subWeeks(currentDate, 1))}>
@@ -261,5 +260,3 @@ export function WeeklyTimetable() {
     </div>
   );
 }
-
-    
