@@ -1,6 +1,6 @@
 'use client'
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
 import { handleAddJobApplication, type FormState } from "./actions";
 
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { KanbanColumnId } from "@/lib/types";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useActionState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -53,7 +53,7 @@ interface AddJobApplicationFormProps {
 
 export function AddJobApplicationForm({ onApplicationAdded }: AddJobApplicationFormProps) {
   const initialState: FormState = { message: "", error: false };
-  const [state, formAction] = useFormState(handleAddJobApplication, initialState);
+  const [state, formAction] = useActionState(handleAddJobApplication, initialState);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
