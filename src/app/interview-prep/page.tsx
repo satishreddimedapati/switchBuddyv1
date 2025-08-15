@@ -109,9 +109,9 @@ function ActivePlanCard({ plan }: { plan: InterviewPlan }) {
                     </div>
                 </div>
                  <div className="flex justify-end">
-                    <Button onClick={handleStartNext} disabled={isStarting}>
+                    <Button onClick={handleStartNext} disabled={isStarting || plan.completedInterviews >= plan.totalInterviews}>
                          {isStarting ? <Loader2 className="animate-spin" /> : <Video />}
-                         Start Next Interview
+                         {plan.completedInterviews >= plan.totalInterviews ? 'Plan Complete' : 'Start Next Interview'}
                     </Button>
                 </div>
             </CardContent>
@@ -123,7 +123,7 @@ function ActivePlanCard({ plan }: { plan: InterviewPlan }) {
 export default function InterviewPrepPage() {
     const { user } = useAuth();
     const [plans, setPlans] = useState<InterviewPlan[]>([]);
-    const [sessions, setSessions] = useState<InterviewSession[]>([]);
+    const [pastSessions, setPastSessions] = useState<InterviewSession[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -134,11 +134,13 @@ export default function InterviewPrepPage() {
             };
             setLoading(true);
             try {
-                const userPlans = await getInterviewPlans(user.uid);
-                const userSessions = await getInterviewSessions(user.uid);
+                const [userPlans, userSessions] = await Promise.all([
+                    getInterviewPlans(user.uid),
+                    getInterviewSessions(user.uid)
+                ]);
                 
                 setPlans(userPlans);
-                setSessions(userSessions.filter(s => s.status === 'completed'));
+                setPastSessions(userSessions.filter(s => s.status === 'completed'));
             } catch (error) {
                 console.error("Failed to fetch interview data", error);
             } finally {
@@ -196,7 +198,7 @@ export default function InterviewPrepPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {sessions.map(interview => (
+                            {pastSessions.map(interview => (
                                 <TableRow key={interview.id}>
                                     <TableCell>{interview.interviewNumber}</TableCell>
                                     <TableCell>{interview.completedAt ? format(new Date(interview.completedAt), 'PPP') : 'N/A'}</TableCell>
@@ -212,7 +214,7 @@ export default function InterviewPrepPage() {
                                     </TableCell>
                                 </TableRow>
                             ))}
-                             {sessions.length === 0 && !loading && (
+                             {pastSessions.length === 0 && !loading && (
                                 <TableRow>
                                     <TableCell colSpan={5} className="text-center h-24">No past interviews found.</TableCell>
                                 </TableRow>
