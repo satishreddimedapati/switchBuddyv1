@@ -25,6 +25,9 @@ export function DailyTrackerTabs() {
         setWeekTasks([]);
         return;
     };
+    
+    setLoadingToday(true);
+    setLoadingWeek(true);
 
     // Listener for today's tasks
     const today = format(new Date(), 'yyyy-MM-dd');
