@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { addInterviewPlan } from '@/services/interview-plans';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2, Video } from 'lucide-react';
 import { addInterviewSession } from '@/services/interview-sessions';
 import { generateInterviewQuestions } from '@/ai/flows/interview-practice';
@@ -21,6 +21,7 @@ const planSchema = z.object({
   topic: z.string().min(1, 'Topic is required.'),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']),
   durationMinutes: z.coerce.number().int().min(1),
+  numberOfQuestions: z.coerce.number().int().min(1),
   totalInterviews: z.coerce.number().int().min(1, 'You must plan at least one interview.'),
 });
 
@@ -44,9 +45,17 @@ export default function NewInterviewPlanPage() {
             topic: '',
             difficulty: 'Medium',
             durationMinutes: 30,
+            numberOfQuestions: 5,
             totalInterviews: 10,
         },
     });
+
+    const watchedDuration = form.watch('durationMinutes');
+    useEffect(() => {
+        const newNumberOfQuestions = getNumberOfQuestions(watchedDuration);
+        form.setValue('numberOfQuestions', newNumberOfQuestions);
+    }, [watchedDuration, form]);
+
 
     const onSubmit = async (data: PlanFormValues) => {
         if (!user || !user.uid) {
@@ -61,11 +70,10 @@ export default function NewInterviewPlanPage() {
             toast({ title: 'Plan Created!', description: "Now generating your interview questions..." });
             
             // 2. Generate questions
-            const numberOfQuestions = getNumberOfQuestions(data.durationMinutes);
             const questionResult = await generateInterviewQuestions({
                 topic: data.topic,
                 difficulty: data.difficulty,
-                numberOfQuestions: numberOfQuestions,
+                numberOfQuestions: data.numberOfQuestions,
             });
 
             if (!questionResult || questionResult.questions.length === 0) {
@@ -112,39 +120,56 @@ export default function NewInterviewPlanPage() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        <div className="grid sm:grid-cols-2 gap-6">
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             <div>
                                 <Label htmlFor="topic">Topic</Label>
-                                <Input id="topic" placeholder="e.g., React, System Design, Behavioral" {...form.register('topic')} />
+                                <Input id="topic" placeholder="e.g., React, System Design" {...form.register('topic')} />
                                 {form.formState.errors.topic && <p className="text-destructive text-sm mt-1">{form.formState.errors.topic.message}</p>}
                             </div>
                             <div>
                                 <Label htmlFor="difficulty">Difficulty</Label>
-                                <Select onValueChange={(value) => form.setValue('difficulty', value as any)} defaultValue={form.getValues('difficulty')}>
-                                    <SelectTrigger id="difficulty">
-                                        <SelectValue placeholder="Select a difficulty" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Easy">Easy</SelectItem>
-                                        <SelectItem value="Medium">Medium</SelectItem>
-                                        <SelectItem value="Hard">Hard</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <Controller
+                                    control={form.control}
+                                    name="difficulty"
+                                    render={({ field }) => (
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <SelectTrigger id="difficulty">
+                                                <SelectValue placeholder="Select a difficulty" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Easy">Easy</SelectItem>
+                                                <SelectItem value="Medium">Medium</SelectItem>
+                                                <SelectItem value="Hard">Hard</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    )}
+                                />
                             </div>
                              <div>
                                 <Label htmlFor="durationMinutes">Duration (minutes)</Label>
-                                <Select onValueChange={(value) => form.setValue('durationMinutes', parseInt(value))} defaultValue={form.getValues('durationMinutes').toString()}>
-                                    <SelectTrigger id="durationMinutes">
-                                        <SelectValue placeholder="Select a duration" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="15">15 minutes</SelectItem>
-                                        <SelectItem value="30">30 minutes</SelectItem>
-                                        <SelectItem value="60">60 minutes</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                 <Controller
+                                    control={form.control}
+                                    name="durationMinutes"
+                                    render={({ field }) => (
+                                        <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value.toString()}>
+                                            <SelectTrigger id="durationMinutes">
+                                                <SelectValue placeholder="Select a duration" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="15">15 minutes</SelectItem>
+                                                <SelectItem value="30">30 minutes</SelectItem>
+                                                <SelectItem value="60">60 minutes</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    )}
+                                />
                             </div>
                             <div>
+                                <Label htmlFor="numberOfQuestions">Number of Questions</Label>
+                                <Input id="numberOfQuestions" type="number" {...form.register('numberOfQuestions')} readOnly className="bg-muted/50" />
+                                {form.formState.errors.numberOfQuestions && <p className="text-destructive text-sm mt-1">{form.formState.errors.numberOfQuestions.message}</p>}
+                            </div>
+                            <div className="lg:col-span-2">
                                 <Label htmlFor="totalInterviews">Total Interviews to Take</Label>
                                 <Input id="totalInterviews" type="number" {...form.register('totalInterviews')} />
                                 {form.formState.errors.totalInterviews && <p className="text-destructive text-sm mt-1">{form.formState.errors.totalInterviews.message}</p>}
