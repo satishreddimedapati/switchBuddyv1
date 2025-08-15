@@ -1,6 +1,6 @@
 'use client'
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useFormStatus } from 'react';
 import { handleTailorResume, type FormState } from './actions';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,7 +30,7 @@ function SubmitButton() {
 
 export function ResumeTailorForm() {
     const initialState: FormState = { message: '', error: false };
-    const [state, formAction] = useFormState(handleTailorResume, initialState);
+    const [state, formAction] = useActionState(handleTailorResume, initialState);
 
     return (
         <div className="space-y-8">
