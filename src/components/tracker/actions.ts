@@ -1,8 +1,9 @@
 "use server";
 
 import { z } from "zod";
-import { addJobApplication } from "@/services/job-applications";
+import { addJobApplication, updateJobApplicationStage } from "@/services/job-applications";
 import { revalidatePath } from "next/cache";
+import { KanbanColumnId } from "@/lib/types";
 
 const AddJobApplicationSchema = z.object({
   company: z.string().min(1, "Company name cannot be empty."),
@@ -54,4 +55,16 @@ export async function handleAddJobApplication(
       error: true,
     };
   }
+}
+
+
+export async function handleUpdateJobStage(jobId: string, newStage: KanbanColumnId) {
+    try {
+        await updateJobApplicationStage(jobId, newStage);
+        revalidatePath('/tracker');
+        return { message: 'Job stage updated' };
+    } catch (error) {
+        console.error("Error updating job stage:", error);
+        return { message: 'Failed to update job stage', error: true };
+    }
 }
