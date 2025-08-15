@@ -1,33 +1,30 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users can create their own user document upon signup
-    // and can only read or update their own document.
+    
+    // Users can only read/write their own user document
     match /users/{userId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null;
+      allow read, write: if request.auth.uid == userId;
     }
-
-    // Users can only read and write their own job applications.
+    
+    // Users can only read/write their own job applications
     match /job-applications/{jobId} {
-      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read, write: if request.auth.uid == request.resource.data.userId;
     }
 
-    // Users can only read and write their own daily tasks.
+    // Users can only read/write their own daily tasks
     match /daily_tasks/{taskId} {
-      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read, write: if request.auth.uid == request.resource.data.userId;
     }
-
-    // Users can only read and write their own interview plans.
+    
+    // Users can only read/write their own interview plans
     match /interview_plans/{planId} {
-       allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read, write: if request.auth.uid == request.resource.data.userId;
     }
-
-    // Placeholder for interview_sessions, allowing authenticated users to manage their own sessions.
-    // We will build this out fully later.
+    
+    // Users can only read/write their own interview sessions
     match /interview_sessions/{sessionId} {
-       allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read, write: if request.auth.uid == request.resource.data.userId;
     }
   }
 }

@@ -3,14 +3,14 @@
 import { db } from "@/lib/firebase";
 import type { InterviewSession } from "@/lib/types";
 import { toSerializableInterviewSession } from "@/lib/types";
-import { collection, getDocs, doc, updateDoc, addDoc, getDoc, query, where, serverTimestamp } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, addDoc, getDoc, query, where, serverTimestamp, orderBy } from "firebase/firestore";
 
 const sessionsCollection = collection(db, "interview_sessions");
 
 export async function getInterviewSessions(userId: string): Promise<InterviewSession[]> {
     if (!userId) return [];
     try {
-        const q = query(sessionsCollection, where("userId", "==", userId));
+        const q = query(sessionsCollection, where("userId", "==", userId), orderBy("startedAt", "desc"));
         const querySnapshot = await getDocs(q);
         return querySnapshot.docs.map(doc => {
             const data = doc.data();
