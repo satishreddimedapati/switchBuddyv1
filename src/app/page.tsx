@@ -48,6 +48,9 @@ export default function LoginPage() {
                <Button type="submit" className="w-full !mt-6 bg-primary text-primary-foreground hover:bg-primary/90">
                 Login
               </Button>
+               <Button variant="link" formAction={login} className="w-full">
+                Continue as Guest
+              </Button>
             </form>
           </CardContent>
           <CardFooter className="flex justify-center text-sm">
