@@ -113,7 +113,7 @@ export type GenerateInterviewTopicScheduleOutput = z.infer<typeof GenerateInterv
 export const InterviewPlanSchema = z.object({
   id: z.string(),
   userId: z.string(),
-  topic: z.enum(['Coding', 'System Design', 'Behavioral', 'Mixed']),
+  topic: z.string(),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']),
   durationMinutes: z.number().int(),
   totalInterviews: z.number().int(),
@@ -147,7 +147,7 @@ export type InterviewSession = z.infer<typeof InterviewSessionSchema>;
 
 // Genkit Flow: Generate Interview Question
 export const InterviewQuestionRequestSchema = z.object({
-    topic: z.enum(['Coding', 'System Design', 'Behavioral', 'Mixed']),
+    topic: z.string(),
     difficulty: z.enum(['Easy', 'Medium', 'Hard']),
 });
 export type InterviewQuestionRequest = z.infer<typeof InterviewQuestionRequestSchema>;

@@ -16,7 +16,7 @@ import { useState } from 'react';
 import { Loader2, Video } from 'lucide-react';
 
 const planSchema = z.object({
-  topic: z.enum(['Coding', 'System Design', 'Behavioral', 'Mixed']),
+  topic: z.string().min(1, 'Topic is required.'),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']),
   durationMinutes: z.coerce.number().int().min(1),
   totalInterviews: z.coerce.number().int().min(1, 'You must plan at least one interview.'),
@@ -33,7 +33,7 @@ export default function NewInterviewPlanPage() {
     const form = useForm<PlanFormValues>({
         resolver: zodResolver(planSchema),
         defaultValues: {
-            topic: 'Coding',
+            topic: '',
             difficulty: 'Medium',
             durationMinutes: 30,
             totalInterviews: 10,
@@ -77,17 +77,8 @@ export default function NewInterviewPlanPage() {
                         <div className="grid sm:grid-cols-2 gap-6">
                             <div>
                                 <Label htmlFor="topic">Topic</Label>
-                                <Select onValueChange={(value) => form.setValue('topic', value as any)} defaultValue={form.getValues('topic')}>
-                                    <SelectTrigger id="topic">
-                                        <SelectValue placeholder="Select a topic" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Coding">Coding</SelectItem>
-                                        <SelectItem value="System Design">System Design</SelectItem>
-                                        <SelectItem value="Behavioral">Behavioral</SelectItem>
-                                        <SelectItem value="Mixed">Mixed</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <Input id="topic" placeholder="e.g., React, System Design, Behavioral" {...form.register('topic')} />
+                                {form.formState.errors.topic && <p className="text-destructive text-sm mt-1">{form.formState.errors.topic.message}</p>}
                             </div>
                             <div>
                                 <Label htmlFor="difficulty">Difficulty</Label>
