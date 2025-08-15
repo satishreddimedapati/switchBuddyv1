@@ -41,6 +41,7 @@ export async function getInterviewPlan(planId: string): Promise<InterviewPlan | 
                 ...serializableData
             } as InterviewPlan
         } else {
+            console.log("No such document!");
             return null;
         }
     } catch (error) {
@@ -61,14 +62,22 @@ export async function addInterviewPlan(plan: Omit<InterviewPlan, 'id' | 'created
     return docRef.id;
 }
 
-export async function updateInterviewPlan(planId: string, updates: Partial<InterviewPlan>, userId: string) {
+export async function updateInterviewPlan(planId: string, updates: Partial<Omit<InterviewPlan, 'id' | 'userId'>>, userId: string) {
   const planRef = doc(db, "interview_plans", planId);
   // Add an ownership check in a real app
+  const planDoc = await getDoc(planRef);
+  if (!planDoc.exists() || planDoc.data().userId !== userId) {
+      throw new Error("Permission denied or plan not found.");
+  }
   await updateDoc(planRef, updates);
 }
 
 export async function deleteInterviewPlan(planId: string, userId: string) {
   // Add an ownership check in a real app
   const planRef = doc(db, "interview_plans", planId);
+    const planDoc = await getDoc(planRef);
+    if (!planDoc.exists() || planDoc.data().userId !== userId) {
+      throw new Error("Permission denied or plan not found.");
+  }
   await deleteDoc(planRef);
 }

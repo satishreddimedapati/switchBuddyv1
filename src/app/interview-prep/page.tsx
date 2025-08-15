@@ -2,24 +2,23 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
 import type { InterviewPlan, InterviewSession } from "@/lib/types";
 import { getInterviewPlans } from "@/services/interview-plans";
 import { FileText, PlusCircle, Video, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
-import { addInterviewSession, getInterviewSessions } from "@/services/interview-sessions";
-import { useRouter } from "next/navigation";
-import { useToast } from "@/hooks/use-toast";
+import { useEffect, useState, useMemo } from "react";
+import { getInterviewSessions } from "@/services/interview-sessions";
 import { format } from "date-fns";
-import { generateInterviewQuestions } from "@/ai/flows/interview-practice";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { InterviewPlanCard } from "./InterviewPlanCard";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function NoActivePlan() {
     return (
         <div className="text-center p-8 border-dashed border-2 rounded-lg flex flex-col items-center gap-4">
-            <h3 className="text-xl font-semibold">No Active Interview Plan</h3>
+            <h3 className="text-xl font-semibold">No Interview Plans Found</h3>
             <p className="text-muted-foreground">Create a new plan to start your mock interviews.</p>
             <Button asChild>
                 <Link href="/interview-prep/new">
@@ -31,91 +30,12 @@ function NoActivePlan() {
     )
 }
 
-const getNumberOfQuestions = (duration: number) => {
-    if (duration <= 15) return 3;
-    if (duration <= 30) return 5;
-    return 8;
-}
-
-function ActivePlanCard({ plan }: { plan: InterviewPlan }) {
-    const { user } = useAuth();
-    const router = useRouter();
-    const { toast } = useToast();
-    const [isStarting, startTransition] = useTransition();
-
-    const handleStartNext = () => {
-        if (!user || !plan.id) return;
-        startTransition(async () => {
-            try {
-                toast({ title: 'Starting new interview...', description: 'Generating questions now.' });
-
-                const numberOfQuestions = getNumberOfQuestions(plan.durationMinutes);
-                const questionResult = await generateInterviewQuestions({
-                    topic: plan.topic,
-                    difficulty: plan.difficulty,
-                    numberOfQuestions: numberOfQuestions,
-                });
-
-                if (!questionResult || questionResult.questions.length === 0) {
-                    toast({ title: 'Error', description: 'Could not generate interview questions. Please try again.', variant: 'destructive' });
-                    return;
-                }
-
-                const newSession = {
-                    userId: user.uid,
-                    planId: plan.id!,
-                    interviewNumber: (plan.completedInterviews || 0) + 1,
-                    status: 'in-progress' as const,
-                    questions: questionResult.questions.map((q, i) => ({ qNo: i + 1, question: q })),
-                };
-                const sessionId = await addInterviewSession(newSession);
-
-                toast({ title: 'Success!', description: 'Your interview is ready.' });
-                router.push(`/interview-prep/session/${sessionId}`);
-            } catch (error) {
-                console.error("Failed to start new session:", error);
-                toast({
-                    title: "Error",
-                    description: "Could not start the next interview session.",
-                    variant: "destructive"
-                });
-            }
-        });
-    }
-
+function LoadingState() {
     return (
-         <Card className="bg-accent/20 border-accent">
-            <CardHeader>
-                <CardTitle>Your Active Plan: {plan.topic}</CardTitle>
-                <CardDescription>You are currently on an active interview plan. Keep up the momentum!</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-                    <div>
-                        <p className="font-semibold">Difficulty</p>
-                        <p className="text-muted-foreground">{plan.difficulty}</p>
-                    </div>
-                     <div>
-                        <p className="font-semibold">Duration</p>
-                        <p className="text-muted-foreground">{plan.durationMinutes} min</p>
-                    </div>
-                    <div>
-                        <p className="font-semibold">Planned</p>
-                        <p className="text-muted-foreground">{plan.totalInterviews}</p>
-                    </div>
-                     <div>
-                        <p className="font-semibold">Completed</p>
-                        <p className="text-muted-foreground">{plan.completedInterviews}</p>
-                    </div>
-                </div>
-                 <div className="flex justify-end">
-                    <Button onClick={handleStartNext} disabled={isStarting || plan.completedInterviews >= plan.totalInterviews}>
-                         {isStarting ? <Loader2 className="animate-spin" /> : <Video />}
-                         {plan.completedInterviews >= plan.totalInterviews ? 'Plan Complete' : 'Start Next Interview'}
-                    </Button>
-                </div>
-            </CardContent>
-        </Card>
+        <div className="space-y-4">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+        </div>
     )
 }
 
@@ -138,11 +58,11 @@ export default function InterviewPrepPage() {
                     getInterviewPlans(user.uid),
                     getInterviewSessions(user.uid)
                 ]);
-                
+
                 setPlans(userPlans);
+
                 const completedSessions = userSessions.filter(s => s.status === 'completed');
                 
-                // Sort sessions by completed date, most recent first
                 completedSessions.sort((a, b) => {
                     const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 0;
                     const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 0;
@@ -160,37 +80,62 @@ export default function InterviewPrepPage() {
         fetchAllData();
     }, [user])
 
-    const activePlan = plans.find(p => (p.completedInterviews || 0) < p.totalInterviews);
-    const totalPlanned = activePlan?.totalInterviews || 0;
-    const totalCompleted = activePlan?.completedInterviews || 0;
+    const groupedPlans = useMemo(() => {
+        return plans.reduce((acc, plan) => {
+            const topic = plan.topic || 'Uncategorized';
+            if (!acc[topic]) {
+                acc[topic] = [];
+            }
+            acc[topic].push(plan);
+            return acc;
+        }, {} as Record<string, InterviewPlan[]>);
+    }, [plans]);
 
     return (
         <div className="flex flex-col gap-8">
-            <div>
-                <h1 className="font-headline text-3xl font-bold tracking-tight">
-                    Mock Interviews
-                </h1>
-                <p className="text-muted-foreground">
-                    Practice makes perfect. Simulate real interviews and get AI-powered feedback.
-                </p>
+            <div className="flex justify-between items-center">
+                 <div>
+                    <h1 className="font-headline text-3xl font-bold tracking-tight">
+                        Mock Interviews
+                    </h1>
+                    <p className="text-muted-foreground">
+                        Practice makes perfect. Simulate real interviews and get AI-powered feedback.
+                    </p>
+                </div>
+                <Button asChild>
+                    <Link href="/interview-prep/new">
+                        <PlusCircle />
+                        Create New Plan
+                    </Link>
+                </Button>
             </div>
-
+            
             <Card>
                 <CardHeader>
-                    <CardTitle>Your Progress</CardTitle>
+                    <CardTitle>My Interview Plans</CardTitle>
+                    <CardDescription>All of your interview practice plans, grouped by topic.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                    <Progress value={(totalCompleted / (totalPlanned || 1)) * 100} />
-                    <p className="text-sm text-muted-foreground">
-                       {totalCompleted > 0 ? `You have completed ${totalCompleted} of ${totalPlanned || 'many'} interviews.` : "No interviews completed yet."} 
-                       {activePlan && totalPlanned > totalCompleted && ` ${totalPlanned - totalCompleted} more to go!`}
-                    </p>
+                <CardContent>
+                     {loading ? <LoadingState /> : (
+                        Object.keys(groupedPlans).length > 0 ? (
+                            <Accordion type="multiple" defaultValue={Object.keys(groupedPlans)}>
+                                {Object.entries(groupedPlans).map(([topic, topicPlans]) => (
+                                    <AccordionItem value={topic} key={topic}>
+                                        <AccordionTrigger className="text-lg font-semibold">{topic}</AccordionTrigger>
+                                        <AccordionContent className="pt-4 space-y-4">
+                                            {topicPlans.map(plan => (
+                                                <InterviewPlanCard key={plan.id} plan={plan} />
+                                            ))}
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                ))}
+                            </Accordion>
+                        ) : (
+                            <NoActivePlan />
+                        )
+                    )}
                 </CardContent>
             </Card>
-
-            {loading ? <Card><CardContent className="p-8"><div className="animate-pulse bg-muted h-24 rounded-md"></div></CardContent></Card> : (
-                activePlan ? <ActivePlanCard plan={activePlan} /> : <NoActivePlan />
-            )}
             
             <Card>
                 <CardHeader>
