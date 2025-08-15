@@ -82,8 +82,6 @@ export function WeeklyTimetable() {
   const [prefillData, setPrefillData] = useState<{ date: string; time: string } | undefined>(undefined);
   const { view } = useView();
   
-  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-
   useEffect(() => {
     if (!user) {
         setTasks([]);
@@ -92,6 +90,7 @@ export function WeeklyTimetable() {
     };
     
     setLoading(true);
+    const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
     const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
     
     const q = query(
@@ -111,8 +110,9 @@ export function WeeklyTimetable() {
     });
 
     return () => unsubscribe();
-  }, [user, weekStart]);
+  }, [user]);
   
+  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   const tasksByDateTime = useMemo(() => {
