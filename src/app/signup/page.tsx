@@ -1,4 +1,4 @@
-'use server';
+'use client';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,15 +12,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Logo } from "@/components/Logo";
+import { signup } from "./actions";
 
-export default async function SignupPage() {
-
-  async function signup() {
-    'use server'
-    redirect('/dashboard')
-  }
+export default function SignupPage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
@@ -39,12 +34,13 @@ export default async function SignupPage() {
             <form action={signup} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" type="text" placeholder="Your Name" required />
+                <Input id="name" name="name" type="text" placeholder="Your Name" required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   placeholder="name@example.com"
                   required
@@ -52,7 +48,7 @@ export default async function SignupPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" required />
+                <Input id="password" name="password" type="password" required />
               </div>
               <Button type="submit" className="w-full !mt-6 bg-primary text-primary-foreground hover:bg-primary/90">
                 Create Account

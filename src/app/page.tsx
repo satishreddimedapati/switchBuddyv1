@@ -1,4 +1,4 @@
-'use server';
+'use client';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,16 +12,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Logo } from "@/components/Logo";
+import { login } from "./actions";
 
-export default async function LoginPage() {
-  
-  async function login() {
-    'use server'
-    redirect('/dashboard')
-  }
-
+export default function LoginPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
@@ -41,6 +35,7 @@ export default async function LoginPage() {
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   placeholder="name@example.com"
                   required
@@ -48,7 +43,7 @@ export default async function LoginPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" required />
+                <Input id="password" name="password" type="password" required />
               </div>
                <Button type="submit" className="w-full !mt-6 bg-primary text-primary-foreground hover:bg-primary/90">
                 Login
