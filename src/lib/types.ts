@@ -112,7 +112,7 @@ export type GenerateInterviewTopicScheduleOutput = z.infer<typeof GenerateInterv
 
 // Firestore: interview_plans
 export const InterviewPlanSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(), // ID is not present on creation
   userId: z.string(),
   topic: z.string(),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']),
@@ -145,17 +145,29 @@ export const InterviewSessionQuestionSchema = z.object({
 export type InterviewSessionQuestion = z.infer<typeof InterviewSessionQuestionSchema>;
 
 export const InterviewSessionSchema = z.object({
-    id: z.string(),
+    id: z.string().optional(),
     userId: z.string(),
     planId: z.string(),
     interviewNumber: z.number(),
     status: z.enum(['in-progress', 'completed', 'draft']),
     questions: z.array(InterviewSessionQuestionSchema),
     overallScore: z.number().optional(),
-    startedAt: z.any(), // Using any for Firestore Timestamps
-    completedAt: z.any().optional(),
+    startedAt: z.union([z.any(), z.string()]), // Using any for Firestore Timestamps
+    completedAt: z.union([z.any(), z.string()]).optional(),
 });
 export type InterviewSession = z.infer<typeof InterviewSessionSchema>;
+
+export function toSerializableInterviewSession(docData: any): Omit<InterviewSession, 'id'> {
+    const { startedAt, completedAt, ...rest } = docData;
+    const serializable: Omit<InterviewSession, 'id'> = {
+        ...rest,
+        startedAt: (startedAt as Timestamp).toDate().toISOString(),
+    };
+    if (completedAt) {
+        serializable.completedAt = (completedAt as Timestamp).toDate().toISOString();
+    }
+    return serializable;
+}
 
 
 // Genkit Flow: Generate Interview Question

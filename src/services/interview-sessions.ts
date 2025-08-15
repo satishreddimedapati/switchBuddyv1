@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/firebase";
 import type { InterviewSession } from "@/lib/types";
+import { toSerializableInterviewSession } from "@/lib/types";
 import { collection, getDocs, doc, updateDoc, addDoc, getDoc, query, where, serverTimestamp } from "firebase/firestore";
 
 const sessionsCollection = collection(db, "interview_sessions");
@@ -11,7 +12,11 @@ export async function getInterviewSessions(userId: string): Promise<InterviewSes
     try {
         const q = query(sessionsCollection, where("userId", "==", userId));
         const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InterviewSession));
+        return querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            const serializableData = toSerializableInterviewSession(data);
+            return { id: doc.id, ...serializableData } as InterviewSession
+        });
     } catch (error) {
         console.error("Error fetching sessions:", error);
         return [];
@@ -23,7 +28,9 @@ export async function getInterviewSession(sessionId: string): Promise<InterviewS
         const docRef = doc(db, "interview_sessions", sessionId);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            return { id: docSnap.id, ...docSnap.data() } as InterviewSession;
+            const data = docSnap.data();
+            const serializableData = toSerializableInterviewSession(data);
+            return { id: docSnap.id, ...serializableData } as InterviewSession;
         }
         return null;
     } catch (error) {
