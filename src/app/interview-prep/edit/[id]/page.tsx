@@ -21,16 +21,11 @@ const planSchema = z.object({
   topic: z.string().min(1, 'Topic is required.'),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']),
   durationMinutes: z.coerce.number().int().min(1),
+  numberOfQuestions: z.coerce.number().int().min(1, 'You must have at least one question.'),
   totalInterviews: z.coerce.number().int().min(1, 'You must plan at least one interview.'),
 });
 
 type PlanFormValues = z.infer<typeof planSchema>;
-
-const getNumberOfQuestions = (duration: number) => {
-    if (duration <= 15) return 3;
-    if (duration <= 30) return 5;
-    return 8;
-}
 
 export default function EditInterviewPlanPage() {
     const { user } = useAuth();
@@ -41,19 +36,10 @@ export default function EditInterviewPlanPage() {
     
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [numberOfQuestions, setNumberOfQuestions] = useState(5);
 
     const form = useForm<PlanFormValues>({
         resolver: zodResolver(planSchema),
     });
-
-    const watchedDuration = form.watch('durationMinutes');
-    useEffect(() => {
-        if(watchedDuration) {
-            const newNumberOfQuestions = getNumberOfQuestions(watchedDuration);
-            setNumberOfQuestions(newNumberOfQuestions);
-        }
-    }, [watchedDuration]);
 
     useEffect(() => {
         if (!user || !planId) return;
@@ -65,6 +51,7 @@ export default function EditInterviewPlanPage() {
                     difficulty: plan.difficulty,
                     durationMinutes: plan.durationMinutes,
                     totalInterviews: plan.totalInterviews,
+                    numberOfQuestions: plan.questions?.length || 5, // Fallback if not stored
                 });
             } else {
                 toast({ title: "Error", description: "Plan not found or you don't have permission to edit it.", variant: "destructive" });
@@ -182,8 +169,9 @@ export default function EditInterviewPlanPage() {
                                 />
                             </div>
                             <div>
-                                <Label>Number of Questions</Label>
-                                <Input value={numberOfQuestions} readOnly className="bg-muted/50" />
+                                <Label htmlFor="numberOfQuestions">Number of Questions</Label>
+                                <Input id="numberOfQuestions" type="number" {...form.register('numberOfQuestions')} />
+                                {form.formState.errors.numberOfQuestions && <p className="text-destructive text-sm mt-1">{form.formState.errors.numberOfQuestions.message}</p>}
                             </div>
                             <div className="lg:col-span-2">
                                 <Label htmlFor="totalInterviews">Total Interviews to Take</Label>

@@ -117,12 +117,13 @@ export const InterviewPlanSchema = z.object({
   topic: z.string(),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']),
   durationMinutes: z.number().int(),
+  numberOfQuestions: z.number().int(),
   totalInterviews: z.number().int(),
   completedInterviews: z.number().int(),
   createdAt: z.union([z.instanceof(Date), z.string()]), // Allow Date or ISO string
 });
 
-export type InterviewPlan = z.infer<typeof InterviewPlanSchema>;
+export type InterviewPlan = z.infer<typeof InterviewPlanSchema> & { questions?: InterviewSessionQuestion[] };
 
 // Helper to convert Firestore data to a serializable InterviewPlan
 export function toSerializableInterviewPlan(docData: any): Omit<InterviewPlan, 'id'> {

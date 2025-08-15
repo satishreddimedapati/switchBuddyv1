@@ -21,17 +21,11 @@ const planSchema = z.object({
   topic: z.string().min(1, 'Topic is required.'),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']),
   durationMinutes: z.coerce.number().int().min(1),
-  numberOfQuestions: z.coerce.number().int().min(1),
+  numberOfQuestions: z.coerce.number().int().min(1, 'You must have at least one question.'),
   totalInterviews: z.coerce.number().int().min(1, 'You must plan at least one interview.'),
 });
 
 type PlanFormValues = z.infer<typeof planSchema>;
-
-const getNumberOfQuestions = (duration: number) => {
-    if (duration <= 15) return 3;
-    if (duration <= 30) return 5;
-    return 8;
-}
 
 export default function NewInterviewPlanPage() {
     const { user } = useAuth();
@@ -49,13 +43,6 @@ export default function NewInterviewPlanPage() {
             totalInterviews: 10,
         },
     });
-
-    const watchedDuration = form.watch('durationMinutes');
-    useEffect(() => {
-        const newNumberOfQuestions = getNumberOfQuestions(watchedDuration);
-        form.setValue('numberOfQuestions', newNumberOfQuestions);
-    }, [watchedDuration, form]);
-
 
     const onSubmit = async (data: PlanFormValues) => {
         if (!user || !user.uid) {
@@ -166,7 +153,7 @@ export default function NewInterviewPlanPage() {
                             </div>
                             <div>
                                 <Label htmlFor="numberOfQuestions">Number of Questions</Label>
-                                <Input id="numberOfQuestions" type="number" {...form.register('numberOfQuestions')} readOnly className="bg-muted/50" />
+                                <Input id="numberOfQuestions" type="number" {...form.register('numberOfQuestions')} />
                                 {form.formState.errors.numberOfQuestions && <p className="text-destructive text-sm mt-1">{form.formState.errors.numberOfQuestions.message}</p>}
                             </div>
                             <div className="lg:col-span-2">
