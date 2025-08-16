@@ -221,7 +221,7 @@ export default function JobIntelligencePage() {
                     </AccordionTrigger>
                      <AccordionContent>
                         <CardContent>
-                            <MarketIntelligence jobRole={searchTerm} />
+                            <MarketIntelligence />
                         </CardContent>
                     </AccordionContent>
                  </Card>

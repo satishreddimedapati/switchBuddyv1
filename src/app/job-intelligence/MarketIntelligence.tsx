@@ -21,13 +21,10 @@ function LoadingSkeleton() {
     )
 }
 
-interface MarketIntelligenceProps {
-    jobRole: string;
-}
-
-export function MarketIntelligence({ jobRole }: MarketIntelligenceProps) {
+export function MarketIntelligence() {
+    const [jobRole, setJobRole] = useState('');
     const [companyName, setCompanyName] = useState('');
-    const [location, setLocation] = useState('Bangalore');
+    const [location, setLocation] = useState('');
     const [result, setResult] = useState<GetMarketIntelligenceOutput | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isGenerating, startTransition] = useTransition();
@@ -53,10 +50,13 @@ export function MarketIntelligence({ jobRole }: MarketIntelligenceProps) {
     return (
         <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <Input placeholder="Enter job role..." value={jobRole} onChange={(e) => setJobRole(e.target.value)} />
                 <Input placeholder="Enter company name..." value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
-                <Input placeholder="Enter location..." value={location} onChange={(e) => setLocation(e.target.value)} />
-                <Button onClick={handleGenerate} disabled={isGenerating || !companyName || !location}>
-                     {isGenerating ? <Skeleton className="h-full w-full" /> : <><Search className="mr-2"/> Analyze</>}
+                <Input placeholder="Location, e.g. Bangalore, Hyderabad" value={location} onChange={(e) => setLocation(e.target.value)} />
+            </div>
+             <div className="flex justify-end">
+                <Button onClick={handleGenerate} disabled={isGenerating || !jobRole || !companyName || !location} className="w-full sm:w-auto">
+                     {isGenerating ? <Skeleton className="h-full w-full" /> : <><Search className="mr-2"/> Analyze Market</>}
                 </Button>
             </div>
              {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
