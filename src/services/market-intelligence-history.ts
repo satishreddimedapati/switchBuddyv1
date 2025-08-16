@@ -16,21 +16,21 @@ export async function addSearchToHistory(
     }
 
     try {
-        // Deeply sanitize the AI output to ensure it's a plain object for Firestore.
-        // This is the most robust way to fix the serialization errors.
+        // The AI can return complex, non-extensible objects. Firestore requires plain JS objects.
+        // The only guaranteed way to fix this is to manually reconstruct the entire object.
         const intelResult = searchData.intelResult;
         const cleanIntelResult: GetMarketIntelligenceOutput = {
             growthPath: intelResult.growthPath.map(p => ({ role: p.role, salaryRange: p.salaryRange })),
-            skillsInDemand: [...intelResult.skillsInDemand],
+            skillsInDemand: Array.from(intelResult.skillsInDemand),
             locationComparison: { commentary: intelResult.locationComparison.commentary },
-            topCompaniesHiring: [...intelResult.topCompaniesHiring],
+            topCompaniesHiring: Array.from(intelResult.topCompaniesHiring),
             alumniInsights: { 
                 avgTenure: intelResult.alumniInsights.avgTenure,
-                careerSwitches: [...intelResult.alumniInsights.careerSwitches] 
+                careerSwitches: Array.from(intelResult.alumniInsights.careerSwitches)
             },
             interviewPrep: {
                 difficultyRating: intelResult.interviewPrep.difficultyRating,
-                commonQuestionCategories: [...intelResult.interviewPrep.commonQuestionCategories]
+                commonQuestionCategories: Array.from(intelResult.interviewPrep.commonQuestionCategories)
             },
             applicationStrategy: {
                 bestTimeToApply: intelResult.applicationStrategy.bestTimeToApply,
