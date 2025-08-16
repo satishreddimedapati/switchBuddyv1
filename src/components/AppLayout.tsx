@@ -33,6 +33,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from './ui/button';
+import { ViewModeToggle } from './ViewModeToggle';
 
 const navItems = [
   { href: '/', icon: Home, label: 'Dashboard' },
@@ -53,7 +54,7 @@ function AppHeader() {
               <span className="sr-only">Toggle navigation menu</span>
             </SidebarTrigger>
             <div className="w-full flex-1">
-              {/* Optional: Add search or other header items here */}
+              <ViewModeToggle />
             </div>
              <UserAvatar />
         </header>
@@ -123,6 +124,9 @@ function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                  </SidebarMenu>
+                 <div className="p-2">
+                    <ViewModeToggle />
+                 </div>
             </div>
             <div className="flex items-center gap-3 p-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-1 group-data-[collapsible=icon]:size-10">
               <UserAvatar />

@@ -65,6 +65,15 @@
     --sidebar-border: 215 27.9% 16.9%;
     --sidebar-ring: 207 88% 68%;
   }
+
+  /* Force view mode for testing */
+  .force-mobile {
+    width: 375px !important;
+    margin: auto !important;
+  }
+  .force-desktop {
+    width: 100% !important;
+  }
 }
 
 @layer base {
