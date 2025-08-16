@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { useState, useActionState, useEffect } from "react";
-import { useFormStatus } from 'react-dom';
+import { useState, useTransition } from "react";
 import { handleAnalysis, type FormState } from "../resume-tailor/actions";
 import { Briefcase, Building, Cpu, FileText, Linkedin, Loader2, MapPin, Search, Wand2, ThumbsUp, ThumbsDown, DollarSign, Calculator, History, MessageSquare, Copy, Lightbulb, HelpCircle, Bot, Video, Save } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -16,152 +15,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { MarketIntelligence } from "./MarketIntelligence";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { GenerateInterviewPlanOutput, GenerateInterviewPlanOutputSchema } from "@/lib/types";
-import { useAuth } from "@/lib/auth";
-import { addInterviewPlan } from "@/services/interview-plans";
-import { useRouter } from "next/navigation";
+import { InterviewPlanForm } from "./InterviewPlanForm";
 
-
-function SubmitButton() {
-    const { pending } = useFormStatus();
-    return (
-        <Button type="submit" name="action" value="analyze" disabled={pending} className="w-full">
-            {pending ? (
-                <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Analyzing...
-                </>
-            ) : (
-                <>
-                    <Wand2 className="mr-2 h-4 w-4" />
-                    Analyze My Fit
-                </>
-            )}
-        </Button>
-    )
-}
-
-type FilterType = 'time' | 'location';
-interface Filter {
-    label: string;
-    type: FilterType;
-    value: string;
-    paramName: 'f_TPR' | 'location';
-}
-
-const smartFilters: Filter[] = [
-    { label: "Last 24h", type: 'time', value: 'r86400', paramName: 'f_TPR' },
-    { label: "Last 7 days", type: 'time', value: 'r604800', paramName: 'f_TPR' },
-    { label: "Hyderabad", type: 'location', value: 'Hyderabad, Telangana, India', paramName: 'location' },
-    { label: "Bangalore", type: 'location', value: 'Bengaluru, Karnataka, India', paramName: 'location' },
-];
-
-function InterviewPlanForm({ planData, onPlanCreated }: { planData: GenerateInterviewPlanOutput, onPlanCreated: () => void }) {
-    const { user } = useAuth();
-    const router = useRouter();
-    const { toast } = useToast();
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const form = useForm({
-        resolver: zodResolver(GenerateInterviewPlanOutputSchema),
-        defaultValues: {
-            ...planData,
-            questions: planData.questions.join('\n'), // Pre-format for textarea
-        }
-    });
-
-    useEffect(() => {
-        form.reset({
-            ...planData,
-            questions: planData.questions.join('\n'),
-        });
-    }, [planData, form]);
-
-    const onSubmit = async (data: any) => {
-         if (!user) {
-            toast({ title: "Error", description: "You must be logged in to create a plan.", variant: "destructive" });
-            return;
-        }
-        setIsSubmitting(true);
-        try {
-            const planToSave = {
-                userId: user.uid,
-                topic: data.topic,
-                difficulty: data.difficulty,
-                durationMinutes: data.durationMinutes || 30,
-                numberOfQuestions: data.questions.split('\n').filter((q: string) => q.trim() !== '').length,
-                totalInterviews: data.totalInterviews || 10,
-                completedInterviews: 0,
-            };
-            await addInterviewPlan(planToSave);
-            toast({ title: "Success!", description: "Interview plan created. Redirecting to Interview Prep..." });
-            onPlanCreated();
-            router.push('/interview-prep');
-        } catch (error) {
-            console.error("Failed to create plan", error);
-            toast({ title: "Error", description: "Could not create the interview plan.", variant: "destructive" });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-    
-    return (
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <Label htmlFor="plan-topic">Topic</Label>
-                    <Input id="plan-topic" {...form.register('topic')} />
-                </div>
-                <div>
-                    <Label htmlFor="plan-difficulty">Difficulty</Label>
-                    <Controller
-                        control={form.control}
-                        name="difficulty"
-                        render={({ field }) => (
-                            <Select onValueChange={field.onChange} value={field.value}>
-                                <SelectTrigger id="plan-difficulty"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Easy">Easy</SelectItem>
-                                    <SelectItem value="Medium">Medium</SelectItem>
-                                    <SelectItem value="Hard">Hard</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        )}
-                    />
-                </div>
-            </div>
-             <div>
-                <Label>Predicted Questions</Label>
-                <Textarea
-                    {...form.register('questions')}
-                    rows={6}
-                    className="bg-muted/50"
-                />
-                <p className="text-xs text-muted-foreground mt-1">You can edit these questions before creating the plan.</p>
-             </div>
-             <div className="flex justify-end">
-                <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? <Loader2 className="animate-spin" /> : <Save />}
-                    Create Plan & Go to Prep
-                </Button>
-            </div>
-        </form>
-    );
-}
 
 export default function JobIntelligencePage() {
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeFilters, setActiveFilters] = useState<Filter[]>([]);
+    const [activeFilters, setActiveFilters] = useState<{label: string; type: 'time' | 'location'; value: string; paramName: 'f_TPR' | 'location'}[]>([]);
     const { toast } = useToast();
+    
+    const [isAnalyzing, startAnalysisTransition] = useTransition();
+    const [analysisState, setAnalysisState] = useState<FormState | null>(null);
 
-    const initialState: FormState = { message: '' };
-    const [state, formAction] = useActionState(handleAnalysis, initialState);
-
-    const toggleFilter = (filter: Filter) => {
+    const toggleFilter = (filter: {label: string; type: 'time' | 'location'; value: string; paramName: 'f_TPR' | 'location'}) => {
         setActiveFilters(prev => {
             const isAlreadyActive = prev.some(f => f.label === filter.label);
             if (isAlreadyActive) {
@@ -214,13 +80,16 @@ export default function JobIntelligencePage() {
             title: "Copied to clipboard!",
         })
     }
-    
-    const handlePlanCreated = () => {
-        // This function will be called when the plan is created.
-        // We can use this to clear the analysis state if needed.
-        // For now, we just need it to exist.
-    }
 
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        startAnalysisTransition(async () => {
+            setAnalysisState(null); // Clear previous results
+            const result = await handleAnalysis({ message: '' }, formData);
+            setAnalysisState(result);
+        });
+    };
 
     return (
       <div className="flex flex-col gap-8">
@@ -264,7 +133,7 @@ export default function JobIntelligencePage() {
                             </div>
                              <div className="flex flex-wrap gap-2 items-center">
                                 <span className="text-sm font-medium">Quick Filters:</span>
-                                {smartFilters.map(filter => (
+                                {[{ label: "Last 24h", type: 'time' as const, value: 'r86400', paramName: 'f_TPR' as const }, { label: "Last 7 days", type: 'time' as const, value: 'r604800', paramName: 'f_TPR' as const }, { label: "Hyderabad", type: 'location' as const, value: 'Hyderabad, Telangana, India', paramName: 'location' as const }, { label: "Bangalore", type: 'location' as const, value: 'Bengaluru, Karnataka, India', paramName: 'location' as const }].map(filter => (
                                     <Badge 
                                         key={filter.label} 
                                         variant={activeFilters.some(f => f.label === filter.label) ? 'default' : 'secondary'}
@@ -296,7 +165,7 @@ export default function JobIntelligencePage() {
                     </AccordionTrigger>
                      <AccordionContent>
                         <CardContent>
-                            <form action={formAction} className="space-y-4">
+                            <form onSubmit={handleSubmit} className="space-y-4">
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="resume">Your Resume</Label>
@@ -334,31 +203,43 @@ export default function JobIntelligencePage() {
                                      </CardContent>
                                 </Card>
                                  <div className="flex justify-end">
-                                    <SubmitButton />
+                                    <Button type="submit" disabled={isAnalyzing} className="w-full">
+                                        {isAnalyzing ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Analyzing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Wand2 className="mr-2 h-4 w-4" />
+                                                Analyze My Fit
+                                            </>
+                                        )}
+                                    </Button>
                                 </div>
                             </form>
-                             {state.message === "An unexpected error occurred. Please try again." && (
+                             {analysisState?.message === "An unexpected error occurred. Please try again." && (
                                 <Alert variant="destructive" className="mt-4">
                                     <AlertTitle>Error</AlertTitle>
-                                    <AlertDescription>{state.message}</AlertDescription>
+                                    <AlertDescription>{analysisState.message}</AlertDescription>
                                 </Alert>
                             )}
 
                              {/* Results Dashboard */}
-                            {(state.analysis) && (
+                            {(analysisState?.analysis) && (
                                 <div className="mt-6 space-y-6">
                                     <Card>
                                         <CardHeader>
                                             <CardTitle>Analysis Complete</CardTitle>
                                             <div className="flex items-center gap-4 text-sm pt-2">
                                                 <div className="flex flex-col items-center">
-                                                    <span className="text-2xl font-bold text-primary">{state.analysis.fitScore}%</span>
+                                                    <span className="text-2xl font-bold text-primary">{analysisState.analysis.fitScore}%</span>
                                                     <span className="text-muted-foreground">Fit Score</span>
                                                 </div>
                                                 <Separator orientation="vertical" className="h-10"/>
                                                 <div>
-                                                    <p><strong>Skills Match:</strong> {state.analysis.breakdown.skillsMatch}</p>
-                                                    <p><strong>Experience Match:</strong> {state.analysis.breakdown.experienceMatch}</p>
+                                                    <p><strong>Skills Match:</strong> {analysisState.analysis.breakdown.skillsMatch}</p>
+                                                    <p><strong>Experience Match:</strong> {analysisState.analysis.breakdown.experienceMatch}</p>
                                                 </div>
                                             </div>
                                         </CardHeader>
@@ -379,17 +260,17 @@ export default function JobIntelligencePage() {
                                                             <div>
                                                                 <h4 className="font-semibold mb-2">Missing Keywords</h4>
                                                                 <div className="flex flex-wrap gap-2">
-                                                                    {state.analysis.missingSkills.map(skill => <Badge key={skill} variant="secondary">{skill}</Badge>)}
+                                                                    {analysisState.analysis.missingSkills.map(skill => <Badge key={skill} variant="secondary">{skill}</Badge>)}
                                                                 </div>
                                                             </div>
                                                             <Separator/>
                                                             <div>
                                                                 <h4 className="font-semibold mb-2">Tailored CV</h4>
                                                                 <pre className="bg-muted/50 p-4 rounded-md whitespace-pre-wrap font-body text-sm leading-relaxed max-h-96 overflow-auto">
-                                                                    {state.analysis.tailoredResume}
+                                                                    {analysisState.analysis.tailoredResume}
                                                                 </pre>
                                                                 <div className="flex justify-end mt-4">
-                                                                    <Button variant="outline" onClick={() => handleCopyToClipboard(state.analysis?.tailoredResume)}>
+                                                                    <Button variant="outline" onClick={() => handleCopyToClipboard(analysisState.analysis?.tailoredResume)}>
                                                                     <Copy className="mr-2" /> Copy CV Text
                                                                     </Button>
                                                                 </div>
@@ -400,7 +281,7 @@ export default function JobIntelligencePage() {
                                             </Card>
                                         </AccordionItem>
                                         
-                                        {state.recruiterMessage && (
+                                        {analysisState.recruiterMessage && (
                                             <AccordionItem value="recruiter-message">
                                             <Card>
                                                 <AccordionTrigger className="p-6">
@@ -412,12 +293,12 @@ export default function JobIntelligencePage() {
                                                 <AccordionContent>
                                                     <CardContent>
                                                         <Textarea
-                                                            defaultValue={state.recruiterMessage}
+                                                            defaultValue={analysisState.recruiterMessage}
                                                             rows={15}
                                                             className="bg-muted/50 p-4 rounded-md whitespace-pre-wrap font-body text-sm leading-relaxed max-h-96 overflow-auto"
                                                         />
                                                         <div className="flex justify-end mt-4">
-                                                            <Button variant="outline" onClick={() => handleCopyToClipboard(state.recruiterMessage)}>
+                                                            <Button variant="outline" onClick={() => handleCopyToClipboard(analysisState.recruiterMessage)}>
                                                                 <Copy className="mr-2" /> Copy Message
                                                             </Button>
                                                         </div>
@@ -426,7 +307,7 @@ export default function JobIntelligencePage() {
                                             </Card>
                                             </AccordionItem>
                                         )}
-                                        {state.companyInsights && (
+                                        {analysisState.companyInsights && (
                                             <AccordionItem value="company-insights">
                                                 <Card>
                                                     <AccordionTrigger className="p-6">
@@ -437,18 +318,18 @@ export default function JobIntelligencePage() {
                                                     </AccordionTrigger>
                                                     <AccordionContent>
                                                         <CardContent className="space-y-4">
-                                                            <div><h4 className="font-semibold">Culture</h4><p className="text-muted-foreground">{state.companyInsights.culture}</p></div>
-                                                            <div><h4 className="font-semibold">Interview Process</h4><p className="text-muted-foreground">{state.companyInsights.interviewProcess}</p></div>
+                                                            <div><h4 className="font-semibold">Culture</h4><p className="text-muted-foreground">{analysisState.companyInsights.culture}</p></div>
+                                                            <div><h4 className="font-semibold">Interview Process</h4><p className="text-muted-foreground">{analysisState.companyInsights.interviewProcess}</p></div>
                                                             <div className="grid grid-cols-2 gap-4">
-                                                                <div><h4 className="font-semibold text-green-600">Pros</h4><ul className="list-disc pl-5 text-muted-foreground">{(state.companyInsights.pros || []).map(pro => <li key={pro}>{pro}</li>)}</ul></div>
-                                                                <div><h4 className="font-semibold text-red-600">Cons</h4><ul className="list-disc pl-5 text-muted-foreground">{(state.companyInsights.cons || []).map(con => <li key={con}>{con}</li>)}</ul></div>
+                                                                <div><h4 className="font-semibold text-green-600">Pros</h4><ul className="list-disc pl-5 text-muted-foreground">{(analysisState.companyInsights.pros || []).map(pro => <li key={pro}>{pro}</li>)}</ul></div>
+                                                                <div><h4 className="font-semibold text-red-600">Cons</h4><ul className="list-disc pl-5 text-muted-foreground">{(analysisState.companyInsights.cons || []).map(con => <li key={con}>{con}</li>)}</ul></div>
                                                             </div>
                                                         </CardContent>
                                                     </AccordionContent>
                                                 </Card>
                                             </AccordionItem>
                                         )}
-                                         {state.interviewPlan && (
+                                         {analysisState.interviewPlan && (
                                             <AccordionItem value="interview-plan">
                                                 <Card>
                                                     <AccordionTrigger className="p-6">
@@ -459,13 +340,13 @@ export default function JobIntelligencePage() {
                                                     </AccordionTrigger>
                                                     <AccordionContent>
                                                          <CardContent>
-                                                            <InterviewPlanForm planData={state.interviewPlan} onPlanCreated={handlePlanCreated} />
+                                                            <InterviewPlanForm planData={analysisState.interviewPlan} />
                                                         </CardContent>
                                                     </AccordionContent>
                                                 </Card>
                                             </AccordionItem>
                                         )}
-                                        {state.interviewQuestions && (
+                                        {analysisState.interviewQuestions && (
                                             <AccordionItem value="interview-questions">
                                                 <Card>
                                                     <AccordionTrigger className="p-6">
@@ -477,14 +358,14 @@ export default function JobIntelligencePage() {
                                                     <AccordionContent>
                                                         <CardContent>
                                                             <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
-                                                                {(state.interviewQuestions.interviewQuestions || []).map(q => <li key={q}>{q}</li>)}
+                                                                {(analysisState.interviewQuestions.interviewQuestions || []).map(q => <li key={q}>{q}</li>)}
                                                             </ul>
                                                         </CardContent>
                                                     </AccordionContent>
                                                 </Card>
                                             </AccordionItem>
                                         )}
-                                        {state.salaryBenchmark && (
+                                        {analysisState.salaryBenchmark && (
                                             <AccordionItem value="salary-benchmark">
                                                 <Card>
                                                     <AccordionTrigger className="p-6">
@@ -498,10 +379,10 @@ export default function JobIntelligencePage() {
                                                             <Alert>
                                                                 <Bot className="h-4 w-4" />
                                                                 <AlertTitle className="text-xl font-bold text-primary">
-                                                                    {state.salaryBenchmark.salaryRange}
+                                                                    {analysisState.salaryBenchmark.salaryRange}
                                                                 </AlertTitle>
                                                                 <AlertDescription>
-                                                                    {state.salaryBenchmark.commentary}
+                                                                    {analysisState.salaryBenchmark.commentary}
                                                                 </AlertDescription>
                                                             </Alert>
                                                         </CardContent>
@@ -536,5 +417,5 @@ export default function JobIntelligencePage() {
             
         </Accordion>
       </div>
-  );
+    );
 }

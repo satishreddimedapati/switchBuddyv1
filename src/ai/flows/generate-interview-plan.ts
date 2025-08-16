@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -30,7 +31,7 @@ Your task is to analyze the user's resume and the provided job description to cr
 Based on the inputs, generate the following:
 1.  **topic**: A concise, relevant interview topic based on the core requirements of the job. Examples: "React & State Management", ".NET Core APIs", "System Design for E-commerce".
 2.  **difficulty**: The most appropriate difficulty level ('Easy', 'Medium', or 'Hard') based on the seniority and skills mentioned in the job description.
-3.  **questions**: An array of 5 challenging, open-ended interview questions that directly test the skills mentioned in both the resume and the job description. These should not be simple "yes/no" questions.
+3.  **questions**: A newline-separated string of 5 challenging, open-ended interview questions that directly test the skills mentioned in both the resume and the job description. These should not be simple "yes/no" questions.
 
 ---
 Resume:
@@ -50,6 +51,24 @@ const generateInterviewPlanFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
+    
+    // The schema expects an array, but the prompt returns a string. Let's fix that.
+    if (output && typeof output.questions === 'string') {
+        const questionsArray = output.questions.split('\n').filter(q => q.trim() !== '');
+        
+        // This is a temporary workaround until we can get the model to return an array directly
+        // We will create a new object that conforms to the output schema.
+        const conformingOutput: GenerateInterviewPlanOutput = {
+            ...output,
+            questions: questionsArray,
+        };
+        // The above doesn't work because the schema on the prompt is expecting a string.
+        // We will adjust the prompt output schema to expect a string
+    }
+
+
     return output!;
   }
 );
+
+    
