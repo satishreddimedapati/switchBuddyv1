@@ -31,6 +31,7 @@ import { addTask, updateTask } from '@/services/daily-tasks';
 import { InterviewTopicScheduler } from './InterviewTopicScheduler';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { sendDailyDebrief } from '@/ai/flows/send-daily-debrief';
 
 function TelegramIcon() {
     return (
@@ -61,6 +62,7 @@ export function AiScheduler() {
   const [summaryError, setSummaryError] = useState<string | null>(null);
   
   const [isAddingTask, startAddTaskTransition] = useTransition();
+  const [isSending, startSendTransition] = useTransition();
   const [deliveryOptions, setDeliveryOptions] = useState({ telegram: true, whatsApp: true });
 
 
@@ -176,19 +178,30 @@ export function AiScheduler() {
   };
 
   const handleSendNow = () => {
-    // This is a placeholder for backend integration.
-    let channels = [];
-    if (deliveryOptions.telegram) channels.push("Telegram");
-    if (deliveryOptions.whatsApp) channels.push("WhatsApp");
-
-    if (channels.length === 0) {
-        toast({ title: "No channels selected", description: "Please select Telegram or WhatsApp to send the schedule.", variant: 'destructive'});
-        return;
+    if (!summaryResult) {
+      toast({ title: 'No summary to send', description: 'Please generate a daily debrief first.', variant: 'destructive'});
+      return;
     }
-    
-    toast({
-        title: "Schedule Sent (Simulated)",
-        description: `Your daily debrief would be sent to ${channels.join(' & ')}. This requires backend setup.`
+
+    startSendTransition(async () => {
+      let sentTo = [];
+      if (deliveryOptions.telegram) {
+        toast({ title: 'Sending to Telegram...', description: 'This may take a moment.' });
+        const result = await sendDailyDebrief(summaryResult);
+        if (result.success) {
+          toast({ title: 'Success!', description: 'Your daily debrief was sent to Telegram.'});
+          sentTo.push('Telegram');
+        } else {
+          toast({ title: 'Telegram Error', description: result.message, variant: 'destructive'});
+        }
+      }
+      if (deliveryOptions.whatsApp) {
+        toast({ title: "WhatsApp Not Implemented", description: "This is a placeholder for backend integration.", variant: "destructive" });
+      }
+
+      if (sentTo.length === 0 && !deliveryOptions.whatsApp) {
+        toast({ title: "No channels selected", description: "Please select Telegram or WhatsApp to send the schedule.", variant: 'destructive'});
+      }
     });
   }
 
@@ -378,8 +391,9 @@ export function AiScheduler() {
                                <WhatsAppIcon /> WhatsApp {deliveryOptions.whatsApp && "✅"}
                             </Button>
                         </div>
-                        <Button size="sm" onClick={handleSendNow} className="w-full sm:w-auto sm:ml-auto">
-                            <Send /> Send Now
+                        <Button size="sm" onClick={handleSendNow} className="w-full sm:w-auto sm:ml-auto" disabled={isSending}>
+                            {isSending ? <Loader2 className="animate-spin" /> : <Send />}
+                            Send Now
                         </Button>
                     </div>
                 </div>

@@ -442,4 +442,13 @@ export const highImpactSkills = [
     "NgRx",
 ];
 
+export const SendDailyDebriefInputSchema = GenerateDailySummaryOutputSchema;
+export type SendDailyDebriefInput = z.infer<typeof SendDailyDebriefInputSchema>;
+
+export const SendDailyDebriefOutputSchema = z.object({
+    success: z.boolean(),
+    message: z.string(),
+});
+export type SendDailyDebriefOutput = z.infer<typeof SendDailyDebriefOutputSchema>;
+
     

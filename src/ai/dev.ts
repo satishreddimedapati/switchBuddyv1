@@ -20,3 +20,4 @@ import '@/ai/flows/get-market-intelligence.ts';
 import '@/ai/flows/get-personalized-salary-estimate.ts';
 import '@/ai/flows/generate-recruiter-message.ts';
 import '@/ai/flows/generate-interview-plan.ts';
+import '@/ai/flows/send-daily-debrief.ts';
