@@ -20,7 +20,7 @@ import {
 import {
   Home,
   Columns3,
-  FileText,
+  Search,
   MessageSquareQuote,
   LogOut,
   PanelLeft,
@@ -39,7 +39,7 @@ const navItems = [
   { href: '/', icon: Home, label: 'Dashboard' },
   { href: '/tracker', icon: Columns3, label: 'Job Tracker' },
   { href: '/daily-tracker', icon: CalendarCheck, label: 'Daily Tracker' },
-  { href: '/resume-tailor', icon: FileText, label: 'Resume Tailor' },
+  { href: '/job-intelligence', icon: Search, label: 'Job Intelligence' },
   { href: '/interview-prep', icon: MessageSquareQuote, label: 'Interview Prep' },
 ];
 
@@ -102,7 +102,7 @@ function AppSidebar() {
                 <SidebarMenuItem key={item.href}>
                   <Link href={item.href}>
                     <SidebarMenuButton
-                      isActive={pathname === item.href}
+                      isActive={pathname.startsWith(item.href) && (item.href !== '/' || pathname === '/')}
                       tooltip={item.label}
                       asChild={false}
                     >
