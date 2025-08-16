@@ -16,11 +16,11 @@ export async function addSearchToHistory(
     }
 
     try {
-        // Sanitize the AI output to ensure it's a plain object
+        // Sanitize the AI output by creating a plain object from the results.
+        // This is the most robust way to ensure serializability for Firestore.
         const cleanIntelResult = JSON.parse(JSON.stringify(searchData.intelResult));
         const cleanSalaryResult = searchData.salaryResult ? JSON.parse(JSON.stringify(searchData.salaryResult)) : null;
 
-        // Manually construct the object to ensure no undefined values are passed.
         const dataToSave = {
             userId: userId,
             createdAt: serverTimestamp(),
@@ -28,7 +28,7 @@ export async function addSearchToHistory(
                 jobRole: searchData.input.jobRole,
                 companyName: searchData.input.companyName,
                 location: searchData.input.location,
-                yearsOfExperience: searchData.input.yearsOfExperience ?? null,
+                yearsOfExperience: searchData.input.yearsOfExperience ?? null
             },
             intelResult: cleanIntelResult,
             salaryResult: cleanSalaryResult,
