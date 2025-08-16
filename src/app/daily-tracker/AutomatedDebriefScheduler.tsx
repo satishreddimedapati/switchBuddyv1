@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -23,7 +24,7 @@ export function AutomatedDebriefScheduler() {
         const checkAndRun = () => {
             const now = new Date();
             const targetHour = 14;
-            const targetMinute = 45;
+            const targetMinute = 50;
             
             // For this simulation, we'll run it once shortly after the component mounts
             // In a real app with a cron job, you would check the time.

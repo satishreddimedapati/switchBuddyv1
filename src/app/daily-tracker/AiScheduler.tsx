@@ -24,7 +24,7 @@ import {collection, onSnapshot, query, where} from 'firebase/firestore';
 import {format as formatDateFns, parse} from 'date-fns';
 import {useEffect, useState, useTransition} from 'react';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
-import {BrainCircuit, CheckCircle2, Coffee, Lightbulb, Loader2, Plus, Sparkles, Target, CalendarPlus} from 'lucide-react';
+import {BrainCircuit, CheckCircle2, Coffee, Lightbulb, Loader2, Plus, Sparkles, Target, CalendarPlus, Send} from 'lucide-react';
 import {Skeleton} from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { addTask, updateTask } from '@/services/daily-tasks';
@@ -32,6 +32,9 @@ import { InterviewTopicScheduler } from './InterviewTopicScheduler';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { AutomatedDebriefScheduler } from './AutomatedDebriefScheduler';
+import { sendDailyDebrief } from '@/ai/flows/send-daily-debrief';
+import { Toggle } from '@/components/ui/toggle';
+
 
 export function AiScheduler() {
   const {user} = useAuth();
@@ -50,6 +53,9 @@ export function AiScheduler() {
   const [summaryError, setSummaryError] = useState<string | null>(null);
   
   const [isAddingTask, startAddTaskTransition] = useTransition();
+  
+  const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -160,6 +166,30 @@ export function AiScheduler() {
         setSummaryError('An error occured while generating the summary.');
       }
     });
+  };
+
+  const handleSendNow = async () => {
+    if (!summaryResult) {
+      toast({ title: 'No summary available', description: 'Please generate a debrief first.', variant: 'destructive' });
+      return;
+    }
+    
+    setIsSending(true);
+    setSendError(null);
+
+    try {
+        const result = await sendDailyDebrief(summaryResult);
+        if (result.success) {
+            toast({ title: 'Success!', description: 'Your daily debrief was sent to Telegram.' });
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (err: any) {
+        setSendError(err.message || "An unknown error occurred.");
+        toast({ title: 'Error Sending Message', description: err.message, variant: 'destructive' });
+    } finally {
+        setIsSending(false);
+    }
   };
 
   const getTaskIcon = (taskTitle: string) => {
@@ -342,6 +372,25 @@ export function AiScheduler() {
             </div>
           )}
         </CardContent>
+         {summaryResult && (
+          <CardFooter className="flex-col items-start gap-4 pt-4 border-t">
+              <div className="text-left">
+                  <h3 className="font-semibold">🛎️ Send me this schedule:</h3>
+                  <p className="text-xs text-muted-foreground">Automated daily sending is active.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                 <Button onClick={handleSendNow} disabled={isSending}>
+                    {isSending ? <Loader2 className="animate-spin" /> : <Send />}
+                     Send to Telegram Now
+                 </Button>
+              </div>
+              {sendError && (
+                  <Alert variant="destructive" className="mt-2">
+                    <AlertDescription>{sendError}</AlertDescription>
+                  </Alert>
+              )}
+          </CardFooter>
+        )}
       </Card>
     </div>
   );
