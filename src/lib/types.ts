@@ -262,6 +262,19 @@ export type NetworkingActivity = z.infer<typeof NetworkingActivitySchema>;
 
 // JOB INTELLIGENCE SCHEMAS
 
+export const GenerateInterviewPlanInputSchema = z.object({
+    resume: z.string().describe("The user's resume as plain text."),
+    jobDescription: z.string().describe("The job description as plain text."),
+});
+export type GenerateInterviewPlanInput = z.infer<typeof GenerateInterviewPlanInputSchema>;
+
+export const GenerateInterviewPlanOutputSchema = z.object({
+    topic: z.string().describe("The suggested topic for the interview plan."),
+    difficulty: z.enum(['Easy', 'Medium', 'Hard']).describe("The suggested difficulty for the plan."),
+    questions: z.array(z.string()).describe("An array of 5 suggested interview questions.")
+});
+export type GenerateInterviewPlanOutput = z.infer<typeof GenerateInterviewPlanOutputSchema>;
+
 export const GetCompanyInsightsInputSchema = z.object({
   companyName: z.string().describe('The name of the company to get insights for.'),
 });

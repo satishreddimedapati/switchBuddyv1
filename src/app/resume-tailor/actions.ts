@@ -6,6 +6,7 @@ import { generateRecruiterMessage } from "@/ai/flows/generate-recruiter-message"
 import { getCompanyInsights, GetCompanyInsightsOutput } from "@/ai/flows/get-company-insights";
 import { getSalaryBenchmark, GetSalaryBenchmarkOutput } from "@/ai/flows/get-salary-benchmark";
 import { generateInterviewQuestions, GenerateInterviewQuestionsOutput } from "@/ai/flows/generate-interview-questions";
+import { generateInterviewPlan, GenerateInterviewPlanOutput } from "@/ai/flows/generate-interview-plan";
 import { z } from "zod";
 import { format } from "date-fns";
 import type { TailorResumeOutput } from "@/lib/types";
@@ -28,6 +29,7 @@ export type FormState = {
   companyInsights?: GetCompanyInsightsOutput;
   salaryBenchmark?: GetSalaryBenchmarkOutput;
   interviewQuestions?: GenerateInterviewQuestionsOutput;
+  interviewPlan?: GenerateInterviewPlanOutput;
   error?: boolean;
 };
 
@@ -44,17 +46,6 @@ function extractJobTitle(jd: string): string {
     }
     return "the role";
 }
-
-function extractLocation(jd: string): string | undefined {
-    const lines = jd.split('\n');
-    for (const line of lines) {
-        if (line.toLowerCase().includes('location:')) {
-            return line.split(':')[1].trim();
-        }
-    }
-    return undefined;
-}
-
 
 export async function handleAnalysis(
   prevState: FormState,
@@ -82,10 +73,8 @@ export async function handleAnalysis(
   try {
     const promises = [];
     
-    // Core analysis
     promises.push(tailorResume({ resume, jobDescription }));
     
-    // Recruiter Message
     if (userName && userContactInfo && companyName) {
         promises.push(generateRecruiterMessage({ 
             resume, 
@@ -94,28 +83,27 @@ export async function handleAnalysis(
             currentDate: format(new Date(), 'MMMM d, yyyy'),
         }));
     } else {
-        promises.push(Promise.resolve(null)); // Placeholder
+        promises.push(Promise.resolve(null)); 
     }
     
-    // Company Insights
     if (companyName) {
         promises.push(getCompanyInsights({ companyName }));
     } else {
-        promises.push(Promise.resolve(null)); // Placeholder
+        promises.push(Promise.resolve(null));
     }
 
-    // Salary Benchmark
     if (location) {
          promises.push(getSalaryBenchmark({ jobRole: jobTitle, location }));
     } else {
         promises.push(Promise.resolve(null));
     }
 
-    // Interview Questions
     promises.push(generateInterviewQuestions({ jobDescription }));
+    
+    promises.push(generateInterviewPlan({ resume, jobDescription }));
 
 
-    const [analysisResult, messageResult, insightsResult, salaryResult, questionsResult] = await Promise.all(promises);
+    const [analysisResult, messageResult, insightsResult, salaryResult, questionsResult, planResult] = await Promise.all(promises);
 
     if (!analysisResult) {
         return { message: "Failed to get analysis from the AI.", error: true };
@@ -127,7 +115,8 @@ export async function handleAnalysis(
       recruiterMessage: messageResult?.recruiterMessage,
       companyInsights: insightsResult,
       salaryBenchmark: salaryResult,
-      interviewQuestions: questionsResult
+      interviewQuestions: questionsResult,
+      interviewPlan: planResult,
     };
 
   } catch (e) {

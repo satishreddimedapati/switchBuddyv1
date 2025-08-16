@@ -7,11 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
-import { useActionState } from 'react';
+import { useState, useActionState, useEffect } from "react";
 import { useFormStatus } from 'react-dom';
 import { handleAnalysis, type FormState } from "../resume-tailor/actions";
-import { Briefcase, Building, Cpu, FileText, Linkedin, Loader2, MapPin, Search, Wand2, ThumbsUp, ThumbsDown, DollarSign, Calculator, History, MessageSquare, Copy, Lightbulb, HelpCircle, Bot } from "lucide-react";
+import { Briefcase, Building, Cpu, FileText, Linkedin, Loader2, MapPin, Search, Wand2, ThumbsUp, ThumbsDown, DollarSign, Calculator, History, MessageSquare, Copy, Lightbulb, HelpCircle, Bot, Video, Save } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -19,6 +18,12 @@ import { MarketIntelligence } from "./MarketIntelligence";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { GenerateInterviewPlanOutputSchema } from "@/lib/types";
+import { useAuth } from "@/lib/auth";
+import { addInterviewPlan } from "@/services/interview-plans";
+import { useRouter } from "next/navigation";
 
 
 function SubmitButton() {
@@ -55,12 +60,110 @@ const smartFilters: Filter[] = [
     { label: "Bangalore", type: 'location', value: 'Bengaluru, Karnataka, India', paramName: 'location' },
 ];
 
+function InterviewPlanForm({ planData, onPlanCreated }: { planData: NonNullable<FormState['interviewPlan']>, onPlanCreated: () => void }) {
+    const { user } = useAuth();
+    const router = useRouter();
+    const { toast } = useToast();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const form = useForm({
+        resolver: zodResolver(GenerateInterviewPlanOutputSchema),
+        defaultValues: {
+            topic: planData.topic,
+            difficulty: planData.difficulty,
+            questions: planData.questions,
+            // Add defaults for fields not in the AI output
+            durationMinutes: 30, 
+            totalInterviews: 10,
+        }
+    });
+    
+    useEffect(() => {
+        form.reset(planData);
+    }, [planData, form]);
+
+    const onSubmit = async (data: any) => {
+         if (!user) {
+            toast({ title: "Error", description: "You must be logged in to create a plan.", variant: "destructive" });
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            const planToSave = {
+                userId: user.uid,
+                topic: data.topic,
+                difficulty: data.difficulty,
+                durationMinutes: data.durationMinutes || 30,
+                numberOfQuestions: data.questions.length,
+                totalInterviews: data.totalInterviews || 10,
+                completedInterviews: 0,
+            };
+            await addInterviewPlan(planToSave);
+            toast({ title: "Success!", description: "Interview plan created. Redirecting to Interview Prep..." });
+            onPlanCreated();
+            router.push('/interview-prep');
+        } catch (error) {
+            console.error("Failed to create plan", error);
+            toast({ title: "Error", description: "Could not create the interview plan.", variant: "destructive" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <Label htmlFor="plan-topic">Topic</Label>
+                    <Input id="plan-topic" {...form.register('topic')} />
+                </div>
+                <div>
+                    <Label htmlFor="plan-difficulty">Difficulty</Label>
+                    <Controller
+                        control={form.control}
+                        name="difficulty"
+                        render={({ field }) => (
+                            <Select onValueChange={field.onChange} value={field.value}>
+                                <SelectTrigger id="plan-difficulty"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Easy">Easy</SelectItem>
+                                    <SelectItem value="Medium">Medium</SelectItem>
+                                    <SelectItem value="Hard">Hard</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        )}
+                    />
+                </div>
+            </div>
+             <div>
+                <Label>Predicted Questions</Label>
+                <Textarea 
+                    {...form.register('questions')} 
+                    rows={6}
+                    className="bg-muted/50"
+                    // Since we are registering an array, we need to handle value conversion
+                    onChange={e => form.setValue('questions', e.target.value.split('\n'))}
+                    value={form.watch('questions')?.join('\n') || ''}
+                />
+                <p className="text-xs text-muted-foreground mt-1">You can edit these questions before creating the plan.</p>
+             </div>
+             <div className="flex justify-end">
+                <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="animate-spin" /> : <Save />}
+                    Create Plan & Go to Prep
+                </Button>
+            </div>
+        </form>
+    );
+}
+
+
 export default function JobIntelligencePage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [activeFilters, setActiveFilters] = useState<Filter[]>([]);
     const { toast } = useToast();
 
-    const initialState: FormState = { message: '', error: false };
+    const initialState: FormState = { message: '' };
     const [state, formAction] = useActionState(handleAnalysis, initialState);
 
     const toggleFilter = (filter: Filter) => {
@@ -115,6 +218,14 @@ export default function JobIntelligencePage() {
         toast({
             title: "Copied to clipboard!",
         })
+    }
+    
+    // This is a simple way to reset the analysis state.
+    // We can just clear the message which will hide the results.
+    const resetAnalysis = () => {
+        if (state.message) {
+            state.message = '';
+        }
     }
 
     return (
@@ -190,7 +301,7 @@ export default function JobIntelligencePage() {
                         </CardHeader>
                     </AccordionTrigger>
                      <AccordionContent>
-                         <CardContent>
+                        <CardContent>
                             <form action={formAction} className="space-y-4">
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
@@ -202,11 +313,11 @@ export default function JobIntelligencePage() {
                                         <Textarea id="jobDescription" name="jobDescription" placeholder="Paste the target job description here..." rows={8} required />
                                     </div>
                                 </div>
-                                <Card>
+                                 <Card>
                                     <CardHeader>
                                         <CardTitle className="text-base">Details for Analysis</CardTitle>
                                     </CardHeader>
-                                     <CardContent className="space-y-4">
+                                     <CardContent>
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                             <div>
                                                  <Label htmlFor="userName">Your Full Name</Label>
@@ -232,7 +343,7 @@ export default function JobIntelligencePage() {
                                     <SubmitButton />
                                 </div>
                             </form>
-                             {state.error && (
+                             {state.message === "An unexpected error occurred. Please try again." && (
                                 <Alert variant="destructive" className="mt-4">
                                     <AlertTitle>Error</AlertTitle>
                                     <AlertDescription>{state.message}</AlertDescription>
@@ -343,6 +454,23 @@ export default function JobIntelligencePage() {
                                                 </Card>
                                             </AccordionItem>
                                         )}
+                                         {state.interviewPlan && (
+                                            <AccordionItem value="interview-plan">
+                                                <Card>
+                                                    <AccordionTrigger className="p-6">
+                                                        <CardHeader className="p-0 text-left">
+                                                            <CardTitle className="flex items-center gap-2"><Video /> Automated Interview Prep</CardTitle>
+                                                            <CardDescription>Create a tailored practice plan with one click.</CardDescription>
+                                                        </CardHeader>
+                                                    </AccordionTrigger>
+                                                    <AccordionContent>
+                                                         <CardContent>
+                                                            <InterviewPlanForm planData={state.interviewPlan} onPlanCreated={resetAnalysis} />
+                                                        </CardContent>
+                                                    </AccordionContent>
+                                                </Card>
+                                            </AccordionItem>
+                                        )}
                                         {state.interviewQuestions && (
                                             <AccordionItem value="interview-questions">
                                                 <Card>
@@ -392,7 +520,7 @@ export default function JobIntelligencePage() {
                             )}
 
                         </CardContent>
-                    </AccordionContent>
+                     </AccordionContent>
                  </Card>
             </AccordionItem>
             
@@ -402,7 +530,7 @@ export default function JobIntelligencePage() {
                          <CardHeader className="p-0 text-left">
                             <CardTitle className="flex items-center gap-2"><Building/> Market Intelligence & Salary Calculator</CardTitle>
                             <CardDescription>Get insights on career paths, skills, top companies and a personalized salary estimate.</CardDescription>
-                        </CardHeader>
+                        </Header>
                     </AccordionTrigger>
                      <AccordionContent>
                         <CardContent>
