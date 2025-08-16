@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition } from "react";
@@ -7,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { getMarketIntelligence, GetMarketIntelligenceOutput } from "@/ai/flows/get-market-intelligence";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BarChart, Briefcase, Building, DollarSign, Gauge, GitBranch, Lightbulb, Search, TrendingUp, Users, Map, Star, Clock, BrainCircuit, CheckCircle } from "lucide-react";
+import { BarChart, Briefcase, Building, DollarSign, Gauge, GitBranch, Lightbulb, Search, TrendingUp, Users, Map, Star, Clock, BrainCircuit, CheckCircle, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 function LoadingSkeleton() {
