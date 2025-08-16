@@ -16,14 +16,18 @@ export async function addSearchToHistory(
     }
 
     try {
-        await addDoc(historyCollection, {
-            ...searchData,
+        // Construct the correct object to save to Firestore
+        const dataToSave = {
             userId,
             createdAt: serverTimestamp(),
-        });
+            input: searchData.input,
+            intelResult: searchData.intelResult,
+            salaryResult: searchData.salaryResult,
+        };
+        await addDoc(historyCollection, dataToSave);
     } catch (error) {
         console.error("Error saving search to history:", error);
-        // We can choose to fail silently or throw, for now, we log it.
+        throw new Error("Failed to save search data to Firestore.");
     }
 }
 
