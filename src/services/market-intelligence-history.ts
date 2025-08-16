@@ -19,16 +19,23 @@ export async function addSearchToHistory(
         // Sanitize the AI output to ensure it's a plain object
         const cleanIntelResult = JSON.parse(JSON.stringify(searchData.intelResult));
         const cleanSalaryResult = searchData.salaryResult ? JSON.parse(JSON.stringify(searchData.salaryResult)) : null;
-        
+
+        // Manually construct the object to ensure no undefined values are passed.
         const dataToSave = {
-            userId,
+            userId: userId,
             createdAt: serverTimestamp(),
-            input: searchData.input,
+            input: {
+                jobRole: searchData.input.jobRole,
+                companyName: searchData.input.companyName,
+                location: searchData.input.location,
+                yearsOfExperience: searchData.input.yearsOfExperience ?? null,
+            },
             intelResult: cleanIntelResult,
             salaryResult: cleanSalaryResult,
         };
-
+        
         await addDoc(historyCollection, dataToSave);
+
     } catch (error) {
         console.error("Error saving search to history:", error);
         throw new Error("Failed to save search data to Firestore.");
