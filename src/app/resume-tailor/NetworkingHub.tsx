@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Search, UserPlus, FileQuestion } from 'lucide-react';
+import { Loader2, Search, UserPlus, FileQuestion, Briefcase } from 'lucide-react';
 import type { HrContact, NetworkingActivity } from '@/lib/types';
 import { searchHrContacts, addHrContact } from '@/services/hr-contacts';
 import { getNetworkingActivities } from '@/services/networking-activities';
@@ -14,6 +14,7 @@ import { HrContactCard } from './HrContactCard';
 import { HrContactForm } from './HrContactForm';
 import { Timeline } from './Timeline';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 
 export function NetworkingHub() {
     const { user } = useAuth();
@@ -42,10 +43,25 @@ export function NetworkingHub() {
         setSearchTerm('');
     };
     
-    const generateLinkedInSearchUrl = (role: string) => {
+    const generateLinkedInPeopleSearchUrl = (role: string) => {
         const query = encodeURIComponent(`${role} recruiter`);
         return `https://www.linkedin.com/search/results/people/?keywords=${query}`;
     }
+
+    const generateLinkedInJobSearchUrl = (keywords: string, options: { time?: string, location?: string } = {}) => {
+        const url = new URL('https://www.linkedin.com/jobs/search/');
+        url.searchParams.set('keywords', keywords);
+        if (options.location) {
+            url.searchParams.set('location', options.location);
+        }
+        if (options.time) {
+            // f_TPR is the filter for time posted range
+            // r86400 = last 24 hours, r604800 = last week, r2592000 = last month
+            url.searchParams.set('f_TPR', options.time);
+        }
+        return url.toString();
+    }
+
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
@@ -106,20 +122,39 @@ export function NetworkingHub() {
                         </Card>
                     )}
 
-                    {!isSearching && searched && searchResults.length === 0 && (
+                    {!isSearching && searched && searchTerm && (
                          <Alert>
-                            <FileQuestion className="h-4 w-4" />
-                            <AlertTitle>Smart Suggestion</AlertTitle>
-                            <AlertDescription>
-                                No contacts in your local database? Try expanding your search.
-                                <a 
-                                    href={generateLinkedInSearchUrl(searchTerm)} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="font-semibold text-primary underline ml-2"
-                                >
-                                    Search LinkedIn for &quot;{searchTerm}&quot; recruiters
-                                </a>
+                            <Briefcase className="h-4 w-4" />
+                            <AlertTitle>Smart Search</AlertTitle>
+                            <AlertDescription className="space-y-4">
+                                <div className='space-y-2'>
+                                    <p className="font-semibold">Find Recruiters</p>
+                                    <p>No contacts in your local database? Try expanding your search on LinkedIn.</p>
+                                    <a 
+                                        href={generateLinkedInPeopleSearchUrl(searchTerm)} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="font-semibold text-primary underline"
+                                    >
+                                        Search LinkedIn for &quot;{searchTerm}&quot; recruiters
+                                    </a>
+                                </div>
+                                <Separator />
+                                <div className='space-y-2'>
+                                     <p className="font-semibold">Find Jobs</p>
+                                     <p>Use these quick links to find job postings.</p>
+                                     <div className="flex flex-wrap gap-2">
+                                        <Button asChild variant="link" className="p-0 h-auto">
+                                            <a href={generateLinkedInJobSearchUrl(searchTerm, {time: 'r86400'})} target="_blank" rel="noopener noreferrer">Latest Posts</a>
+                                        </Button>
+                                        <Button asChild variant="link" className="p-0 h-auto">
+                                            <a href={generateLinkedInJobSearchUrl(searchTerm, {location: 'Hyderabad, Telangana, India'})} target="_blank" rel="noopener noreferrer">in Hyderabad</a>
+                                        </Button>
+                                        <Button asChild variant="link" className="p-0 h-auto">
+                                            <a href={generateLinkedInJobSearchUrl(searchTerm, {location: 'Bengaluru, Karnataka, India'})} target="_blank" rel="noopener noreferrer">in Bangalore</a>
+                                        </Button>
+                                     </div>
+                                </div>
                             </AlertDescription>
                         </Alert>
                     )}
