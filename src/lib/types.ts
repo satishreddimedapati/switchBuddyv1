@@ -334,3 +334,44 @@ export const GetMarketIntelligenceOutputSchema = z.object({
 
 export type GetMarketIntelligenceInput = z.infer<typeof GetMarketIntelligenceInputSchema>;
 export type GetMarketIntelligenceOutput = z.infer<typeof GetMarketIntelligenceOutputSchema>;
+
+export const GetPersonalizedSalaryEstimateInputSchema = z.object({
+  jobRole: z.string().min(1, 'Job role is required.'),
+  yearsOfExperience: z.number().min(0, 'Years of experience cannot be negative.'),
+  location: z.string().min(1, 'Location is required.'),
+  skills: z.array(z.string()).min(1, 'Please select at least one skill.'),
+});
+export type GetPersonalizedSalaryEstimateInput = z.infer<typeof GetPersonalizedSalaryEstimateInputSchema>;
+
+export const GetPersonalizedSalaryEstimateOutputSchema = z.object({
+  estimatedSalaryRange: z.string().describe('The estimated salary range in LPA, e.g., "₹10 - 12 LPA".'),
+  commentary: z.string().describe('A brief commentary explaining how skills and experience affect the estimate.'),
+});
+export type GetPersonalizedSalaryEstimateOutput = z.infer<typeof GetPersonalizedSalaryEstimateOutputSchema>;
+
+export const highImpactSkills = [
+    "React",
+    "Angular",
+    "Vue.js",
+    "Node.js",
+    "Python",
+    ".NET Core",
+    "Java",
+    "Spring Boot",
+    "Go",
+    "AWS",
+    "Azure",
+    "GCP",
+    "Kubernetes",
+    "Docker",
+    "Terraform",
+    "SQL",
+    "NoSQL",
+    "Microservices",
+    "System Design",
+    "Machine Learning",
+    "Data Science",
+    "Cypress",
+    "RxJS",
+    "NgRx",
+];

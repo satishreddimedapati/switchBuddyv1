@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -10,11 +11,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState, useTransition } from "react";
 import { useActionState } from 'react';
 import { handleTailorResume, type FormState } from "../resume-tailor/actions";
-import { Briefcase, Building, Cpu, FileText, Linkedin, Loader2, MapPin, Search, Wand2, ThumbsUp, ThumbsDown, DollarSign } from "lucide-react";
+import { Briefcase, Building, Cpu, FileText, Linkedin, Loader2, MapPin, Search, Wand2, ThumbsUp, ThumbsDown, DollarSign, Calculator } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { MarketIntelligence } from "./MarketIntelligence";
+import { SalaryCalculator } from "./SalaryCalculator";
 
 
 function SubmitButton() {
@@ -121,8 +123,8 @@ export default function JobIntelligencePage() {
           </p>
         </div>
 
-        <Accordion type="multiple" defaultValue={["item-1"]} className="w-full space-y-4">
-            <AccordionItem value="item-1">
+        <Accordion type="multiple" defaultValue={["job-search"]} className="w-full space-y-4">
+            <AccordionItem value="job-search">
                 <Card>
                     <AccordionTrigger className="p-6">
                         <CardHeader className="p-0 text-left">
@@ -174,7 +176,7 @@ export default function JobIntelligencePage() {
                 </Card>
             </AccordionItem>
             
-            <AccordionItem value="item-2">
+            <AccordionItem value="role-fit">
                  <Card>
                     <AccordionTrigger className="p-6">
                         <CardHeader className="p-0 text-left">
@@ -211,17 +213,33 @@ export default function JobIntelligencePage() {
                  </Card>
             </AccordionItem>
             
-            <AccordionItem value="item-3">
+            <AccordionItem value="market-intelligence">
                  <Card>
                     <AccordionTrigger className="p-6">
                          <CardHeader className="p-0 text-left">
                             <CardTitle className="flex items-center gap-2"><Building/> Market Intelligence</CardTitle>
-                            <CardDescription>Get insights on companies and salaries.</CardDescription>
+                            <CardDescription>Get insights on career paths, skills, and top companies.</CardDescription>
                         </CardHeader>
                     </AccordionTrigger>
                      <AccordionContent>
                         <CardContent>
                             <MarketIntelligence />
+                        </CardContent>
+                    </AccordionContent>
+                 </Card>
+            </AccordionItem>
+
+            <AccordionItem value="salary-calculator">
+                 <Card>
+                    <AccordionTrigger className="p-6">
+                         <CardHeader className="p-0 text-left">
+                            <CardTitle className="flex items-center gap-2"><Calculator /> Personalized Salary Calculator</CardTitle>
+                            <CardDescription>Estimate your salary based on your unique profile.</CardDescription>
+                        </CardHeader>
+                    </AccordionTrigger>
+                     <AccordionContent>
+                        <CardContent>
+                            <SalaryCalculator />
                         </CardContent>
                     </AccordionContent>
                  </Card>
