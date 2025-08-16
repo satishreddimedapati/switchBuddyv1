@@ -35,12 +35,12 @@ function SubmitButton({ action }: { action: 'analyze' | 'message' }) {
                 action === 'analyze' ? (
                     <>
                         <Wand2 className="mr-2 h-4 w-4" />
-                        Analyze Fit
+                        Generate Tailored CV
                     </>
                 ) : (
                     <>
                          <MessageSquare className="mr-2 h-4 w-4" />
-                         Generate Message
+                         Generate Cover Letter
                     </>
                 )
             )}
@@ -194,7 +194,7 @@ export default function JobIntelligencePage() {
                     <AccordionTrigger className="p-6">
                         <CardHeader className="p-0 text-left">
                              <CardTitle className="flex items-center gap-2"><Cpu /> Resume & Role Analyzer</CardTitle>
-                            <CardDescription>Get a fit score, generate a tailored resume, and craft a message to the recruiter.</CardDescription>
+                            <CardDescription>Get a tailored resume and generate a professional cover letter.</CardDescription>
                         </CardHeader>
                     </AccordionTrigger>
                      <AccordionContent>
@@ -207,23 +207,15 @@ export default function JobIntelligencePage() {
                                  
                                  <Card>
                                     <CardContent className="p-4 space-y-4">
-                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                                            <div>
-                                                <Label htmlFor="tone" className="font-semibold">Recruiter Message Tone</Label>
-                                                <p className="text-sm text-muted-foreground">Select the tone for the AI-generated recruiter message.</p>
+                                        <div className="space-y-2">
+                                            <Label className="font-semibold">Cover Letter Details</Label>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <Input name="userName" placeholder="Your Full Name" required/>
+                                                <Input name="userContactInfo" placeholder="Phone, LinkedIn, GitHub, etc." required/>
+                                                <Input name="companyName" placeholder="Company Name" required />
                                             </div>
-                                             <Select name="tone" defaultValue="Friendly">
-                                                <SelectTrigger className="w-full sm:w-[180px]">
-                                                    <SelectValue placeholder="Select a tone" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="Formal">Formal</SelectItem>
-                                                    <SelectItem value="Friendly">Friendly</SelectItem>
-                                                    <SelectItem value="Confident">Confident</SelectItem>
-                                                </SelectContent>
-                                            </Select>
                                         </div>
-                                         <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2 border-t">
+                                         <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t">
                                             <SubmitButton action="analyze" />
                                             <SubmitButton action="message" />
                                         </div>
@@ -240,7 +232,7 @@ export default function JobIntelligencePage() {
                                 <div className="mt-6 grid md:grid-cols-2 gap-6">
                                      {state.fitScoreAnalysis && (
                                         <div className="space-y-4">
-                                            <h3 className="font-semibold text-lg">Resume Analysis & Tailored CV</h3>
+                                            <h3 className="font-semibold text-lg">Tailored CV</h3>
                                             <Card>
                                                 <CardContent className="p-4">
                                                     <pre className="bg-muted/50 p-4 rounded-md whitespace-pre-wrap font-body text-sm leading-relaxed max-h-96 overflow-auto">
@@ -257,7 +249,7 @@ export default function JobIntelligencePage() {
                                     )}
                                      {state.recruiterMessage && (
                                         <div className="space-y-4">
-                                            <h3 className="font-semibold text-lg">Generated Recruiter Message</h3>
+                                            <h3 className="font-semibold text-lg">Generated Cover Letter</h3>
                                              <Card>
                                                 <CardContent className="p-4">
                                                     <pre className="bg-muted/50 p-4 rounded-md whitespace-pre-wrap font-body text-sm leading-relaxed max-h-96 overflow-auto">

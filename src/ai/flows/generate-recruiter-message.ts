@@ -1,9 +1,9 @@
 'use server';
 
 /**
- * @fileOverview A flow to generate a professional message to a recruiter.
+ * @fileOverview A flow to generate a professional cover letter.
  *
- * - generateRecruiterMessage - A function that generates the message.
+ * - generateRecruiterMessage - A function that generates the cover letter.
  * - GenerateRecruiterMessageInput - The input type for the function.
  * - GenerateRecruiterMessageOutput - The return type for the function.
  */
@@ -23,19 +23,42 @@ const prompt = ai.definePrompt({
   name: 'generateRecruiterMessagePrompt',
   input: {schema: GenerateRecruiterMessageInputSchema},
   output: {schema: GenerateRecruiterMessageOutputSchema},
-  prompt: `You are an expert career coach helping a job seeker draft a professional message to a recruiter.
+  prompt: `You are an expert career coach helping a job seeker draft a professional cover letter.
 
-Based on the provided resume and job description, generate a short, human-sounding message. Do NOT make it sound robotic.
+Based on the provided resume and job description, generate a comprehensive, well-structured cover letter.
 
-The message should be in a {{tone}} tone.
+Follow this exact format:
 
+Hiring Team
+{{companyName}}
+
+{{userName}}
+{{userContactInfo}}
+
+{{currentDate}}
+
+Dear Hiring Team,
+
+I hope you're doing well. Iʼm excited to apply for the {{jobDescription.jobTitle}} role at {{companyName}}. [Based on the resume and job description, write a compelling opening paragraph that highlights 2-3 key skills and years of experience.]
+
+[Based on the resume, write a detailed paragraph highlighting relevant work experience, projects, and accomplishments. Connect these experiences directly to the requirements in the job description.]
+
+What excites me about this opportunity is {{companyName}}’s focus on [mention something specific about the company's focus, values, or projects based on the job description or general knowledge]. The chance to work on cutting-edge technologies, collaborate with talented professionals, and contribute to meaningful projects is something I’d love to be a part of. Iʼm eager to bring my problem-solving skills, technical expertise, and enthusiasm for learning to your team.
+
+Iʼd welcome the opportunity to discuss how my skills align with the role. Thank you for your time, and I look
+forward to the possibility of contributing to {{companyName}}.
+
+Best regards,
+{{userName}}
+
+---
 Resume:
 {{{resume}}}
 
+---
 Job Description:
-{{{jobDescription}}}
-
-Recruiter Message:
+{{{jobDescription.fullText}}}
+---
 `,
 });
 

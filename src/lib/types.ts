@@ -351,13 +351,19 @@ export type GetPersonalizedSalaryEstimateOutput = z.infer<typeof GetPersonalized
 
 export const GenerateRecruiterMessageInputSchema = z.object({
     resume: z.string().describe("The user's resume as plain text."),
-    jobDescription: z.string().describe("The job description as plain text."),
-    tone: z.enum(['Formal', 'Friendly', 'Confident']).describe("The desired tone for the message."),
+    jobDescription: z.object({
+        fullText: z.string().describe("The full job description as plain text."),
+        jobTitle: z.string().describe("The job title, extracted from the job description."),
+    }),
+    userName: z.string().describe("The user's full name."),
+    userContactInfo: z.string().describe("The user's contact info (e.g., phone, email, LinkedIn)."),
+    companyName: z.string().describe("The name of the company they are applying to."),
+    currentDate: z.string().describe("The current date, formatted as 'Month Day, Year'."),
 });
 export type GenerateRecruiterMessageInput = z.infer<typeof GenerateRecruiterMessageInputSchema>;
 
 export const GenerateRecruiterMessageOutputSchema = z.object({
-    recruiterMessage: z.string().describe("The generated message for the recruiter."),
+    recruiterMessage: z.string().describe("The generated cover letter for the recruiter."),
 });
 export type GenerateRecruiterMessageOutput = z.infer<typeof GenerateRecruiterMessageOutputSchema>;
 

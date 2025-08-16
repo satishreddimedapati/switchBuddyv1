@@ -4,12 +4,16 @@
 import { tailorResume } from "@/ai/flows/tailor-resume";
 import { generateRecruiterMessage } from "@/ai/flows/generate-recruiter-message";
 import { z } from "zod";
+import { format } from "date-fns";
 
 const FormSchema = z.object({
   resume: z.string().min(1, "Resume cannot be empty."),
   jobDescription: z.string().min(1, "Job description cannot be empty."),
-  tone: z.enum(['Formal', 'Friendly', 'Confident']).optional(),
-  action: z.enum(['analyze', 'message'])
+  action: z.enum(['analyze', 'message']),
+  // Fields for cover letter
+  userName: z.string().optional(),
+  userContactInfo: z.string().optional(),
+  companyName: z.string().optional(),
 });
 
 export type FormState = {
@@ -19,6 +23,22 @@ export type FormState = {
   error?: boolean;
 };
 
+function extractJobTitle(jd: string): string {
+    const match = jd.match(/(job title|role|position):\s*(.*)/i);
+    if (match && match[2]) {
+        return match[2].split('\n')[0].trim();
+    }
+    // Fallback: try to find common titles
+    const commonTitles = ["Software Engineer", "Developer", "Analyst", "Manager", "Designer"];
+    for (const title of commonTitles) {
+        if (jd.toLowerCase().includes(title.toLowerCase())) {
+            return title;
+        }
+    }
+    return "the role"; // generic fallback
+}
+
+
 export async function handleAnalysis(
   prevState: FormState,
   formData: FormData
@@ -26,8 +46,10 @@ export async function handleAnalysis(
   const validatedFields = FormSchema.safeParse({
     resume: formData.get("resume"),
     jobDescription: formData.get("jobDescription"),
-    tone: formData.get("tone"),
     action: formData.get("action"),
+    userName: formData.get("userName"),
+    userContactInfo: formData.get("userContactInfo"),
+    companyName: formData.get("companyName"),
   });
 
   if (!validatedFields.success) {
@@ -37,7 +59,7 @@ export async function handleAnalysis(
     };
   }
   
-  const { resume, jobDescription, tone, action } = validatedFields.data;
+  const { resume, jobDescription, action, userName, userContactInfo, companyName } = validatedFields.data;
 
   try {
     if (action === 'analyze') {
@@ -53,7 +75,20 @@ export async function handleAnalysis(
     }
 
     if (action === 'message') {
-        const result = await generateRecruiterMessage({ resume, jobDescription, tone: tone || 'Friendly' });
+        if (!userName || !userContactInfo || !companyName) {
+            return { message: "User name, contact info, and company name are required for the cover letter.", error: true };
+        }
+        const result = await generateRecruiterMessage({ 
+            resume, 
+            jobDescription: {
+                fullText: jobDescription,
+                jobTitle: extractJobTitle(jobDescription),
+            },
+            userName,
+            userContactInfo,
+            companyName,
+            currentDate: format(new Date(), 'MMMM d, yyyy'),
+        });
         if (result.recruiterMessage) {
             return {
                 message: "Recruiter message generated!",
