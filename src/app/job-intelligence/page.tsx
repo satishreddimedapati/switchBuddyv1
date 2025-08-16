@@ -11,7 +11,7 @@ import { useState } from "react";
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { handleAnalysis, type FormState } from "../resume-tailor/actions";
-import { Briefcase, Building, Cpu, FileText, Linkedin, Loader2, MapPin, Search, Wand2, ThumbsUp, ThumbsDown, DollarSign, Calculator, History, MessageSquare, Copy } from "lucide-react";
+import { Briefcase, Building, Cpu, FileText, Linkedin, Loader2, MapPin, Search, Wand2, ThumbsUp, ThumbsDown, DollarSign, Calculator, History, MessageSquare, Copy, Lightbulb, HelpCircle, Bot } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -186,7 +186,7 @@ export default function JobIntelligencePage() {
                     <AccordionTrigger className="p-6">
                         <CardHeader className="p-0 text-left">
                              <CardTitle className="flex items-center gap-2"><Cpu /> Resume & Role Analyzer</CardTitle>
-                            <CardDescription>Analyze your resume against a job description for a fit score, tailored CV, and a professional cover letter.</CardDescription>
+                            <CardDescription>Get a fit score, tailored resume, recruiter message, company insights, and more.</CardDescription>
                         </CardHeader>
                     </AccordionTrigger>
                      <AccordionContent>
@@ -204,7 +204,7 @@ export default function JobIntelligencePage() {
                                 </div>
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle className="text-base">Cover Letter Details</CardTitle>
+                                        <CardTitle className="text-base">Details for Analysis</CardTitle>
                                     </CardHeader>
                                      <CardContent className="space-y-4">
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -218,7 +218,12 @@ export default function JobIntelligencePage() {
                                             </div>
                                             <div>
                                                 <Label htmlFor="companyName">Company Name</Label>
-                                                <Input id="companyName" name="companyName" placeholder="e.g. Deloitte" required />
+                                                <Input id="companyName" name="companyName" placeholder="e.g. Siemens, Deloitte" required />
+                                            </div>
+                                            <div className="sm:col-span-3">
+                                                <Label htmlFor="location">Job Location</Label>
+                                                <Input id="location" name="location" placeholder="e.g. Bangalore" required />
+                                                <p className="text-xs text-muted-foreground mt-1">Required for salary benchmark.</p>
                                             </div>
                                         </div>
                                     </CardContent>
@@ -235,89 +240,153 @@ export default function JobIntelligencePage() {
                             )}
 
                              {/* Results Dashboard */}
-                            {(state.analysis || state.recruiterMessage) && (
+                            {(state.analysis) && (
                                 <div className="mt-6 space-y-6">
-                                     {state.analysis && (
-                                        <Card>
-                                            <CardHeader>
-                                                <CardTitle>Analysis Complete</CardTitle>
-                                                <div className="flex items-center gap-4 text-sm pt-2">
-                                                    <div className="flex flex-col items-center">
-                                                        <span className="text-2xl font-bold text-primary">{state.analysis.fitScore}%</span>
-                                                        <span className="text-muted-foreground">Fit Score</span>
-                                                    </div>
-                                                    <Separator orientation="vertical" className="h-10"/>
-                                                    <div>
-                                                        <p><strong>Skills Match:</strong> {state.analysis.breakdown.skillsMatch}</p>
-                                                        <p><strong>Experience Match:</strong> {state.analysis.breakdown.experienceMatch}</p>
-                                                    </div>
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle>Analysis Complete</CardTitle>
+                                            <div className="flex items-center gap-4 text-sm pt-2">
+                                                <div className="flex flex-col items-center">
+                                                    <span className="text-2xl font-bold text-primary">{state.analysis.fitScore}%</span>
+                                                    <span className="text-muted-foreground">Fit Score</span>
                                                 </div>
-                                            </CardHeader>
-                                        </Card>
-                                    )}
+                                                <Separator orientation="vertical" className="h-10"/>
+                                                <div>
+                                                    <p><strong>Skills Match:</strong> {state.analysis.breakdown.skillsMatch}</p>
+                                                    <p><strong>Experience Match:</strong> {state.analysis.breakdown.experienceMatch}</p>
+                                                </div>
+                                            </div>
+                                        </CardHeader>
+                                    </Card>
                                     <Accordion type="multiple" defaultValue={["resume-optimizer", "recruiter-message"]} className="w-full space-y-4">
-                                         {state.analysis && (
-                                            <AccordionItem value="resume-optimizer">
+                                        
+                                        <AccordionItem value="resume-optimizer">
+                                            <Card>
+                                                <AccordionTrigger className="p-6">
+                                                    <CardHeader className="p-0 text-left">
+                                                        <CardTitle className="flex items-center gap-2">Resume Optimizer</CardTitle>
+                                                        <CardDescription>Your resume, tailored for this specific role.</CardDescription>
+                                                    </CardHeader>
+                                                </AccordionTrigger>
+                                                <AccordionContent>
+                                                    <CardContent>
+                                                        <div className="space-y-4">
+                                                            <div>
+                                                                <h4 className="font-semibold mb-2">Missing Keywords</h4>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {state.analysis.missingSkills.map(skill => <Badge key={skill} variant="secondary">{skill}</Badge>)}
+                                                                </div>
+                                                            </div>
+                                                            <Separator/>
+                                                            <div>
+                                                                <h4 className="font-semibold mb-2">Tailored CV</h4>
+                                                                <pre className="bg-muted/50 p-4 rounded-md whitespace-pre-wrap font-body text-sm leading-relaxed max-h-96 overflow-auto">
+                                                                    {state.analysis.tailoredResume}
+                                                                </pre>
+                                                                <div className="flex justify-end mt-4">
+                                                                    <Button variant="outline" onClick={() => handleCopyToClipboard(state.analysis?.tailoredResume)}>
+                                                                    <Copy className="mr-2" /> Copy CV Text
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </CardContent>
+                                                </AccordionContent>
+                                            </Card>
+                                        </AccordionItem>
+                                        
+                                        {state.recruiterMessage && (
+                                            <AccordionItem value="recruiter-message">
+                                            <Card>
+                                                <AccordionTrigger className="p-6">
+                                                    <CardHeader className="p-0 text-left">
+                                                        <CardTitle className="flex items-center gap-2">Recruiter Message</CardTitle>
+                                                        <CardDescription>A professional cover letter to send to the recruiter.</CardDescription>
+                                                    </CardHeader>
+                                                </AccordionTrigger>
+                                                <AccordionContent>
+                                                    <CardContent>
+                                                        <Textarea
+                                                            defaultValue={state.recruiterMessage}
+                                                            rows={15}
+                                                            className="bg-muted/50 p-4 rounded-md whitespace-pre-wrap font-body text-sm leading-relaxed max-h-96 overflow-auto"
+                                                        />
+                                                        <div className="flex justify-end mt-4">
+                                                            <Button variant="outline" onClick={() => handleCopyToClipboard(state.recruiterMessage)}>
+                                                                <Copy className="mr-2" /> Copy Message
+                                                            </Button>
+                                                        </div>
+                                                    </CardContent>
+                                                </AccordionContent>
+                                            </Card>
+                                            </AccordionItem>
+                                        )}
+                                        {state.companyInsights && (
+                                            <AccordionItem value="company-insights">
                                                 <Card>
                                                     <AccordionTrigger className="p-6">
                                                         <CardHeader className="p-0 text-left">
-                                                            <CardTitle className="flex items-center gap-2">Resume Optimizer</CardTitle>
-                                                            <CardDescription>Your resume, tailored for this specific role.</CardDescription>
+                                                            <CardTitle className="flex items-center gap-2"><Lightbulb /> Company Insights</CardTitle>
+                                                            <CardDescription>Learn about the company culture and interview process.</CardDescription>
                                                         </CardHeader>
                                                     </AccordionTrigger>
                                                     <AccordionContent>
-                                                        <CardContent>
-                                                            <div className="space-y-4">
-                                                                <div>
-                                                                    <h4 className="font-semibold mb-2">Missing Keywords</h4>
-                                                                    <div className="flex flex-wrap gap-2">
-                                                                        {state.analysis.missingSkills.map(skill => <Badge key={skill} variant="secondary">{skill}</Badge>)}
-                                                                    </div>
-                                                                </div>
-                                                                <Separator/>
-                                                                 <div>
-                                                                    <h4 className="font-semibold mb-2">Tailored CV</h4>
-                                                                    <pre className="bg-muted/50 p-4 rounded-md whitespace-pre-wrap font-body text-sm leading-relaxed max-h-96 overflow-auto">
-                                                                        {state.analysis.tailoredResume}
-                                                                    </pre>
-                                                                     <div className="flex justify-end mt-4">
-                                                                        <Button variant="outline" onClick={() => handleCopyToClipboard(state.analysis?.tailoredResume)}>
-                                                                          <Copy className="mr-2" /> Copy CV Text
-                                                                        </Button>
-                                                                    </div>
-                                                                </div>
+                                                        <CardContent className="space-y-4">
+                                                            <div><h4 className="font-semibold">Culture</h4><p className="text-muted-foreground">{state.companyInsights.culture}</p></div>
+                                                            <div><h4 className="font-semibold">Interview Process</h4><p className="text-muted-foreground">{state.companyInsights.interviewProcess}</p></div>
+                                                            <div className="grid grid-cols-2 gap-4">
+                                                                <div><h4 className="font-semibold text-green-600">Pros</h4><ul className="list-disc pl-5 text-muted-foreground">{(state.companyInsights.pros || []).map(pro => <li key={pro}>{pro}</li>)}</ul></div>
+                                                                <div><h4 className="font-semibold text-red-600">Cons</h4><ul className="list-disc pl-5 text-muted-foreground">{(state.companyInsights.cons || []).map(con => <li key={con}>{con}</li>)}</ul></div>
                                                             </div>
                                                         </CardContent>
                                                     </AccordionContent>
                                                 </Card>
                                             </AccordionItem>
-                                         )}
-                                         {state.recruiterMessage && (
-                                             <AccordionItem value="recruiter-message">
+                                        )}
+                                        {state.interviewQuestions && (
+                                            <AccordionItem value="interview-questions">
                                                 <Card>
                                                     <AccordionTrigger className="p-6">
                                                         <CardHeader className="p-0 text-left">
-                                                            <CardTitle className="flex items-center gap-2">Recruiter Message</CardTitle>
-                                                             <CardDescription>A professional cover letter to send to the recruiter.</CardDescription>
+                                                            <CardTitle className="flex items-center gap-2"><HelpCircle /> Predicted Interview Questions</CardTitle>
+                                                            <CardDescription>AI-generated questions based on the job and your resume.</CardDescription>
                                                         </CardHeader>
                                                     </AccordionTrigger>
                                                     <AccordionContent>
                                                         <CardContent>
-                                                            <Textarea
-                                                                defaultValue={state.recruiterMessage}
-                                                                rows={15}
-                                                                className="bg-muted/50 p-4 rounded-md whitespace-pre-wrap font-body text-sm leading-relaxed max-h-96 overflow-auto"
-                                                            />
-                                                            <div className="flex justify-end mt-4">
-                                                                <Button variant="outline" onClick={() => handleCopyToClipboard(state.recruiterMessage)}>
-                                                                    <Copy className="mr-2" /> Copy Message
-                                                                </Button>
-                                                            </div>
+                                                            <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
+                                                                {(state.interviewQuestions.interviewQuestions || []).map(q => <li key={q}>{q}</li>)}
+                                                            </ul>
                                                         </CardContent>
                                                     </AccordionContent>
                                                 </Card>
-                                             </AccordionItem>
-                                         )}
+                                            </AccordionItem>
+                                        )}
+                                        {state.salaryBenchmark && (
+                                            <AccordionItem value="salary-benchmark">
+                                                <Card>
+                                                    <AccordionTrigger className="p-6">
+                                                        <CardHeader className="p-0 text-left">
+                                                            <CardTitle className="flex items-center gap-2"><DollarSign /> Salary Benchmark</CardTitle>
+                                                            <CardDescription>An estimated salary for this role in the specified location.</CardDescription>
+                                                        </CardHeader>
+                                                    </AccordionTrigger>
+                                                    <AccordionContent>
+                                                         <CardContent>
+                                                            <Alert>
+                                                                <Bot className="h-4 w-4" />
+                                                                <AlertTitle className="text-xl font-bold text-primary">
+                                                                    {state.salaryBenchmark.salaryRange}
+                                                                </AlertTitle>
+                                                                <AlertDescription>
+                                                                    {state.salaryBenchmark.commentary}
+                                                                </AlertDescription>
+                                                            </Alert>
+                                                        </CardContent>
+                                                    </AccordionContent>
+                                                </Card>
+                                            </AccordionItem>
+                                        )}
                                     </Accordion>
                                 </div>
                             )}
@@ -333,7 +402,7 @@ export default function JobIntelligencePage() {
                          <CardHeader className="p-0 text-left">
                             <CardTitle className="flex items-center gap-2"><Building/> Market Intelligence & Salary Calculator</CardTitle>
                             <CardDescription>Get insights on career paths, skills, top companies and a personalized salary estimate.</CardDescription>
-                        </CardHeader>
+                        </Header>
                     </AccordionTrigger>
                      <AccordionContent>
                         <CardContent>
