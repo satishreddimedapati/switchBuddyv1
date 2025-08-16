@@ -21,3 +21,4 @@ import '@/ai/flows/get-personalized-salary-estimate.ts';
 import '@/ai/flows/generate-recruiter-message.ts';
 import '@/ai/flows/generate-interview-plan.ts';
 import '@/ai/flows/send-daily-debrief.ts';
+import '@/ai/flows/send-whatsapp-debrief.ts';

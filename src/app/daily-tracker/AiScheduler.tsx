@@ -32,6 +32,7 @@ import { InterviewTopicScheduler } from './InterviewTopicScheduler';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { sendDailyDebrief } from '@/ai/flows/send-daily-debrief';
+import { sendWhatsAppDebrief } from '@/ai/flows/send-whatsapp-debrief';
 
 function TelegramIcon() {
     return (
@@ -187,19 +188,34 @@ export function AiScheduler() {
       let sentTo = [];
       if (deliveryOptions.telegram) {
         toast({ title: 'Sending to Telegram...', description: 'This may take a moment.' });
-        const result = await sendDailyDebrief(summaryResult);
-        if (result.success) {
-          toast({ title: 'Success!', description: 'Your daily debrief was sent to Telegram.'});
-          sentTo.push('Telegram');
-        } else {
-          toast({ title: 'Telegram Error', description: result.message, variant: 'destructive'});
+        try {
+            const result = await sendDailyDebrief(summaryResult);
+            if (result.success) {
+              toast({ title: 'Success!', description: 'Your daily debrief was sent to Telegram.'});
+              sentTo.push('Telegram');
+            } else {
+              toast({ title: 'Telegram Error', description: result.message, variant: 'destructive'});
+            }
+        } catch (error) {
+            toast({ title: 'Telegram Error', description: 'Failed to send message.', variant: 'destructive'});
         }
       }
       if (deliveryOptions.whatsApp) {
-        toast({ title: "WhatsApp Not Implemented", description: "This is a placeholder for backend integration.", variant: "destructive" });
+        toast({ title: 'Sending to WhatsApp...', description: 'This is a simulation.' });
+        try {
+            const result = await sendWhatsAppDebrief(summaryResult);
+             if (result.success) {
+              toast({ title: 'Success!', description: 'Your daily debrief was sent to WhatsApp (Simulated).'});
+              sentTo.push('WhatsApp');
+            } else {
+              toast({ title: 'WhatsApp Error', description: result.message, variant: 'destructive'});
+            }
+        } catch(error) {
+            toast({ title: 'WhatsApp Error', description: 'Failed to send message.', variant: 'destructive'});
+        }
       }
 
-      if (sentTo.length === 0 && !deliveryOptions.whatsApp) {
+      if (sentTo.length === 0 && !deliveryOptions.whatsApp && !deliveryOptions.telegram) {
         toast({ title: "No channels selected", description: "Please select Telegram or WhatsApp to send the schedule.", variant: 'destructive'});
       }
     });
