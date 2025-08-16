@@ -16,7 +16,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { MarketIntelligence } from "./MarketIntelligence";
-import { SalaryCalculator } from "./SalaryCalculator";
 
 
 function SubmitButton() {
@@ -217,29 +216,13 @@ export default function JobIntelligencePage() {
                  <Card>
                     <AccordionTrigger className="p-6">
                          <CardHeader className="p-0 text-left">
-                            <CardTitle className="flex items-center gap-2"><Building/> Market Intelligence</CardTitle>
-                            <CardDescription>Get insights on career paths, skills, and top companies.</CardDescription>
+                            <CardTitle className="flex items-center gap-2"><Building/> Market Intelligence & Salary Calculator</CardTitle>
+                            <CardDescription>Get insights on career paths, skills, top companies and a personalized salary estimate.</CardDescription>
                         </CardHeader>
                     </AccordionTrigger>
                      <AccordionContent>
                         <CardContent>
                             <MarketIntelligence />
-                        </CardContent>
-                    </AccordionContent>
-                 </Card>
-            </AccordionItem>
-
-            <AccordionItem value="salary-calculator">
-                 <Card>
-                    <AccordionTrigger className="p-6">
-                         <CardHeader className="p-0 text-left">
-                            <CardTitle className="flex items-center gap-2"><Calculator /> Personalized Salary Calculator</CardTitle>
-                            <CardDescription>Estimate your salary based on your unique profile.</CardDescription>
-                        </CardHeader>
-                    </AccordionTrigger>
-                     <AccordionContent>
-                        <CardContent>
-                            <SalaryCalculator />
                         </CardContent>
                     </AccordionContent>
                  </Card>
