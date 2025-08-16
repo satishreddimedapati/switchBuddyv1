@@ -271,7 +271,9 @@ export type GenerateInterviewPlanInput = z.infer<typeof GenerateInterviewPlanInp
 export const GenerateInterviewPlanOutputSchema = z.object({
     topic: z.string().describe("The suggested topic for the interview plan."),
     difficulty: z.enum(['Easy', 'Medium', 'Hard']).describe("The suggested difficulty for the plan."),
-    questions: z.array(z.string()).describe("An array of 5 suggested interview questions.")
+    questions: z.array(z.string()).describe("An array of 5 suggested interview questions."),
+    durationMinutes: z.coerce.number().int().min(1).optional(),
+    totalInterviews: z.coerce.number().int().min(1).optional(),
 });
 export type GenerateInterviewPlanOutput = z.infer<typeof GenerateInterviewPlanOutputSchema>;
 

@@ -72,14 +72,17 @@ function InterviewPlanForm({ planData, onPlanCreated }: { planData: NonNullable<
             topic: planData.topic,
             difficulty: planData.difficulty,
             questions: planData.questions,
-            // Add defaults for fields not in the AI output
             durationMinutes: 30, 
             totalInterviews: 10,
         }
     });
     
     useEffect(() => {
-        form.reset(planData);
+        form.reset({
+            ...planData,
+            durationMinutes: 30,
+            totalInterviews: 10,
+        });
     }, [planData, form]);
 
     const onSubmit = async (data: any) => {
@@ -141,7 +144,6 @@ function InterviewPlanForm({ planData, onPlanCreated }: { planData: NonNullable<
                     {...form.register('questions')} 
                     rows={6}
                     className="bg-muted/50"
-                    // Since we are registering an array, we need to handle value conversion
                     onChange={e => form.setValue('questions', e.target.value.split('\n'))}
                     value={form.watch('questions')?.join('\n') || ''}
                 />
@@ -220,8 +222,6 @@ export default function JobIntelligencePage() {
         })
     }
     
-    // This is a simple way to reset the analysis state.
-    // We can just clear the message which will hide the results.
     const resetAnalysis = () => {
         if (state.message) {
             state.message = '';
