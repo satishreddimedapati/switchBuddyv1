@@ -358,7 +358,7 @@ export const MarketIntelHistoryItemSchema = z.object({
         jobRole: z.string(),
         companyName: z.string(),
         location: z.string(),
-        yearsOfExperience: z.number().optional(),
+        yearsOfExperience: z.number().nullable().optional(),
     }),
     intelResult: GetMarketIntelligenceOutputSchema,
     salaryResult: GetPersonalizedSalaryEstimateOutputSchema.nullable(),
@@ -392,3 +392,5 @@ export const highImpactSkills = [
     "RxJS",
     "NgRx",
 ];
+
+    

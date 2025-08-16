@@ -135,7 +135,16 @@ export function MarketIntelligence({ historyItem, onNewSearch }: MarketIntellige
         }
         startSaveTransition(async () => {
             try {
-                await addSearchToHistory(user.uid, currentAnalysis);
+                // Ensure yearsOfExperience is not undefined
+                const saveData = {
+                    ...currentAnalysis,
+                    input: {
+                        ...currentAnalysis.input,
+                        yearsOfExperience: currentAnalysis.input.yearsOfExperience ?? null
+                    }
+                };
+
+                await addSearchToHistory(user.uid, saveData);
                 setIsCurrentSearchSaved(true);
                 toast({ title: "Success", description: "Search saved to your history." });
             } catch (error) {
@@ -174,7 +183,7 @@ export function MarketIntelligence({ historyItem, onNewSearch }: MarketIntellige
                 </div>
                 
                 <div className="flex justify-end">
-                     <Button type="submit" disabled={isGenerating || !form.formState.isValid} className="w-full sm:w-auto">
+                     <Button type="submit" disabled={isGenerating || !form.formState.isDirty || !form.formState.isValid} className="w-full sm:w-auto">
                          {isGenerating ? <Loader2 className="animate-spin mr-2"/> : <Search className="mr-2"/>}
                           Analyze Market
                     </Button>
@@ -322,3 +331,5 @@ export function MarketIntelligence({ historyItem, onNewSearch }: MarketIntellige
         </div>
     )
 }
+
+    
