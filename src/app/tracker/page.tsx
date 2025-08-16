@@ -36,8 +36,8 @@ export default function TrackerPage() {
   }, [fetchJobs]);
 
   return (
-      <div className="flex flex-col h-[calc(100vh-theme(spacing.20))]">
-         <div className="flex justify-between items-start">
+      <div className="flex flex-col h-full">
+         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="font-headline text-3xl font-bold tracking-tight">
                 Job Application Tracker
@@ -48,13 +48,13 @@ export default function TrackerPage() {
             </div>
             <AddJobApplicationForm onApplicationAdded={fetchJobs} />
         </div>
-        <div className="mt-6 flex-grow">
+        <div className="mt-6 flex-grow overflow-hidden">
           {loading ? (
              <div className="flex gap-6 p-1 pb-4">
-                <Skeleton className="h-[500px] w-72" />
-                <Skeleton className="h-[500px] w-72" />
-                <Skeleton className="h-[500px] w-72" />
-                <Skeleton className="h-[500px] w-72" />
+                <Skeleton className="h-[500px] w-full sm:w-72" />
+                <Skeleton className="h-[500px] w-full sm:w-72 hidden sm:block" />
+                <Skeleton className="h-[500px] w-full sm:w-72 hidden lg:block" />
+                <Skeleton className="h-[500px] w-full sm:w-72 hidden lg:block" />
              </div>
           ) : (
             <KanbanBoard initialData={jobApplications} onBoardChange={setJobApplications} />

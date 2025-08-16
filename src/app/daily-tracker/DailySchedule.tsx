@@ -70,9 +70,9 @@ export function DailySchedule() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <h2 className="font-headline text-2xl font-bold">Today's List</h2>
-        <Button onClick={handleAddNew}><PlusCircle /> Schedule Task</Button>
+        <Button onClick={handleAddNew} className="w-full sm:w-auto"><PlusCircle /> Schedule Task</Button>
       </div>
 
       <Card>

@@ -9,6 +9,7 @@ import { JobApplicationCard } from "./JobApplicationCard";
 import { createPortal } from "react-dom";
 import { handleUpdateJobStage } from "./actions";
 import { useAuth } from "@/lib/auth";
+import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 
 interface KanbanBoardProps {
   initialData: JobApplication[];
@@ -96,28 +97,31 @@ export function KanbanBoard({ initialData, onBoardChange }: KanbanBoardProps) {
   const columnIds = Array.from(columns.keys());
 
   return (
-    <div className="flex-1 overflow-x-auto">
-      <div className="flex gap-6 p-1 pb-4">
-        <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-            {columnIds.map((columnId) => (
-              <KanbanColumn
-                key={columnId}
-                columnId={columnId}
-                jobs={columns.get(columnId) || []}
-              />
-            ))}
-            {createPortal(
-            <DragOverlay>
-              {activeJob && (
-                <JobApplicationCard
-                  job={activeJob}
+    <ScrollArea className="w-full whitespace-nowrap">
+      <div className="flex-1">
+        <div className="flex gap-6 p-1 pb-4">
+          <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+              {columnIds.map((columnId) => (
+                <KanbanColumn
+                  key={columnId}
+                  columnId={columnId}
+                  jobs={columns.get(columnId) || []}
                 />
-              )}
-            </DragOverlay>,
-            document.body
-          )}
-        </DndContext>
+              ))}
+              {createPortal(
+              <DragOverlay>
+                {activeJob && (
+                  <JobApplicationCard
+                    job={activeJob}
+                  />
+                )}
+              </DragOverlay>,
+              document.body
+            )}
+          </DndContext>
+        </div>
       </div>
-    </div>
+       <ScrollBar orientation="horizontal" />
+    </ScrollArea>
   );
 }

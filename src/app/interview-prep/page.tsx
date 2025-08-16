@@ -93,7 +93,7 @@ export default function InterviewPrepPage() {
 
     return (
         <div className="flex flex-col gap-8">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                  <div>
                     <h1 className="font-headline text-3xl font-bold tracking-tight">
                         Mock Interviews
@@ -102,7 +102,7 @@ export default function InterviewPrepPage() {
                         Practice makes perfect. Simulate real interviews and get AI-powered feedback.
                     </p>
                 </div>
-                <Button asChild>
+                <Button asChild className="w-full sm:w-auto">
                     <Link href="/interview-prep/new">
                         <PlusCircle />
                         Create New Plan
@@ -142,45 +142,47 @@ export default function InterviewPrepPage() {
                     <CardTitle>Past Interviews</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Interview #</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Average Score</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {pastSessions.map(interview => (
-                                <TableRow key={interview.id}>
-                                    <TableCell>{interview.interviewNumber}</TableCell>
-                                    <TableCell>{interview.completedAt ? format(new Date(interview.completedAt), 'PPP') : 'N/A'}</TableCell>
-                                    <TableCell>{interview.overallScore ? interview.overallScore.toFixed(1) : 'N/A'}</TableCell>
-                                    <TableCell>{interview.status}</TableCell>
-                                    <TableCell className="text-right space-x-2">
-                                        <Button variant="outline" size="sm" disabled={interview.status !== 'completed'}><FileText className="mr-2 h-4 w-4" /> View PDF</Button>
-                                        <Button variant="outline" size="sm" asChild>
-                                           <Link href={`/interview-prep/summary/${interview.id}`}>
-                                                <Video className="mr-2 h-4 w-4" /> Review Online
-                                            </Link>
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                             {pastSessions.length === 0 && !loading && (
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center h-24">No past interviews found.</TableCell>
+                                    <TableHead>Interview #</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead>Score</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
-                            )}
-                             {loading && (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center h-24"><Loader2 className="animate-spin mx-auto" /></TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {pastSessions.map(interview => (
+                                    <TableRow key={interview.id}>
+                                        <TableCell>{interview.interviewNumber}</TableCell>
+                                        <TableCell>{interview.completedAt ? format(new Date(interview.completedAt), 'PPP') : 'N/A'}</TableCell>
+                                        <TableCell>{interview.overallScore ? interview.overallScore.toFixed(1) : 'N/A'}</TableCell>
+                                        <TableCell>{interview.status}</TableCell>
+                                        <TableCell className="text-right space-x-2">
+                                            <Button variant="outline" size="sm" disabled={interview.status !== 'completed'}><FileText className="mr-2 h-4 w-4" /> PDF</Button>
+                                            <Button variant="outline" size="sm" asChild>
+                                               <Link href={`/interview-prep/summary/${interview.id}`}>
+                                                    <Video className="mr-2 h-4 w-4" /> Review
+                                                </Link>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                 {pastSessions.length === 0 && !loading && (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center h-24">No past interviews found.</TableCell>
+                                    </TableRow>
+                                )}
+                                 {loading && (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center h-24"><Loader2 className="animate-spin mx-auto" /></TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </CardContent>
             </Card>
 

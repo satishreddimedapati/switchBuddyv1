@@ -33,7 +33,7 @@ function InterviewTimer({ durationMinutes, onTimeUp }: { durationMinutes: number
     const seconds = timeLeft % 60;
 
     return (
-        <div className="flex items-center gap-2 font-mono p-2 bg-muted rounded-md">
+        <div className="flex items-center gap-2 font-mono p-2 bg-muted rounded-md text-sm md:text-base">
             <Timer className="h-5 w-5" />
             <span>{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}</span>
         </div>
@@ -149,11 +149,11 @@ export default function InterviewSessionPage() {
     return (
         <div className="flex flex-col gap-4 h-full">
             {/* Top Bar */}
-            <div className="flex justify-between items-center p-4 border-b bg-card rounded-lg">
-                <div className="font-semibold">Interview {session.interviewNumber} / {plan.totalInterviews}</div>
+            <div className="flex justify-between items-center p-2 md:p-4 border-b bg-card rounded-lg flex-wrap gap-2">
+                <div className="font-semibold text-sm md:text-base">Interview {session.interviewNumber} / {plan.totalInterviews}</div>
                 <InterviewTimer durationMinutes={plan.durationMinutes} onTimeUp={handleEndInterview} />
-                <Button variant="destructive" onClick={handleEndInterview} disabled={isEnding}>
-                    {isEnding ? <Loader2 className="animate-spin"/> : 'End & Submit Interview'}
+                <Button variant="destructive" onClick={handleEndInterview} disabled={isEnding} size="sm">
+                    {isEnding ? <Loader2 className="animate-spin"/> : 'End & Submit'}
                 </Button>
             </div>
 
@@ -165,7 +165,7 @@ export default function InterviewSessionPage() {
                             <CardTitle>Question {currentQuestionIndex + 1} of {session.questions.length}</CardTitle>
                         </CardHeader>
                         <CardContent>
-                             <p className="text-lg">
+                             <p className="text-lg md:text-xl">
                                 {currentQuestion?.question}
                             </p>
                         </CardContent>
@@ -177,7 +177,7 @@ export default function InterviewSessionPage() {
                         <CardContent className="space-y-4">
                             <Textarea 
                                 placeholder="Type your answer here..." 
-                                className="h-48" 
+                                className="h-32 md:h-48" 
                                 value={answers[currentQuestion.qNo] || ''} 
                                 onChange={(e) => handleAnswerChange(e.target.value)}
                              />
@@ -191,10 +191,10 @@ export default function InterviewSessionPage() {
             </div>
 
             {/* Bottom Bar */}
-            <div className="flex justify-between items-center p-4 border-t bg-card rounded-lg">
-                 <Button variant="outline" onClick={() => setCurrentQuestionIndex(p => p - 1)} disabled={currentQuestionIndex === 0}><ArrowLeft /> Previous</Button>
+            <div className="flex justify-between items-center p-2 md:p-4 border-t bg-card rounded-lg">
+                 <Button variant="outline" onClick={() => setCurrentQuestionIndex(p => p - 1)} disabled={currentQuestionIndex === 0}><ArrowLeft className="mr-0 md:mr-2" /><span className="hidden md:inline">Previous</span></Button>
                  <div className="text-sm text-muted-foreground">Question {currentQuestionIndex + 1} of {session.questions.length}</div>
-                 <Button onClick={() => setCurrentQuestionIndex(p => p + 1)} disabled={currentQuestionIndex === session.questions.length - 1}>Next Question <ArrowRight /></Button>
+                 <Button onClick={() => setCurrentQuestionIndex(p => p + 1)} disabled={currentQuestionIndex === session.questions.length - 1}><span className="hidden md:inline">Next</span><ArrowRight className="ml-0 md:ml-2" /></Button>
             </div>
         </div>
     );

@@ -42,7 +42,7 @@ export function ResumeTailorForm() {
                              <CardDescription>Paste your current resume here.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                             <Textarea name="resume" placeholder="Your resume text..." rows={15} required className="min-h-[300px]" />
+                             <Textarea name="resume" placeholder="Your resume text..." rows={15} required className="min-h-[300px] lg:min-h-[400px]" />
                         </CardContent>
                     </Card>
                     <Card>
@@ -51,7 +51,7 @@ export function ResumeTailorForm() {
                             <CardDescription>Paste the target job description.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Textarea name="jobDescription" placeholder="Job description text..." rows={15} required className="min-h-[300px]" />
+                            <Textarea name="jobDescription" placeholder="Job description text..." rows={15} required className="min-h-[300px] lg:min-h-[400px]" />
                         </CardContent>
                     </Card>
                 </div>

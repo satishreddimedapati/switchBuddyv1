@@ -105,8 +105,8 @@ export function InterviewTopicScheduler() {
     return (
         <div className="space-y-6">
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid sm:grid-cols-3 gap-4">
-                    <div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="sm:col-span-3 md:col-span-1">
                         <Label htmlFor="topic">Topic</Label>
                         <Input id="topic" {...form.register('topic')} placeholder="e.g., React, .NET" />
                         {form.formState.errors.topic && <p className="text-destructive text-sm mt-1">{form.formState.errors.topic.message}</p>}
@@ -170,8 +170,8 @@ export function InterviewTopicScheduler() {
                     <div className="border rounded-md">
                          <ul className="space-y-1 p-4 max-h-96 overflow-y-auto">
                             {result.schedule.map((item, index) => (
-                                <li key={index} className="flex items-center gap-4 p-2 border-b last:border-b-0">
-                                    <span className="font-mono text-sm text-muted-foreground w-24">
+                                <li key={index} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 p-2 border-b last:border-b-0">
+                                    <span className="font-mono text-sm text-muted-foreground w-full sm:w-24">
                                         {format(new Date(item.date), 'EEE, MMM d')}
                                     </span>
                                     <p className="font-medium">{item.subtopic}</p>
@@ -180,15 +180,15 @@ export function InterviewTopicScheduler() {
                         </ul>
                     </div>
                    
-                    <div className="flex flex-wrap items-center gap-4 p-4 border-t bg-muted/50 rounded-b-md">
+                    <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4 p-4 border-t bg-muted/50 rounded-b-md">
                         <div className="flex-grow">
                             <p className="font-semibold">Ready to commit?</p>
                             <p className="text-sm text-muted-foreground">Add these tasks to your daily schedule.</p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
                             <Label htmlFor="task-time" className="flex items-center gap-2 text-sm"><Clock className="h-4 w-4" /> Time</Label>
                              <Select value={selectedTime} onValueChange={setSelectedTime}>
-                                <SelectTrigger className="w-[180px]">
+                                <SelectTrigger className="w-full sm:w-[180px]">
                                     <SelectValue placeholder="Select time" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -200,7 +200,7 @@ export function InterviewTopicScheduler() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <Button onClick={handleAddToSchedule} disabled={isSaving}>
+                        <Button onClick={handleAddToSchedule} disabled={isSaving} className="w-full sm:w-auto">
                             {isSaving ? <Loader2 className="mr-2 animate-spin" /> : <Check className="mr-2" />}
                             Add to Daily Schedule
                         </Button>

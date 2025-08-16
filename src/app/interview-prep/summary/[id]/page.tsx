@@ -68,8 +68,8 @@ export default function InterviewSummaryPage() {
         </p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-4">
-        <Card className="md:col-span-2">
+      <div className="grid lg:grid-cols-3 gap-4">
+        <Card className="lg:col-span-2">
             <CardHeader>
                 <CardTitle>Results</CardTitle>
                 <CardDescription>Review the AI feedback for each question.</CardDescription>

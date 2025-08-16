@@ -174,7 +174,7 @@ export function AiScheduler() {
       {/* Smart Daily Plan Generator */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base md:text-2xl">
             <BrainCircuit /> Your AI-Generated Daily Battle Plan
           </CardTitle>
           <CardDescription>
@@ -244,7 +244,7 @@ export function AiScheduler() {
       {/* Interview Topic Scheduler */}
       <Card>
         <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base md:text-2xl">
                 <CalendarPlus /> Interview Topic Scheduler
             </CardTitle>
             <CardDescription>
@@ -259,7 +259,7 @@ export function AiScheduler() {
       {/* Daily Summary & Next-Day Recommendations */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base md:text-2xl">
             <CheckCircle2 /> Daily Debrief &amp; Tomorrow's Targets
           </CardTitle>
           <CardDescription>
