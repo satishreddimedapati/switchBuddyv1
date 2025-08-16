@@ -24,21 +24,14 @@ import {collection, onSnapshot, query, where} from 'firebase/firestore';
 import {format as formatDateFns, parse} from 'date-fns';
 import {useEffect, useState, useTransition} from 'react';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
-import {BrainCircuit, CheckCircle2, Coffee, Lightbulb, Loader2, Plus, Sparkles, Target, CalendarPlus, Send} from 'lucide-react';
+import {BrainCircuit, CheckCircle2, Coffee, Lightbulb, Loader2, Plus, Sparkles, Target, CalendarPlus} from 'lucide-react';
 import {Skeleton} from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { addTask, updateTask } from '@/services/daily-tasks';
 import { InterviewTopicScheduler } from './InterviewTopicScheduler';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { sendDailyDebrief } from '@/ai/flows/send-daily-debrief';
 import { AutomatedDebriefScheduler } from './AutomatedDebriefScheduler';
-
-function TelegramIcon() {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-send h-4 w-4"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-    )
-}
 
 export function AiScheduler() {
   const {user} = useAuth();
@@ -57,7 +50,6 @@ export function AiScheduler() {
   const [summaryError, setSummaryError] = useState<string | null>(null);
   
   const [isAddingTask, startAddTaskTransition] = useTransition();
-  const [isSending, startSendTransition] = useTransition();
 
   useEffect(() => {
     if (!user) {
@@ -169,27 +161,6 @@ export function AiScheduler() {
       }
     });
   };
-
-  const handleSendNow = () => {
-    if (!summaryResult) {
-      toast({ title: 'No summary to send', description: 'Please generate a daily debrief first.', variant: 'destructive'});
-      return;
-    }
-
-    startSendTransition(async () => {
-        toast({ title: 'Sending to Telegram...', description: 'This may take a moment.' });
-        try {
-            const result = await sendDailyDebrief(summaryResult);
-            if (result.success) {
-              toast({ title: 'Success!', description: 'Your daily debrief was sent to Telegram.'});
-            } else {
-              toast({ title: 'Telegram Error', description: result.message, variant: 'destructive'});
-            }
-        } catch (error) {
-            toast({ title: 'Telegram Error', description: 'Failed to send message.', variant: 'destructive'});
-        }
-    });
-  }
 
   const getTaskIcon = (taskTitle: string) => {
     const lowerCaseTitle = taskTitle.toLowerCase();
@@ -367,16 +338,6 @@ export function AiScheduler() {
                            <li key={index}>{item}</li>
                         ))}
                     </ul>
-                </div>
-
-                <div className="p-4 border-t mt-4 space-y-3">
-                    <h3 className="font-semibold text-base">🛎️ Send this debrief to Telegram</h3>
-                    <div className="flex flex-col sm:flex-row items-center gap-2">
-                        <Button size="sm" onClick={handleSendNow} className="w-full sm:w-auto" disabled={isSending}>
-                            {isSending ? <Loader2 className="animate-spin" /> : <Send />}
-                            Send Now
-                        </Button>
-                    </div>
                 </div>
             </div>
           )}
