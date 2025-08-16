@@ -349,6 +349,17 @@ export const GetPersonalizedSalaryEstimateOutputSchema = z.object({
 });
 export type GetPersonalizedSalaryEstimateOutput = z.infer<typeof GetPersonalizedSalaryEstimateOutputSchema>;
 
+export const GenerateRecruiterMessageInputSchema = z.object({
+    resume: z.string().describe("The user's resume as plain text."),
+    jobDescription: z.string().describe("The job description as plain text."),
+    tone: z.enum(['Formal', 'Friendly', 'Confident']).describe("The desired tone for the message."),
+});
+export type GenerateRecruiterMessageInput = z.infer<typeof GenerateRecruiterMessageInputSchema>;
+
+export const GenerateRecruiterMessageOutputSchema = z.object({
+    recruiterMessage: z.string().describe("The generated message for the recruiter."),
+});
+export type GenerateRecruiterMessageOutput = z.infer<typeof GenerateRecruiterMessageOutputSchema>;
 
 export const highImpactSkills = [
     "React",
@@ -376,7 +387,3 @@ export const highImpactSkills = [
     "RxJS",
     "NgRx",
 ];
-
-    
-
-    

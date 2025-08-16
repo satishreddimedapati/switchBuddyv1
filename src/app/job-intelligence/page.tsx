@@ -10,33 +10,38 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useTransition } from "react";
 import { useActionState } from 'react';
-import { handleTailorResume, type FormState } from "../resume-tailor/actions";
-import { Briefcase, Building, Cpu, FileText, Linkedin, Loader2, MapPin, Search, Wand2, ThumbsUp, ThumbsDown, DollarSign, Calculator, History } from "lucide-react";
+import { handleAnalysis, type FormState } from "../resume-tailor/actions";
+import { Briefcase, Building, Cpu, FileText, Linkedin, Loader2, MapPin, Search, Wand2, ThumbsUp, ThumbsDown, DollarSign, Calculator, History, MessageSquare, Copy } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { MarketIntelligence } from "./MarketIntelligence";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
 
-function SubmitButton() {
-    const [pending, startTransition] = useTransition();
-     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-        if (pending) {
-            e.preventDefault();
-        }
-    };
+function SubmitButton({ action }: { action: 'analyze' | 'message' }) {
+    const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending} onClick={handleClick} className="w-full sm:w-auto">
+        <Button type="submit" name="action" value={action} disabled={pending} className="w-full sm:w-auto">
             {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Analyzing...
+                    Generating...
                 </>
             ) : (
-                <>
-                    <Wand2 className="mr-2 h-4 w-4" />
-                    Calculate Fit Score
-                </>
+                action === 'analyze' ? (
+                    <>
+                        <Wand2 className="mr-2 h-4 w-4" />
+                        Analyze Fit
+                    </>
+                ) : (
+                    <>
+                         <MessageSquare className="mr-2 h-4 w-4" />
+                         Generate Message
+                    </>
+                )
             )}
         </Button>
     )
@@ -60,9 +65,10 @@ const smartFilters: Filter[] = [
 export default function JobIntelligencePage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [activeFilters, setActiveFilters] = useState<Filter[]>([]);
+    const { toast } = useToast();
 
     const initialState: FormState = { message: '', error: false };
-    const [state, formAction] = useActionState(handleTailorResume, initialState);
+    const [state, formAction] = useActionState(handleAnalysis, initialState);
 
     const toggleFilter = (filter: Filter) => {
         setActiveFilters(prev => {
@@ -108,6 +114,14 @@ export default function JobIntelligencePage() {
         if (!searchTerm) return 'https://www.naukri.com';
         const keyword = searchTerm.toLowerCase().replace(/\s+/g, '-');
         return `https://www.naukri.com/${keyword}-jobs`;
+    }
+
+    const handleCopyToClipboard = (text: string | undefined) => {
+        if (!text) return;
+        navigator.clipboard.writeText(text);
+        toast({
+            title: "Copied to clipboard!",
+        })
     }
 
     return (
@@ -178,18 +192,42 @@ export default function JobIntelligencePage() {
                  <Card>
                     <AccordionTrigger className="p-6">
                         <CardHeader className="p-0 text-left">
-                             <CardTitle className="flex items-center gap-2"><Cpu /> Role Fit Score</CardTitle>
-                            <CardDescription>Upload your resume and a job description to get your fit score and identify skill gaps.</CardDescription>
+                             <CardTitle className="flex items-center gap-2"><Cpu /> Resume & Role Analyzer</CardTitle>
+                            <CardDescription>Get a fit score, generate a tailored resume, and craft a message to the recruiter.</CardDescription>
                         </CardHeader>
                     </AccordionTrigger>
                      <AccordionContent>
                          <CardContent>
                             <form action={formAction} className="space-y-4">
-                                 <Textarea name="resume" placeholder="Paste your current resume here..." rows={8} required />
-                                 <Textarea name="jobDescription" placeholder="Paste the target job description here..." rows={8} required />
-                                 <div className="flex justify-end">
-                                    <SubmitButton />
-                                </div>
+                                 <div className="grid md:grid-cols-2 gap-4">
+                                    <Textarea name="resume" placeholder="Paste your current resume here..." rows={8} required />
+                                    <Textarea name="jobDescription" placeholder="Paste the target job description here..." rows={8} required />
+                                 </div>
+                                 
+                                 <Card>
+                                    <CardContent className="p-4 space-y-4">
+                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                            <div>
+                                                <Label htmlFor="tone" className="font-semibold">Recruiter Message Tone</Label>
+                                                <p className="text-sm text-muted-foreground">Select the tone for the AI-generated recruiter message.</p>
+                                            </div>
+                                             <Select name="tone" defaultValue="Friendly">
+                                                <SelectTrigger className="w-full sm:w-[180px]">
+                                                    <SelectValue placeholder="Select a tone" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Formal">Formal</SelectItem>
+                                                    <SelectItem value="Friendly">Friendly</SelectItem>
+                                                    <SelectItem value="Confident">Confident</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                         <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2 border-t">
+                                            <SubmitButton action="analyze" />
+                                            <SubmitButton action="message" />
+                                        </div>
+                                    </CardContent>
+                                 </Card>
                             </form>
                              {state.error && (
                                 <Alert variant="destructive" className="mt-4">
@@ -197,13 +235,42 @@ export default function JobIntelligencePage() {
                                     <AlertDescription>{state.message}</AlertDescription>
                                 </Alert>
                             )}
-                            {state.tailoredResume && (
-                                <div className="mt-6">
-                                    <Separator className="my-4" />
-                                    <h3 className="font-semibold mb-2">Analysis Result:</h3>
-                                    <pre className="bg-muted/50 p-4 rounded-md whitespace-pre-wrap font-body text-sm leading-relaxed max-h-96 overflow-auto">
-                                        {state.tailoredResume}
-                                    </pre>
+                             {(state.fitScoreAnalysis || state.recruiterMessage) && (
+                                <div className="mt-6 grid md:grid-cols-2 gap-6">
+                                     {state.fitScoreAnalysis && (
+                                        <div className="space-y-4">
+                                            <h3 className="font-semibold text-lg">Resume Analysis & Tailored CV</h3>
+                                            <Card>
+                                                <CardContent className="p-4">
+                                                    <pre className="bg-muted/50 p-4 rounded-md whitespace-pre-wrap font-body text-sm leading-relaxed max-h-96 overflow-auto">
+                                                        {state.fitScoreAnalysis}
+                                                    </pre>
+                                                     <div className="flex justify-end mt-4">
+                                                        <Button variant="outline" onClick={() => handleCopyToClipboard(state.fitScoreAnalysis)}>
+                                                          <Copy className="mr-2" /> Copy CV Text
+                                                        </Button>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        </div>
+                                    )}
+                                     {state.recruiterMessage && (
+                                        <div className="space-y-4">
+                                            <h3 className="font-semibold text-lg">Generated Recruiter Message</h3>
+                                             <Card>
+                                                <CardContent className="p-4">
+                                                    <pre className="bg-muted/50 p-4 rounded-md whitespace-pre-wrap font-body text-sm leading-relaxed max-h-96 overflow-auto">
+                                                        {state.recruiterMessage}
+                                                    </pre>
+                                                     <div className="flex justify-end mt-4">
+                                                        <Button variant="outline" onClick={() => handleCopyToClipboard(state.recruiterMessage)}>
+                                                          <Copy className="mr-2" /> Copy Message
+                                                        </Button>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </CardContent>
@@ -231,5 +298,3 @@ export default function JobIntelligencePage() {
       </div>
   );
 }
-
-    
