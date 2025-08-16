@@ -283,3 +283,32 @@ export const GetSalaryBenchmarkOutputSchema = z.object({
   salaryRange: z.string().describe('The estimated salary range, e.g., "₹8.5 LPA – ₹12 LPA".'),
   commentary: z.string().describe('A brief commentary on the salary range and market conditions.'),
 });
+
+export const GetMarketIntelligenceInputSchema = z.object({
+  jobRole: z.string().describe('The job role, e.g., "Software Engineer".'),
+  companyName: z.string().describe('The name of the target company.'),
+  location: z.string().describe('The city or region, e.g., "Bangalore".'),
+});
+
+export const GetMarketIntelligenceOutputSchema = z.object({
+  growthPath: z.array(z.string()).describe('A typical career progression path, e.g., ["Junior Dev", "Senior Dev", "Tech Lead"].'),
+  marketDemand: z.object({
+    demandIndex: z.string().describe('A qualitative rating of demand, e.g., "High", "+15% YoY".'),
+    commentary: z.string().describe('A brief analysis of the job market demand.'),
+  }),
+  alumniInsights: z.object({
+    avgTenure: z.string().describe('The average tenure for this role at the company.'),
+    commonNextSteps: z.array(z.string()).describe('Common companies or roles alumni move to.'),
+  }),
+  interviewDifficulty: z.object({
+      difficultyRating: z.string().describe('A rating of the interview difficulty, e.g., "Medium", "7/10".'),
+      commentary: z.string().describe('A brief explanation of why the interview is rated this way.'),
+  }),
+  applicationStrategy: z.object({
+      recommendedStrategy: z.string().describe('The best suggested way to apply (e.g., "Referral", "LinkedIn Easy Apply").'),
+      responseProbability: z.string().describe('An estimated probability of getting a response, e.g., "High", "Low".'),
+  })
+});
+
+export type GetMarketIntelligenceInput = z.infer<typeof GetMarketIntelligenceInputSchema>;
+export type GetMarketIntelligenceOutput = z.infer<typeof GetMarketIntelligenceOutputSchema>;

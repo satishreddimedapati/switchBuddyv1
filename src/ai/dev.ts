@@ -16,3 +16,4 @@ import '@/ai/flows/interview-topic-scheduler.ts';
 import '@/ai/flows/interview-practice.ts';
 import '@/ai/flows/get-company-insights.ts';
 import '@/ai/flows/get-salary-benchmark.ts';
+import '@/ai/flows/get-market-intelligence.ts';

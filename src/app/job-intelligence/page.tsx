@@ -7,14 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { useActionState, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
+import { useActionState } from 'react';
 import { handleTailorResume, type FormState } from "../resume-tailor/actions";
 import { Briefcase, Building, Cpu, FileText, Linkedin, Loader2, MapPin, Search, Wand2, ThumbsUp, ThumbsDown, DollarSign } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { getCompanyInsights, GetCompanyInsightsOutput } from "@/ai/flows/get-company-insights";
-import { getSalaryBenchmark, GetSalaryBenchmarkOutput } from "@/ai/flows/get-salary-benchmark";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { MarketIntelligence } from "./MarketIntelligence";
 
 
 function SubmitButton() {
@@ -55,124 +55,6 @@ const smartFilters: Filter[] = [
     { label: "Hyderabad", type: 'location', value: 'Hyderabad, Telangana, India', paramName: 'location' },
     { label: "Bangalore", type: 'location', value: 'Bengaluru, Karnataka, India', paramName: 'location' },
 ];
-
-
-function CompanyInsightsWidget() {
-    const [companyName, setCompanyName] = useState('');
-    const [result, setResult] = useState<GetCompanyInsightsOutput | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [isGenerating, startTransition] = useTransition();
-
-    const handleGenerate = () => {
-        if (!companyName) return;
-        startTransition(async () => {
-            setError(null);
-            setResult(null);
-            try {
-                const res = await getCompanyInsights({ companyName });
-                setResult(res);
-            } catch (e) {
-                setError("Failed to fetch company insights.");
-                console.error(e);
-            }
-        });
-    }
-
-    return (
-        <div className="space-y-4">
-            <h3 className="font-semibold text-lg flex items-center gap-2"><Building /> Company Insights</h3>
-            <div className="flex gap-2">
-                <Input placeholder="Enter company name..." value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
-                <Button onClick={handleGenerate} disabled={isGenerating || !companyName}>
-                    {isGenerating ? <Loader2 className="animate-spin" /> : <Search />}
-                </Button>
-            </div>
-            {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
-            {isGenerating && (
-                <div className="space-y-2 pt-2">
-                    <Skeleton className="h-4 w-1/4" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
-                </div>
-            )}
-            {result && (
-                <div className="space-y-4 pt-2 text-sm">
-                    <div>
-                        <h4 className="font-semibold">Culture</h4>
-                        <p className="text-muted-foreground">{result.culture}</p>
-                    </div>
-                     <div>
-                        <h4 className="font-semibold">Interview Process</h4>
-                        <p className="text-muted-foreground">{result.interviewProcess}</p>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <h4 className="font-semibold flex items-center gap-2"><ThumbsUp className="text-green-500"/> Pros</h4>
-                            <ul className="list-disc list-inside text-muted-foreground">
-                                {result.pros.map((pro, i) => <li key={i}>{pro}</li>)}
-                            </ul>
-                        </div>
-                         <div>
-                            <h4 className="font-semibold flex items-center gap-2"><ThumbsDown className="text-red-500" /> Cons</h4>
-                            <ul className="list-disc list-inside text-muted-foreground">
-                                {result.cons.map((con, i) => <li key={i}>{con}</li>)}
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-}
-
-function SalaryBenchmarkingWidget({ jobRole }: { jobRole: string }) {
-    const [location, setLocation] = useState('Bangalore');
-    const [result, setResult] = useState<GetSalaryBenchmarkOutput | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [isGenerating, startTransition] = useTransition();
-
-    const handleGenerate = () => {
-        if (!jobRole || !location) return;
-        startTransition(async () => {
-            setError(null);
-            setResult(null);
-            try {
-                const res = await getSalaryBenchmark({ jobRole, location });
-                setResult(res);
-            } catch (e) {
-                setError("Failed to fetch salary data.");
-                console.error(e);
-            }
-        });
-    }
-
-    return (
-        <div className="space-y-4">
-             <h3 className="font-semibold text-lg flex items-center gap-2"><DollarSign /> Salary Benchmarking</h3>
-            <div className="flex gap-2">
-                <Input placeholder="Enter location..." value={location} onChange={(e) => setLocation(e.target.value)} />
-                <Button onClick={handleGenerate} disabled={isGenerating || !location || !jobRole}>
-                     {isGenerating ? <Loader2 className="animate-spin" /> : <Search />}
-                </Button>
-            </div>
-             {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
-             {isGenerating && (
-                <div className="space-y-2 pt-2">
-                    <Skeleton className="h-8 w-1/2 mx-auto" />
-                    <Skeleton className="h-4 w-3/4 mx-auto" />
-                </div>
-             )}
-             {result && (
-                <div className="text-center pt-2">
-                    <p className="text-2xl font-bold text-primary">{result.salaryRange}</p>
-                    <p className="text-sm text-muted-foreground">{result.commentary}</p>
-                </div>
-             )}
-        </div>
-    );
-}
-
 
 export default function JobIntelligencePage() {
     const [searchTerm, setSearchTerm] = useState('');
@@ -338,10 +220,8 @@ export default function JobIntelligencePage() {
                         </CardHeader>
                     </AccordionTrigger>
                      <AccordionContent>
-                        <CardContent className="space-y-6">
-                             <CompanyInsightsWidget />
-                             <Separator />
-                             <SalaryBenchmarkingWidget jobRole={searchTerm} />
+                        <CardContent>
+                            <MarketIntelligence jobRole={searchTerm} />
                         </CardContent>
                     </AccordionContent>
                  </Card>
@@ -351,5 +231,3 @@ export default function JobIntelligencePage() {
       </div>
   );
 }
-
-    
