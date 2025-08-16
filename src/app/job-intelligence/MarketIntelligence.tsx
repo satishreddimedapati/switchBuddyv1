@@ -23,7 +23,6 @@ const marketIntelSchema = z.object({
     companyName: z.string().min(1),
     location: z.string().min(1),
     yearsOfExperience: z.coerce.number().min(0),
-    skills: z.array(z.string()),
 })
 type MarketIntelFormValues = z.infer<typeof marketIntelSchema>;
 
@@ -52,7 +51,6 @@ export function MarketIntelligence() {
             companyName: '',
             location: '',
             yearsOfExperience: 0,
-            skills: [],
         }
     })
 
@@ -62,15 +60,18 @@ export function MarketIntelligence() {
             setIntelResult(null);
             setSalaryResult(null);
             try {
-                const [intelRes, salaryRes] = await Promise.all([
-                    getMarketIntelligence({ jobRole: data.jobRole, companyName: data.companyName, location: data.location }),
-                    ...(data.skills.length > 0 
-                        ? [getPersonalizedSalaryEstimate({ jobRole: data.jobRole, yearsOfExperience: data.yearsOfExperience, location: data.location, skills: data.skills })] 
-                        : [Promise.resolve(null)])
-                ]);
-
+                // Always fetch market intelligence first
+                const intelRes = await getMarketIntelligence({ jobRole: data.jobRole, companyName: data.companyName, location: data.location });
                 setIntelResult(intelRes);
-                if (salaryRes) {
+
+                // If experience is provided, fetch personalized salary using skills from the first result
+                if (data.yearsOfExperience > 0 && intelRes.skillsInDemand.length > 0) {
+                   const salaryRes = await getPersonalizedSalaryEstimate({ 
+                        jobRole: data.jobRole, 
+                        yearsOfExperience: data.yearsOfExperience, 
+                        location: data.location, 
+                        skills: intelRes.skillsInDemand 
+                    });
                     setSalaryResult(salaryRes);
                 }
 
@@ -102,41 +103,11 @@ export function MarketIntelligence() {
                     </div>
                 </div>
                  <div>
-                    <Label htmlFor="yearsOfExperience">Years of Experience</Label>
+                    <Label htmlFor="yearsOfExperience">Years of Experience (for personalized salary)</Label>
                     <Input id="yearsOfExperience" type="number" {...form.register('yearsOfExperience')} className="max-w-xs" />
                     {form.formState.errors.yearsOfExperience && <p className="text-destructive text-sm mt-1">{form.formState.errors.yearsOfExperience.message}</p>}
                 </div>
-                 <div>
-                    <Label>Select Your Key Skills (for personalized salary)</Label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 rounded-md border p-4 mt-2">
-                        {highImpactSkills.map(skill => (
-                             <Controller
-                                key={skill}
-                                name="skills"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id={skill}
-                                            checked={field.value?.includes(skill)}
-                                            onCheckedChange={(checked) => {
-                                                return checked
-                                                ? field.onChange([...(field.value || []), skill])
-                                                : field.onChange(
-                                                    field.value?.filter(
-                                                        (value) => value !== skill
-                                                    )
-                                                    );
-                                            }}
-                                        />
-                                        <Label htmlFor={skill} className="text-sm font-normal">{skill}</Label>
-                                    </div>
-                                )}
-                            />
-                        ))}
-                    </div>
-                </div>
-
+                
                 <div className="flex justify-end">
                     <Button type="submit" disabled={isGenerating} className="w-full sm:w-auto">
                          {isGenerating ? <Loader2 className="animate-spin mr-2"/> : <Search className="mr-2"/>}
