@@ -29,6 +29,13 @@ const marketIntelSchema = z.object({
 })
 type MarketIntelFormValues = z.infer<typeof marketIntelSchema>;
 
+type CurrentAnalysis = {
+    input: MarketIntelFormValues;
+    intelResult: GetMarketIntelligenceOutput;
+    salaryResult: GetPersonalizedSalaryEstimateOutput | null;
+} | null;
+
+
 function LoadingSkeleton() {
     return (
         <div className="space-y-4 pt-4">
@@ -49,9 +56,7 @@ interface MarketIntelligenceProps {
 export function MarketIntelligence({ historyItem, onNewSearch }: MarketIntelligenceProps) {
     const { user } = useAuth();
     const { toast } = useToast();
-    const [intelResult, setIntelResult] = useState<GetMarketIntelligenceOutput | null>(null);
-    const [salaryResult, setSalaryResult] = useState<GetPersonalizedSalaryEstimateOutput | null>(null);
-    const [lastSearchInput, setLastSearchInput] = useState<MarketIntelFormValues | null>(null);
+    const [currentAnalysis, setCurrentAnalysis] = useState<CurrentAnalysis>(null);
     const [isCurrentSearchSaved, setIsCurrentSearchSaved] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isGenerating, startGenerateTransition] = useTransition();
@@ -75,14 +80,13 @@ export function MarketIntelligence({ historyItem, onNewSearch }: MarketIntellige
                 location: historyItem.input.location,
                 yearsOfExperience: historyItem.input.yearsOfExperience,
             });
-            setIntelResult(historyItem.intelResult);
-            setSalaryResult(historyItem.salaryResult || null);
-            setLastSearchInput(historyItem.input);
+            setCurrentAnalysis({
+                input: historyItem.input,
+                intelResult: historyItem.intelResult,
+                salaryResult: historyItem.salaryResult,
+            });
             setIsCurrentSearchSaved(true);
             setError(null);
-        } else {
-            // Do not clear the form when onNewSearch is called, only when historyItem becomes null explicitly
-            // This preserves form state during analysis.
         }
     }, [historyItem, form]);
 
@@ -94,25 +98,29 @@ export function MarketIntelligence({ historyItem, onNewSearch }: MarketIntellige
         }
         startGenerateTransition(async () => {
             setError(null);
-            setIntelResult(null);
-            setSalaryResult(null);
+            setCurrentAnalysis(null);
             onNewSearch(); 
             setIsCurrentSearchSaved(false);
-            setLastSearchInput(data);
 
             try {
                 const intelRes = await getMarketIntelligence({ jobRole: data.jobRole, companyName: data.companyName, location: data.location });
-                setIntelResult(intelRes);
-
+                
+                let salaryRes = null;
                 if (data.yearsOfExperience !== undefined && data.yearsOfExperience >= 0 && intelRes.skillsInDemand.length > 0) {
-                   const personalizedSalaryRes = await getPersonalizedSalaryEstimate({ 
+                   salaryRes = await getPersonalizedSalaryEstimate({ 
                         jobRole: data.jobRole, 
                         yearsOfExperience: data.yearsOfExperience, 
                         location: data.location, 
                         skills: intelRes.skillsInDemand 
                     });
-                    setSalaryResult(personalizedSalaryRes);
                 }
+                
+                setCurrentAnalysis({
+                    input: data,
+                    intelResult: intelRes,
+                    salaryResult: salaryRes,
+                });
+
             } catch (e) {
                 setError("Failed to fetch market intelligence data.");
                 console.error(e);
@@ -121,17 +129,13 @@ export function MarketIntelligence({ historyItem, onNewSearch }: MarketIntellige
     }
 
     const handleSaveSearch = () => {
-        if (!user || !lastSearchInput || !intelResult) {
+        if (!user || !currentAnalysis) {
             toast({ title: "Error", description: "No results to save.", variant: "destructive" });
             return;
         }
         startSaveTransition(async () => {
             try {
-                await addSearchToHistory(user.uid, {
-                    input: lastSearchInput,
-                    intelResult: intelResult,
-                    salaryResult: salaryResult,
-                });
+                await addSearchToHistory(user.uid, currentAnalysis);
                 setIsCurrentSearchSaved(true);
                 toast({ title: "Success", description: "Search saved to your history." });
             } catch (error) {
@@ -140,6 +144,9 @@ export function MarketIntelligence({ historyItem, onNewSearch }: MarketIntellige
             }
         });
     };
+
+    const intelResult = currentAnalysis?.intelResult;
+    const salaryResult = currentAnalysis?.salaryResult;
 
     return (
         <div className="space-y-4">
