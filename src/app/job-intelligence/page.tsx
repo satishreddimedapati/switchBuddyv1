@@ -372,7 +372,8 @@ export default function JobIntelligencePage() {
                                                         <CardHeader className="p-0 text-left">
                                                             <CardTitle className="flex items-center gap-2"><DollarSign /> Salary Benchmark</CardTitle>
                                                             <CardDescription>An estimated salary for this role in the specified location.</CardDescription>
-                                                        </Header>
+
+                                                        </CardHeader>
                                                     </AccordionTrigger>
                                                     <AccordionContent>
                                                          <CardContent>
@@ -405,7 +406,7 @@ export default function JobIntelligencePage() {
                          <CardHeader className="p-0 text-left">
                             <CardTitle className="flex items-center gap-2"><Building/> Market Intelligence & Salary Calculator</CardTitle>
                             <CardDescription>Get insights on career paths, skills, top companies and a personalized salary estimate.</CardDescription>
-                        </Header>
+                        </CardHeader>
                     </AccordionTrigger>
                      <AccordionContent>
                         <CardContent>
