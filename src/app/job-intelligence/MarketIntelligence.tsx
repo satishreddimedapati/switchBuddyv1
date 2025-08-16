@@ -151,120 +151,125 @@ export function MarketIntelligence() {
 
              {(intelResult || salaryResult) && (
                  <div className="space-y-4 pt-2 text-sm">
-                    {salaryResult && (
-                         <Alert>
-                            <Sparkles className="h-4 w-4" />
-                            <AlertTitle className="text-xl font-bold text-primary">
-                                Personalized Salary: {salaryResult.estimatedSalaryRange}
-                            </AlertTitle>
-                            <AlertDescription>
-                                {salaryResult.commentary}
-                            </AlertDescription>
-                        </Alert>
-                    )}
-
-                    {intelResult && (
-                       <Accordion type="multiple" defaultValue={['growth-path']} className="w-full space-y-2">
-                            
-                            <AccordionItem value="growth-path">
+                    <Accordion type="multiple" defaultValue={['personalized-salary', 'growth-path']} className="w-full space-y-2">
+                        {salaryResult && (
+                            <AccordionItem value="personalized-salary">
                                 <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
-                                    <span className="flex items-center gap-2"><GitBranch/> Growth Path & Salary</span>
+                                    <span className="flex items-center gap-2"><Sparkles/> Your Personalized Salary Estimate</span>
                                 </AccordionTrigger>
                                 <AccordionContent className="p-4 border rounded-b-md">
-                                    <ul className="list-none space-y-2">
-                                        {intelResult.growthPath.map((step, i) => (
-                                            <li key={i} className="flex justify-between items-center">
-                                                <span>{step.role}</span>
-                                                <Badge variant="secondary">{step.salaryRange}</Badge>
-                                            </li>
-                                        ))}
-                                    </ul>
+                                    <Alert>
+                                        <AlertTitle className="text-xl font-bold text-primary">
+                                            {salaryResult.estimatedSalaryRange}
+                                        </AlertTitle>
+                                        <AlertDescription>
+                                            {salaryResult.commentary}
+                                        </AlertDescription>
+                                    </Alert>
                                 </AccordionContent>
                             </AccordionItem>
-                            
-                            <AccordionItem value="skills">
-                                <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
-                                    <span className="flex items-center gap-2"><Star/> Skills in Demand</span>
-                                </AccordionTrigger>
-                                <AccordionContent className="p-4 border rounded-b-md">
-                                   <div className="flex flex-wrap gap-2">
-                                        {intelResult.skillsInDemand.map((skill, i) => <Badge key={i}>{skill}</Badge>)}
-                                   </div>
-                                </AccordionContent>
-                            </AccordionItem>
-
-                            <AccordionItem value="location-comparison">
-                                <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
-                                    <span className="flex items-center gap-2"><Map/> Location Comparison</span>
-                                </AccordionTrigger>
-                                <AccordionContent className="p-4 border rounded-b-md space-y-2">
-                                   <p className="text-muted-foreground">{intelResult.locationComparison.commentary}</p>
-                                </AccordionContent>
-                            </AccordionItem>
-                            
-                            <AccordionItem value="top-companies">
-                                <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
-                                    <span className="flex items-center gap-2"><Building/> Top Companies Hiring</span>
-                                </AccordionTrigger>
-                                <AccordionContent className="p-4 border rounded-b-md">
-                                    <div className="flex flex-wrap gap-2">
-                                        {intelResult.topCompaniesHiring.map((company, i) => <Badge variant="outline" key={i}>{company}</Badge>)}
-                                   </div>
-                                </AccordionContent>
-                            </AccordionItem>
-
-                            <AccordionItem value="alumni-insights">
-                                <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
-                                    <span className="flex items-center gap-2"><Users/> Alumni Career Switches</span>
-                                </AccordionTrigger>
-                                <AccordionContent className="p-4 border rounded-b-md space-y-2">
-                                   <p><strong className="font-semibold">Average Tenure:</strong> {intelResult.alumniInsights.avgTenure}</p>
-                                   <div>
-                                       <strong className="font-semibold">Common Career Switches:</strong>
-                                       <ul className="list-disc list-inside text-muted-foreground">
-                                           {intelResult.alumniInsights.careerSwitches.map((step, i) => <li key={i}>{step}</li>)}
-                                       </ul>
-                                   </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                             
-                             <AccordionItem value="interview-prep">
-                                <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
-                                    <span className="flex items-center gap-2"><BrainCircuit/> Interview Prep</span>
-                                </AccordionTrigger>
-                                <AccordionContent className="p-4 border rounded-b-md space-y-2">
-                                    <p><strong className="font-semibold">Difficulty:</strong> {intelResult.interviewPrep.difficultyRating}</p>
-                                    <div>
-                                       <strong className="font-semibold">Common Question Categories:</strong>
-                                       <ul className="list-disc list-inside text-muted-foreground">
-                                           {intelResult.interviewPrep.commonQuestionCategories.map((cat, i) => <li key={i}>{cat}</li>)}
-                                       </ul>
-                                   </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                             
-                             <AccordionItem value="application-strategy">
-                                <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
-                                    <span className="flex items-center gap-2"><CheckCircle/> Application Strategy</span>
-                                </AccordionTrigger>
-                                <AccordionContent className="p-4 border rounded-b-md space-y-2">
-                                    <p><strong className="font-semibold">Best Time to Apply:</strong> {intelResult.applicationStrategy.bestTimeToApply}</p>
-                                    <div>
-                                       <strong className="font-semibold">Success Rates by Method:</strong>
-                                       <ul className="list-none text-muted-foreground space-y-1 mt-1">
-                                           {intelResult.applicationStrategy.successRates.map((rate, i) => (
-                                               <li key={i} className="flex justify-between items-center">
-                                                   <span>{rate.method}</span>
-                                                   <span className="font-mono font-bold text-primary">{rate.probability}</span>
+                        )}
+                        {intelResult && (
+                            <>
+                                <AccordionItem value="growth-path">
+                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
+                                        <span className="flex items-center gap-2"><GitBranch/> Growth Path & Salary</span>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="p-4 border rounded-b-md">
+                                        <ul className="list-none space-y-2">
+                                            {intelResult.growthPath.map((step, i) => (
+                                                <li key={i} className="flex justify-between items-center">
+                                                    <span>{step.role}</span>
+                                                    <Badge variant="secondary">{step.salaryRange}</Badge>
                                                 </li>
-                                           ))}
-                                       </ul>
-                                   </div>
-                                </AccordionContent>
-                            </AccordionItem>
+                                            ))}
+                                        </ul>
+                                    </AccordionContent>
+                                </AccordionItem>
+                                
+                                <AccordionItem value="skills">
+                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
+                                        <span className="flex items-center gap-2"><Star/> Skills in Demand</span>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="p-4 border rounded-b-md">
+                                    <div className="flex flex-wrap gap-2">
+                                            {intelResult.skillsInDemand.map((skill, i) => <Badge key={i}>{skill}</Badge>)}
+                                    </div>
+                                    </AccordionContent>
+                                </AccordionItem>
 
-                       </Accordion>
-                    )}
+                                <AccordionItem value="location-comparison">
+                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
+                                        <span className="flex items-center gap-2"><Map/> Location Comparison</span>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="p-4 border rounded-b-md space-y-2">
+                                    <p className="text-muted-foreground">{intelResult.locationComparison.commentary}</p>
+                                    </AccordionContent>
+                                </AccordionItem>
+                                
+                                <AccordionItem value="top-companies">
+                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
+                                        <span className="flex items-center gap-2"><Building/> Top Companies Hiring</span>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="p-4 border rounded-b-md">
+                                        <div className="flex flex-wrap gap-2">
+                                            {intelResult.topCompaniesHiring.map((company, i) => <Badge variant="outline" key={i}>{company}</Badge>)}
+                                    </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+
+                                <AccordionItem value="alumni-insights">
+                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
+                                        <span className="flex items-center gap-2"><Users/> Alumni Career Switches</span>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="p-4 border rounded-b-md space-y-2">
+                                    <p><strong className="font-semibold">Average Tenure:</strong> {intelResult.alumniInsights.avgTenure}</p>
+                                    <div>
+                                        <strong className="font-semibold">Common Career Switches:</strong>
+                                        <ul className="list-disc list-inside text-muted-foreground">
+                                            {intelResult.alumniInsights.careerSwitches.map((step, i) => <li key={i}>{step}</li>)}
+                                        </ul>
+                                    </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                                
+                                <AccordionItem value="interview-prep">
+                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
+                                        <span className="flex items-center gap-2"><BrainCircuit/> Interview Prep</span>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="p-4 border rounded-b-md space-y-2">
+                                        <p><strong className="font-semibold">Difficulty:</strong> {intelResult.interviewPrep.difficultyRating}</p>
+                                        <div>
+                                        <strong className="font-semibold">Common Question Categories:</strong>
+                                        <ul className="list-disc list-inside text-muted-foreground">
+                                            {intelResult.interviewPrep.commonQuestionCategories.map((cat, i) => <li key={i}>{cat}</li>)}
+                                        </ul>
+                                    </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                                
+                                <AccordionItem value="application-strategy">
+                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
+                                        <span className="flex items-center gap-2"><CheckCircle/> Application Strategy</span>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="p-4 border rounded-b-md space-y-2">
+                                        <p><strong className="font-semibold">Best Time to Apply:</strong> {intelResult.applicationStrategy.bestTimeToApply}</p>
+                                        <div>
+                                        <strong className="font-semibold">Success Rates by Method:</strong>
+                                        <ul className="list-none text-muted-foreground space-y-1 mt-1">
+                                            {intelResult.applicationStrategy.successRates.map((rate, i) => (
+                                                <li key={i} className="flex justify-between items-center">
+                                                    <span>{rate.method}</span>
+                                                    <span className="font-mono font-bold text-primary">{rate.probability}</span>
+                                                    </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </>
+                        )}
+                    </Accordion>
                  </div>
              )}
         </div>
