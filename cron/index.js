@@ -3,6 +3,7 @@ import cron from 'node-cron';
 import admin from 'firebase-admin';
 import { genkit, z } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
+import { definePrompt, defineFlow } from 'genkit';
 
 // Initialize Genkit and Google AI plugin
 genkit({
@@ -107,25 +108,25 @@ const sendDailyDebriefFlow = defineFlow(
             throw new Error("Telegram credentials are not configured in environment variables.");
         }
 
-        let messageText = `📝 Daily Debrief\n`;
-        messageText += `✅ Today’s Summary: ${summary.completedTasks}/${summary.totalTasks} tasks completed\n`;
-        messageText += `🔥 Streak: ${summary.streak} days\n`;
+        let messageText = \`📝 Daily Debrief\n\`;
+        messageText += \`✅ Today’s Summary: \${summary.completedTasks}/\${summary.totalTasks} tasks completed\n\`;
+        messageText += \`🔥 Streak: \${summary.streak} days\n\`;
 
         if (summary.missedTasks.length > 0) {
-            messageText += `📌 Missed Tasks:\n`;
+            messageText += \`📌 Missed Tasks:\n\`;
             summary.missedTasks.forEach(task => {
-                messageText += `- ${task.title} → ${task.rescheduledTime}\n`;
+                messageText += \`- \${task.title} → \${task.rescheduledTime}\n\`;
             });
         }
 
         if (summary.nextDayPriorities.length > 0) {
-            messageText += `🎯 Top 3 Priorities for Tomorrow:\n`;
+            messageText += \`🎯 Top 3 Priorities for Tomorrow:\n\`;
             summary.nextDayPriorities.forEach((priority, index) => {
-                messageText += `${index + 1}. ${priority}\n`;
+                messageText += \`\${index + 1}. \${priority}\n\`;
             });
         }
         
-        const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+        const url = \`https://api.telegram.org/bot\${botToken}/sendMessage\`;
         
         try {
             const response = await fetch(url, {
@@ -136,13 +137,13 @@ const sendDailyDebriefFlow = defineFlow(
             const result = await response.json();
             if (!result.ok) {
                 console.error('Telegram API Error:', result.description);
-                return { success: false, message: `Telegram API Error: ${result.description}` };
+                return { success: false, message: \`Telegram API Error: \${result.description}\` };
             }
             return { success: true, message: 'Message sent successfully.' };
         } catch (error) {
             console.error("Failed to send Telegram message:", error);
             const errorMessage = error instanceof Error ? error.message : "Unknown error";
-            return { success: false, message: `Failed to send message: ${errorMessage}` };
+            return { success: false, message: \`Failed to send message: \${errorMessage}\` };
         }
     }
 );
@@ -162,7 +163,7 @@ async function runDailyDebrief() {
 
         for (const userDoc of usersSnapshot.docs) {
             const userId = userDoc.id;
-            console.log(`Processing user: ${userId}`);
+            console.log(\`Processing user: \${userId}\`);
 
             const tasksSnapshot = await db.collection('daily_tasks')
                 .where('userId', '==', userId)
@@ -170,21 +171,21 @@ async function runDailyDebrief() {
                 .get();
 
             if (tasksSnapshot.empty) {
-                console.log(`No tasks for user ${userId} today. Skipping.`);
+                console.log(\`No tasks for user \${userId} today. Skipping.\`);
                 continue;
             }
 
             const tasks = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-            console.log(`Found ${tasks.length} tasks. Generating summary...`);
+            console.log(\`Found \${tasks.length} tasks. Generating summary...\`);
             const summary = await generateDailySummaryFlow({ tasks });
             
             if (summary) {
-                console.log(`Summary generated. Sending to Telegram...`);
+                console.log(\`Summary generated. Sending to Telegram...\`);
                 await sendDailyDebriefFlow(summary);
-                console.log(`Debrief sent successfully for user ${userId}.`);
+                console.log(\`Debrief sent successfully for user \${userId}.\`);
             } else {
-                 console.log(`Could not generate summary for user ${userId}.`);
+                 console.log(\`Could not generate summary for user \${userId}.\`);
             }
         }
     } catch (error) {
