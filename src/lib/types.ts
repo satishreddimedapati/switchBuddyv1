@@ -259,3 +259,27 @@ export const NetworkingActivitySchema = z.object({
     status: z.enum(['Pending', 'Replied', 'No Response']),
 });
 export type NetworkingActivity = z.infer<typeof NetworkingActivitySchema>;
+
+// JOB INTELLIGENCE SCHEMAS
+
+export const GetCompanyInsightsInputSchema = z.object({
+  companyName: z.string().describe('The name of the company to get insights for.'),
+});
+
+export const GetCompanyInsightsOutputSchema = z.object({
+  culture: z.string().describe("A summary of the company's work culture."),
+  interviewProcess: z.string().describe('A summary of the typical interview process.'),
+  pros: z.array(z.string()).describe('A list of common pros of working at the company.'),
+  cons: z.array(z.string()).describe('A list of common cons of working at the company.'),
+});
+
+
+export const GetSalaryBenchmarkInputSchema = z.object({
+  jobRole: z.string().describe('The job role, e.g., "Angular Developer".'),
+  location: z.string().describe('The city or region, e.g., "Bangalore".'),
+});
+
+export const GetSalaryBenchmarkOutputSchema = z.object({
+  salaryRange: z.string().describe('The estimated salary range, e.g., "₹8.5 LPA – ₹12 LPA".'),
+  commentary: z.string().describe('A brief commentary on the salary range and market conditions.'),
+});

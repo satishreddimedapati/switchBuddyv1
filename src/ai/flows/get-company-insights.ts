@@ -8,19 +8,10 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'zod';
+import { GetCompanyInsightsInputSchema, GetCompanyInsightsOutputSchema } from '@/lib/types';
+import { z } from 'zod';
 
-export const GetCompanyInsightsInputSchema = z.object({
-  companyName: z.string().describe('The name of the company to get insights for.'),
-});
 export type GetCompanyInsightsInput = z.infer<typeof GetCompanyInsightsInputSchema>;
-
-export const GetCompanyInsightsOutputSchema = z.object({
-  culture: z.string().describe("A summary of the company's work culture."),
-  interviewProcess: z.string().describe('A summary of the typical interview process.'),
-  pros: z.array(z.string()).describe('A list of common pros of working at the company.'),
-  cons: z.array(z.string()).describe('A list of common cons of working at the company.'),
-});
 export type GetCompanyInsightsOutput = z.infer<typeof GetCompanyInsightsOutputSchema>;
 
 export async function getCompanyInsights(

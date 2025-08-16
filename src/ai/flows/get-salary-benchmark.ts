@@ -8,18 +8,10 @@
  */
 
 import {ai} from '@/ai/genkit';
+import { GetSalaryBenchmarkInputSchema, GetSalaryBenchmarkOutputSchema } from '@/lib/types';
 import {z} from 'zod';
 
-export const GetSalaryBenchmarkInputSchema = z.object({
-  jobRole: z.string().describe('The job role, e.g., "Angular Developer".'),
-  location: z.string().describe('The city or region, e.g., "Bangalore".'),
-});
 export type GetSalaryBenchmarkInput = z.infer<typeof GetSalaryBenchmarkInputSchema>;
-
-export const GetSalaryBenchmarkOutputSchema = z.object({
-  salaryRange: z.string().describe('The estimated salary range, e.g., "₹8.5 LPA – ₹12 LPA".'),
-  commentary: z.string().describe('A brief commentary on the salary range and market conditions.'),
-});
 export type GetSalaryBenchmarkOutput = z.infer<typeof GetSalaryBenchmarkOutputSchema>;
 
 export async function getSalaryBenchmark(
