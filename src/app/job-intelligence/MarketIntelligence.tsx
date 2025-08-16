@@ -55,7 +55,7 @@ export function MarketIntelligence({ jobRole }: MarketIntelligenceProps) {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <Input placeholder="Enter company name..." value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
                 <Input placeholder="Enter location..." value={location} onChange={(e) => setLocation(e.target.value)} />
-                <Button onClick={handleGenerate} disabled={isGenerating || !companyName || !location || !jobRole}>
+                <Button onClick={handleGenerate} disabled={isGenerating || !companyName || !location}>
                      {isGenerating ? <Skeleton className="h-full w-full" /> : <><Search className="mr-2"/> Analyze</>}
                 </Button>
             </div>
