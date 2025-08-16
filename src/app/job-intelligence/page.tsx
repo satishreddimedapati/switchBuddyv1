@@ -226,7 +226,7 @@ export default function JobIntelligencePage() {
                                                 <p className="text-xs text-muted-foreground mt-1">Required for salary benchmark.</p>
                                             </div>
                                         </div>
-                                    </CardContent>
+                                     </CardContent>
                                 </Card>
                                  <div className="flex justify-end">
                                     <SubmitButton />
@@ -402,7 +402,7 @@ export default function JobIntelligencePage() {
                          <CardHeader className="p-0 text-left">
                             <CardTitle className="flex items-center gap-2"><Building/> Market Intelligence & Salary Calculator</CardTitle>
                             <CardDescription>Get insights on career paths, skills, top companies and a personalized salary estimate.</CardDescription>
-                        </Header>
+                        </CardHeader>
                     </AccordionTrigger>
                      <AccordionContent>
                         <CardContent>
@@ -416,5 +416,3 @@ export default function JobIntelligencePage() {
       </div>
   );
 }
-
-    
