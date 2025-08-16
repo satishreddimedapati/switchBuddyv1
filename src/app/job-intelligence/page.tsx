@@ -16,8 +16,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { MarketIntelligence } from "./MarketIntelligence";
-import { SearchHistory } from "./SearchHistory";
-import type { MarketIntelHistoryItem } from "@/lib/types";
 
 
 function SubmitButton() {
@@ -62,7 +60,6 @@ const smartFilters: Filter[] = [
 export default function JobIntelligencePage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [activeFilters, setActiveFilters] = useState<Filter[]>([]);
-    const [selectedHistoryItem, setSelectedHistoryItem] = useState<MarketIntelHistoryItem | null>(null);
 
     const initialState: FormState = { message: '', error: false };
     const [state, formAction] = useActionState(handleTailorResume, initialState);
@@ -112,15 +109,6 @@ export default function JobIntelligencePage() {
         const keyword = searchTerm.toLowerCase().replace(/\s+/g, '-');
         return `https://www.naukri.com/${keyword}-jobs`;
     }
-
-    const handleHistorySelect = (item: MarketIntelHistoryItem) => {
-        setSelectedHistoryItem(item);
-    }
-    
-    const handleNewSearch = () => {
-        setSelectedHistoryItem(null);
-    }
-
 
     return (
       <div className="flex flex-col gap-8">
@@ -233,29 +221,15 @@ export default function JobIntelligencePage() {
                     </AccordionTrigger>
                      <AccordionContent>
                         <CardContent>
-                            <MarketIntelligence historyItem={selectedHistoryItem} onNewSearch={handleNewSearch} />
+                            <MarketIntelligence />
                         </CardContent>
                     </AccordionContent>
                  </Card>
             </AccordionItem>
             
-             <AccordionItem value="search-history">
-                 <Card>
-                    <AccordionTrigger className="p-6">
-                         <CardHeader className="p-0 text-left">
-                            <CardTitle className="flex items-center gap-2"><History/> Search History</CardTitle>
-                            <CardDescription>Review your past market intelligence searches.</CardDescription>
-                        </CardHeader>
-                    </AccordionTrigger>
-                     <AccordionContent>
-                        <CardContent>
-                            <SearchHistory onSelect={handleHistorySelect} />
-                        </CardContent>
-                    </AccordionContent>
-                 </Card>
-            </AccordionItem>
-
         </Accordion>
       </div>
   );
 }
+
+    

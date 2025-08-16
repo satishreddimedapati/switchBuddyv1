@@ -15,8 +15,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BarChart, Briefcase, Building, DollarSign, Gauge, GitBranch, Lightbulb, Search, TrendingUp, Users, Map, Star, Clock, BrainCircuit, CheckCircle, Loader2, Wand2, Sparkles, Bookmark } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
-import { MarketIntelHistoryItem } from "@/lib/types";
-import { addSearchToHistory } from "@/services/market-intelligence-history";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 
@@ -49,18 +47,14 @@ function LoadingSkeleton() {
 }
 
 interface MarketIntelligenceProps {
-    historyItem?: MarketIntelHistoryItem | null;
-    onNewSearch: () => void;
 }
 
-export function MarketIntelligence({ historyItem, onNewSearch }: MarketIntelligenceProps) {
+export function MarketIntelligence({}: MarketIntelligenceProps) {
     const { user } = useAuth();
     const { toast } = useToast();
     const [currentAnalysis, setCurrentAnalysis] = useState<CurrentAnalysis>(null);
-    const [isCurrentSearchSaved, setIsCurrentSearchSaved] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isGenerating, startGenerateTransition] = useTransition();
-    const [isSaving, startSaveTransition] = useTransition();
 
     const form = useForm<MarketIntelFormValues>({
         resolver: zodResolver(marketIntelSchema),
@@ -72,24 +66,6 @@ export function MarketIntelligence({ historyItem, onNewSearch }: MarketIntellige
         }
     });
 
-     useEffect(() => {
-        if (historyItem) {
-            form.reset({
-                jobRole: historyItem.input.jobRole,
-                companyName: historyItem.input.companyName,
-                location: historyItem.input.location,
-                yearsOfExperience: historyItem.input.yearsOfExperience,
-            });
-            setCurrentAnalysis({
-                input: historyItem.input,
-                intelResult: historyItem.intelResult,
-                salaryResult: historyItem.salaryResult,
-            });
-            setIsCurrentSearchSaved(true);
-            setError(null);
-        }
-    }, [historyItem, form]);
-
 
     const onSubmit = (data: MarketIntelFormValues) => {
         if (!user) {
@@ -99,8 +75,6 @@ export function MarketIntelligence({ historyItem, onNewSearch }: MarketIntellige
         startGenerateTransition(async () => {
             setError(null);
             setCurrentAnalysis(null);
-            onNewSearch(); 
-            setIsCurrentSearchSaved(false);
 
             try {
                 const intelRes = await getMarketIntelligence({ jobRole: data.jobRole, companyName: data.companyName, location: data.location });
@@ -127,32 +101,6 @@ export function MarketIntelligence({ historyItem, onNewSearch }: MarketIntellige
             }
         });
     }
-
-    const handleSaveSearch = () => {
-        if (!user || !currentAnalysis) {
-            toast({ title: "Error", description: "No results to save.", variant: "destructive" });
-            return;
-        }
-        startSaveTransition(async () => {
-            try {
-                // Ensure yearsOfExperience is not undefined
-                const saveData = {
-                    ...currentAnalysis,
-                    input: {
-                        ...currentAnalysis.input,
-                        yearsOfExperience: currentAnalysis.input.yearsOfExperience ?? null
-                    }
-                };
-
-                await addSearchToHistory(user.uid, saveData);
-                setIsCurrentSearchSaved(true);
-                toast({ title: "Success", description: "Search saved to your history." });
-            } catch (error) {
-                console.error("Failed to save search:", error);
-                toast({ title: "Error", description: "Could not save your search.", variant: "destructive" });
-            }
-        });
-    };
 
     const intelResult = currentAnalysis?.intelResult;
     const salaryResult = currentAnalysis?.salaryResult;
@@ -196,17 +144,6 @@ export function MarketIntelligence({ historyItem, onNewSearch }: MarketIntellige
 
              {(intelResult || salaryResult) && (
                  <div className="space-y-4 pt-2 text-sm">
-                    <div className="flex justify-end">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleSaveSearch}
-                            disabled={isSaving || isCurrentSearchSaved}
-                        >
-                            {isSaving ? <Loader2 className="animate-spin" /> : <Bookmark />}
-                            {isCurrentSearchSaved ? 'Saved' : 'Save this Search'}
-                        </Button>
-                    </div>
                     <Accordion type="multiple" defaultValue={['personalized-salary', 'growth-path']} className="w-full space-y-2">
                         {salaryResult && (
                             <AccordionItem value="personalized-salary">
