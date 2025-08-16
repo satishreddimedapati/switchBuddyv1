@@ -24,12 +24,25 @@ import {collection, onSnapshot, query, where} from 'firebase/firestore';
 import {format as formatDateFns, parse} from 'date-fns';
 import {useEffect, useState, useTransition} from 'react';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
-import {BrainCircuit, CheckCircle2, Coffee, Lightbulb, Loader2, Plus, Sparkles, Target, CalendarPlus} from 'lucide-react';
+import {BrainCircuit, CheckCircle2, Coffee, Lightbulb, Loader2, Plus, Sparkles, Target, CalendarPlus, Send} from 'lucide-react';
 import {Skeleton} from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { addTask, updateTask } from '@/services/daily-tasks';
 import { InterviewTopicScheduler } from './InterviewTopicScheduler';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+
+function TelegramIcon() {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-send h-4 w-4"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+    )
+}
+
+function WhatsAppIcon() {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4"><path d="M16.75 13.96c.25.13.43.2.5.28.07.08.15.18.22.33.07.15.03.31-.12.48-.15.17-.34.35-.57.52-.23.17-.5.35-.82.53-.32.18-.66.33-1.02.46-.36.13-.75.23-1.16.29-.41.06-.84.06-1.28-.02-.44-.08-.88-.2-1.3-.39-.42-.19-.82-.43-1.2-.72-.38-.29-.73-.63-1.05-1.01-.32-.38-.6-.79-.83-1.22-.23-.43-.4-.88-.52-1.34-.12-.46-.18-.94-.18-1.42 0-.48.06-1 .18-1.48.12-.48.3-1 .53-1.44.23-.44.5-1 .82-1.42.32-.42.68-.78 1.08-1.08.4-.3.83-.53 1.28-.7.45-.17.92-.28 1.4-.33.48-.05.97-.05 1.45.02.48.07.95.18 1.4.35.45.17.88.39 1.28.66.4.27.78.58 1.1.95.32.37.6.78.84 1.21.24.43.4.9.52 1.38.12.48.18.98.18 1.48 0 .44-.05.88-.16 1.32-.11.44-.28.88-.5 1.3-.15.28-.3.53-.48.75-.18.22-.38.43-.59.61-.21.18-.42.35-.62.51l-.01.01zM12.01 2.01c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10-4.48-10-10-10zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/></svg>
+    )
+}
 
 export function AiScheduler() {
   const {user} = useAuth();
@@ -48,6 +61,7 @@ export function AiScheduler() {
   const [summaryError, setSummaryError] = useState<string | null>(null);
   
   const [isAddingTask, startAddTaskTransition] = useTransition();
+  const [deliveryOptions, setDeliveryOptions] = useState({ telegram: true, whatsApp: true });
 
 
   useEffect(() => {
@@ -161,6 +175,23 @@ export function AiScheduler() {
     });
   };
 
+  const handleSendNow = () => {
+    // This is a placeholder for backend integration.
+    let channels = [];
+    if (deliveryOptions.telegram) channels.push("Telegram");
+    if (deliveryOptions.whatsApp) channels.push("WhatsApp");
+
+    if (channels.length === 0) {
+        toast({ title: "No channels selected", description: "Please select Telegram or WhatsApp to send the schedule.", variant: 'destructive'});
+        return;
+    }
+    
+    toast({
+        title: "Schedule Sent (Simulated)",
+        description: `Your daily debrief would be sent to ${channels.join(' & ')}. This requires backend setup.`
+    });
+  }
+
   const getTaskIcon = (taskTitle: string) => {
     const lowerCaseTitle = taskTitle.toLowerCase();
     if (lowerCaseTitle.includes('break') || lowerCaseTitle.includes('coffee') || lowerCaseTitle.includes('lunch') || lowerCaseTitle.includes('dinner')) return <Coffee className="h-5 w-5 text-amber-600" />;
@@ -256,14 +287,14 @@ export function AiScheduler() {
         </CardContent>
       </Card>
 
-      {/* Daily Summary & Next-Day Recommendations */}
+      {/* Daily Debrief & Next-Day Recommendations */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base md:text-2xl">
-            <CheckCircle2 /> Daily Debrief &amp; Tomorrow's Targets
+            <CheckCircle2 /> Daily Debrief &amp; Accountability
           </CardTitle>
           <CardDescription>
-            Review today&apos;s progress and get your top 3 priorities for tomorrow, so you always know what to focus on.
+            Review today&apos;s progress, see rescheduled tasks, and get your top priorities for tomorrow.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -297,18 +328,60 @@ export function AiScheduler() {
             </div>
           )}
            {summaryResult && (
-            <div className="mt-6 space-y-4">
-                <div>
-                    <h3 className="font-semibold mb-2">Today's Summary:</h3>
-                    <p className='text-sm leading-relaxed bg-muted/50 p-3 rounded-md'>{summaryResult.motivationalSummary}</p>
+            <div className="mt-6 space-y-4 text-sm">
+                <div className="flex flex-wrap gap-4">
+                     <div className="flex-1 min-w-[120px] p-3 bg-muted/50 rounded-md">
+                        <p className="font-semibold">Today&apos;s Summary</p>
+                        <p className="text-2xl font-bold">{summaryResult.completedTasks}/{summaryResult.totalTasks}</p>
+                        <p className="text-xs text-muted-foreground">tasks completed</p>
+                     </div>
+                      <div className="flex-1 min-w-[120px] p-3 bg-muted/50 rounded-md">
+                        <p className="font-semibold">Streak</p>
+                        <p className="text-2xl font-bold">🔥 {summaryResult.streak}</p>
+                        <p className="text-xs text-muted-foreground">days in a row</p>
+                     </div>
                 </div>
+
+                {summaryResult.missedTasks.length > 0 && (
+                    <div>
+                        <h3 className="font-semibold mb-2 text-base">📌 Missed Tasks (Rescheduled)</h3>
+                        <div className="p-3 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 rounded-r-md">
+                            <ul className="space-y-1 list-none">
+                                {summaryResult.missedTasks.map((item, index) => (
+                                <li key={index} className="flex justify-between items-center">
+                                    <span>{item.title}</span>
+                                    <Badge variant="outline">{item.rescheduledTime}</Badge>
+                                </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                )}
+                 
                  <div>
-                    <h3 className="font-semibold mb-2">Top 3 Priorities for Tomorrow:</h3>
-                     <ul className="space-y-2 list-disc pl-5">
+                    <h3 className="font-semibold mb-2 text-base">🎯 Top 3 Priorities for Tomorrow:</h3>
+                     <ul className="space-y-2 list-decimal pl-5">
                         {summaryResult.nextDayPriorities.map((item, index) => (
-                           <li key={index} className="text-sm">{item}</li>
+                           <li key={index}>{item}</li>
                         ))}
                     </ul>
+                </div>
+
+                <div className="p-4 border-t mt-4 space-y-3">
+                    <h3 className="font-semibold text-base">🛎️ Send me this schedule</h3>
+                    <div className="flex flex-col sm:flex-row items-center gap-2">
+                        <div className="flex items-center gap-2">
+                            <Button size="sm" variant={deliveryOptions.telegram ? 'default' : 'outline'} onClick={() => setDeliveryOptions(p => ({...p, telegram: !p.telegram}))}>
+                                <TelegramIcon /> Telegram {deliveryOptions.telegram && "✅"}
+                            </Button>
+                            <Button size="sm" variant={deliveryOptions.whatsApp ? 'default' : 'outline'} onClick={() => setDeliveryOptions(p => ({...p, whatsApp: !p.whatsApp}))}>
+                               <WhatsAppIcon /> WhatsApp {deliveryOptions.whatsApp && "✅"}
+                            </Button>
+                        </div>
+                        <Button size="sm" onClick={handleSendNow} className="w-full sm:w-auto sm:ml-auto">
+                            <Send /> Send Now
+                        </Button>
+                    </div>
                 </div>
             </div>
           )}

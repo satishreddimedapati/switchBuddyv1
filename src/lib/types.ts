@@ -76,6 +76,14 @@ export type GenerateDailySummaryInput = z.infer<
   typeof GenerateDailySummaryInputSchema
 >;
 
+// Schema for a missed task in the summary output
+const MissedTaskSchema = z.object({
+    title: z.string().describe("The title of the missed task."),
+    rescheduledTime: z.string().describe("The suggested rescheduled time for tomorrow, e.g., 'Tomorrow 8AM'."),
+});
+export type MissedTask = z.infer<typeof MissedTaskSchema>;
+
+
 // Output for a generated daily summary
 export const GenerateDailySummaryOutputSchema = z.object({
   motivationalSummary: z
@@ -84,6 +92,10 @@ export const GenerateDailySummaryOutputSchema = z.object({
   nextDayPriorities: z
     .array(z.string())
     .describe('The top 3 recommended priority tasks for tomorrow.'),
+   completedTasks: z.number().describe('The number of tasks completed today.'),
+   totalTasks: z.number().describe('The total number of tasks for today.'),
+   streak: z.number().describe('The current number of consecutive days with at least one completed task.'),
+   missedTasks: z.array(MissedTaskSchema).describe("A list of incomplete tasks from today, with a suggested rescheduled time for tomorrow."),
 });
 export type GenerateDailySummaryOutput = z.infer<
   typeof GenerateDailySummaryOutputSchema

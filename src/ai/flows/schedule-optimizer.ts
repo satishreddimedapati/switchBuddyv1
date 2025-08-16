@@ -19,6 +19,7 @@ import {
   GenerateDailySummaryInputSchema,
   GenerateDailySummaryOutput,
   GenerateDailySummaryOutputSchema,
+  MissedTask,
 } from '@/lib/types';
 
 const generatePlanPrompt = ai.definePrompt({
@@ -90,8 +91,12 @@ const generateSummaryPrompt = ai.definePrompt({
 You will be given a list of tasks and their completion status for today.
 
 Your tasks are to:
-1.  Write a short, motivational summary of the user's accomplishments. Focus on what they completed.
-2.  Based on the incomplete tasks and general productivity principles, identify and suggest the top 3 most important priorities for tomorrow.
+1.  **motivationalSummary**: Write a short, motivational summary of the user's accomplishments. Focus on what they completed.
+2.  **nextDayPriorities**: Based on the incomplete tasks and general productivity principles, identify and suggest the top 3 most important priorities for tomorrow.
+3.  **completedTasks**: Count the number of completed tasks.
+4.  **totalTasks**: Count the total number of tasks.
+5.  **streak**: Return a fictional but realistic streak number between 2 and 10.
+6.  **missedTasks**: For each incomplete task, create an object with its title and a suggested rescheduled time for tomorrow (e.g., "Tomorrow 8AM", "Tomorrow 1PM").
 
 Today's Tasks:
 {{#each tasks}}
