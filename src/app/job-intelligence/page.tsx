@@ -7,10 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { useFormStatus } from "react-dom";
 import { useActionState, useState, useTransition } from "react";
 import { handleTailorResume, type FormState } from "../resume-tailor/actions";
-import { Briefcase, Building, Cpu, FileText, Linkedin, Loader2, MapPin, Search, Wand2, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Briefcase, Building, Cpu, FileText, Linkedin, Loader2, MapPin, Search, Wand2, ThumbsUp, ThumbsDown, DollarSign } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getCompanyInsights, GetCompanyInsightsOutput } from "@/ai/flows/get-company-insights";
 import { getSalaryBenchmark, GetSalaryBenchmarkOutput } from "@/ai/flows/get-salary-benchmark";
@@ -19,9 +18,14 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 
 function SubmitButton() {
-    const { pending } = useFormStatus();
+    const [pending, startTransition] = useTransition();
+     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        if (pending) {
+            e.preventDefault();
+        }
+    };
     return (
-        <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+        <Button type="submit" disabled={pending} onClick={handleClick} className="w-full sm:w-auto">
             {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -42,14 +46,16 @@ interface Filter {
     label: string;
     type: FilterType;
     value: string;
+    paramName: 'f_TPR' | 'location';
 }
 
 const smartFilters: Filter[] = [
-    { label: "Last 24h", type: 'time', value: 'r86400' },
-    { label: "Last 7 days", type: 'time', value: 'r604800' },
-    { label: "Hyderabad", type: 'location', value: 'Hyderabad, Telangana, India' },
-    { label: "Bangalore", type: 'location', value: 'Bengaluru, Karnataka, India' },
+    { label: "Last 24h", type: 'time', value: 'r86400', paramName: 'f_TPR' },
+    { label: "Last 7 days", type: 'time', value: 'r604800', paramName: 'f_TPR' },
+    { label: "Hyderabad", type: 'location', value: 'Hyderabad, Telangana, India', paramName: 'location' },
+    { label: "Bangalore", type: 'location', value: 'Bengaluru, Karnataka, India', paramName: 'location' },
 ];
+
 
 function CompanyInsightsWidget() {
     const [companyName, setCompanyName] = useState('');
@@ -74,6 +80,7 @@ function CompanyInsightsWidget() {
 
     return (
         <div className="space-y-4">
+            <h3 className="font-semibold text-lg flex items-center gap-2"><Building /> Company Insights</h3>
             <div className="flex gap-2">
                 <Input placeholder="Enter company name..." value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
                 <Button onClick={handleGenerate} disabled={isGenerating || !companyName}>
@@ -142,6 +149,7 @@ function SalaryBenchmarkingWidget({ jobRole }: { jobRole: string }) {
 
     return (
         <div className="space-y-4">
+             <h3 className="font-semibold text-lg flex items-center gap-2"><DollarSign /> Salary Benchmarking</h3>
             <div className="flex gap-2">
                 <Input placeholder="Enter location..." value={location} onChange={(e) => setLocation(e.target.value)} />
                 <Button onClick={handleGenerate} disabled={isGenerating || !location || !jobRole}>
@@ -175,17 +183,15 @@ export default function JobIntelligencePage() {
 
     const toggleFilter = (filter: Filter) => {
         setActiveFilters(prev => {
-            // For time filters, only one can be active at a time.
-            if (filter.type === 'time') {
-                const otherFilters = prev.filter(f => f.type !== 'time');
-                const isAlreadyActive = prev.some(f => f.label === filter.label);
-                return isAlreadyActive ? otherFilters : [...otherFilters, filter];
-            } 
-            // For location filters, multiple can be active.
-            else {
-                 const isAlreadyActive = prev.some(f => f.label === filter.label);
-                 return isAlreadyActive ? prev.filter(f => f.label !== filter.label) : [...prev, filter];
+            const isAlreadyActive = prev.some(f => f.label === filter.label);
+            if (isAlreadyActive) {
+                return prev.filter(f => f.label !== filter.label);
             }
+            if (filter.type === 'time') {
+                const otherTimeFiltersRemoved = prev.filter(f => f.type !== 'time');
+                return [...otherTimeFiltersRemoved, filter];
+            }
+            return [...prev, filter];
         });
     }
 
@@ -195,23 +201,23 @@ export default function JobIntelligencePage() {
             url.searchParams.set('keywords', searchTerm);
         }
 
-        const timeFilter = activeFilters.find(f => f.type === 'time');
-        if (timeFilter) {
-            url.searchParams.set('f_TPR', timeFilter.value);
-        }
-
-        const locationFilters = activeFilters.filter(f => f.type === 'location');
-        if (locationFilters.length > 0) {
-            url.searchParams.set('location', locationFilters.map(f => f.value).join(' OR '));
-        }
-
+        activeFilters.forEach(filter => {
+            if (filter.paramName === 'location') {
+                 const existing = url.searchParams.get('location');
+                 url.searchParams.set('location', existing ? `${existing} OR ${filter.value}` : filter.value);
+            } else {
+                 url.searchParams.set(filter.paramName, filter.value);
+            }
+        });
+        
         return url.toString();
     }
     
-     const generateLinkedInRecruiterUrl = () => {
+    const generateLinkedInRecruiterUrl = () => {
         const url = new URL('https://www.linkedin.com/search/results/people/');
         const query = `${searchTerm} recruiter`;
         url.searchParams.set('keywords', query);
+        url.searchParams.set('sid', '~SJ');
         return url.toString();
     }
 
@@ -233,12 +239,12 @@ export default function JobIntelligencePage() {
           </p>
         </div>
 
-        <Accordion type="single" collapsible defaultValue="item-1" className="w-full space-y-4">
+        <Accordion type="multiple" defaultValue={["item-1"]} className="w-full space-y-4">
             <AccordionItem value="item-1">
                 <Card>
                     <AccordionTrigger className="p-6">
-                        <CardHeader className="p-0">
-                            <CardTitle className="flex items-center gap-2 text-left"><Search /> Job Search</CardTitle>
+                        <CardHeader className="p-0 text-left">
+                            <CardTitle className="flex items-center gap-2"><Search /> Job Search & Recruiter Shortcut</CardTitle>
                         </CardHeader>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -275,6 +281,12 @@ export default function JobIntelligencePage() {
                                     </Badge>
                                 ))}
                             </div>
+                            <Separator />
+                            <Button asChild variant="outline" className="w-full" disabled={!searchTerm}>
+                                <a href={generateLinkedInRecruiterUrl()} target="_blank" rel="noopener noreferrer">
+                                    <Linkedin className="mr-2"/> Find Recruiters for &quot;{searchTerm || '...'}&quot;
+                                </a>
+                            </Button>
                         </CardContent>
                     </AccordionContent>
                 </Card>
@@ -283,9 +295,9 @@ export default function JobIntelligencePage() {
             <AccordionItem value="item-2">
                  <Card>
                     <AccordionTrigger className="p-6">
-                        <CardHeader className="p-0">
-                             <CardTitle className="flex items-center gap-2 text-left"><Cpu /> Role Fit Score</CardTitle>
-                            <CardDescription className="text-left">Upload your resume and a job description to get your fit score and identify skill gaps.</CardDescription>
+                        <CardHeader className="p-0 text-left">
+                             <CardTitle className="flex items-center gap-2"><Cpu /> Role Fit Score</CardTitle>
+                            <CardDescription>Upload your resume and a job description to get your fit score and identify skill gaps.</CardDescription>
                         </CardHeader>
                     </AccordionTrigger>
                      <AccordionContent>
@@ -320,58 +332,24 @@ export default function JobIntelligencePage() {
             <AccordionItem value="item-3">
                  <Card>
                     <AccordionTrigger className="p-6">
-                         <CardHeader className="p-0">
-                            <CardTitle className="flex items-center gap-2 text-left"><Building/> Company Insights</CardTitle>
-                            <CardDescription className="text-left">Culture, reviews, and salary data.</CardDescription>
+                         <CardHeader className="p-0 text-left">
+                            <CardTitle className="flex items-center gap-2"><Building/> Market Intelligence</CardTitle>
+                            <CardDescription>Get insights on companies and salaries.</CardDescription>
                         </CardHeader>
                     </AccordionTrigger>
                      <AccordionContent>
-                        <CardContent>
+                        <CardContent className="space-y-6">
                              <CompanyInsightsWidget />
+                             <Separator />
+                             <SalaryBenchmarkingWidget jobRole={searchTerm} />
                         </CardContent>
                     </AccordionContent>
                  </Card>
             </AccordionItem>
 
-            <AccordionItem value="item-4">
-                 <Card>
-                    <AccordionTrigger className="p-6">
-                         <CardHeader className="p-0">
-                            <CardTitle className="flex items-center gap-2 text-left"><MapPin /> Salary Benchmarking</CardTitle>
-                            <CardDescription className="text-left">Compare salary expectations with market data.</CardDescription>
-                        </CardHeader>
-                    </AccordionTrigger>
-                     <AccordionContent>
-                        <CardContent>
-                            <SalaryBenchmarkingWidget jobRole={searchTerm} />
-                        </CardContent>
-                    </AccordionContent>
-                 </Card>
-            </AccordionItem>
-
-            <AccordionItem value="item-5">
-                 <Card>
-                    <AccordionTrigger className="p-6">
-                         <CardHeader className="p-0">
-                            <CardTitle className="flex items-center gap-2 text-left"><Linkedin /> Recruiter Shortcut</CardTitle>
-                            <CardDescription className="text-left">Find recruiters for this role on LinkedIn.</CardDescription>
-                        </CardHeader>
-                    </AccordionTrigger>
-                     <AccordionContent>
-                        <CardContent>
-                             <Button asChild variant="outline" className="w-full" disabled={!searchTerm}>
-                                <a href={generateLinkedInRecruiterUrl()} target="_blank" rel="noopener noreferrer">
-                                    Find Recruiters for &quot;{searchTerm || '...'}&quot;
-                                </a>
-                            </Button>
-                        </CardContent>
-                    </AccordionContent>
-                 </Card>
-            </AccordionItem>
         </Accordion>
       </div>
   );
 }
-
 
     
