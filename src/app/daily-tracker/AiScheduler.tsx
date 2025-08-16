@@ -31,7 +31,6 @@ import { addTask, updateTask } from '@/services/daily-tasks';
 import { InterviewTopicScheduler } from './InterviewTopicScheduler';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { AutomatedDebriefScheduler } from './AutomatedDebriefScheduler';
 import { sendDailyDebrief } from '@/ai/flows/send-daily-debrief';
 import { Toggle } from '@/components/ui/toggle';
 
@@ -202,9 +201,6 @@ export function AiScheduler() {
 
   return (
     <div className="space-y-8">
-      {/* Automated Debrief Scheduler */}
-      <AutomatedDebriefScheduler />
-
       {/* Smart Daily Plan Generator */}
       <Card>
         <CardHeader>
@@ -297,7 +293,7 @@ export function AiScheduler() {
             <CheckCircle2 /> Daily Debrief &amp; Accountability
           </CardTitle>
           <CardDescription>
-            Review today&apos;s progress, see rescheduled tasks, and get your top priorities for tomorrow.
+            Review today&apos;s progress, see rescheduled tasks, and get your top priorities for tomorrow. Your backend service will send this automatically at 14:50 every day.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -374,10 +370,6 @@ export function AiScheduler() {
         </CardContent>
          {summaryResult && (
           <CardFooter className="flex-col items-start gap-4 pt-4 border-t">
-              <div className="text-left">
-                  <h3 className="font-semibold">🛎️ Send me this schedule:</h3>
-                  <p className="text-xs text-muted-foreground">Automated daily sending is active.</p>
-              </div>
               <div className="flex items-center gap-2">
                  <Button onClick={handleSendNow} disabled={isSending}>
                     {isSending ? <Loader2 className="animate-spin" /> : <Send />}
