@@ -12,12 +12,13 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { getMarketIntelligence, GetMarketIntelligenceOutput } from "@/ai/flows/get-market-intelligence";
 import { getPersonalizedSalaryEstimate, GetPersonalizedSalaryEstimateOutput } from "@/ai/flows/get-personalized-salary-estimate";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BarChart, Briefcase, Building, DollarSign, Gauge, GitBranch, Lightbulb, Search, TrendingUp, Users, Map, Star, Clock, BrainCircuit, CheckCircle, Loader2, Wand2, Sparkles } from "lucide-react";
+import { BarChart, Briefcase, Building, DollarSign, Gauge, GitBranch, Lightbulb, Search, TrendingUp, Users, Map, Star, Clock, BrainCircuit, CheckCircle, Loader2, Wand2, Sparkles, Bookmark } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 import { MarketIntelHistoryItem } from "@/lib/types";
 import { addSearchToHistory } from "@/services/market-intelligence-history";
 import { useAuth } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 
 
 const marketIntelSchema = z.object({
@@ -47,10 +48,14 @@ interface MarketIntelligenceProps {
 
 export function MarketIntelligence({ historyItem, onNewSearch }: MarketIntelligenceProps) {
     const { user } = useAuth();
+    const { toast } = useToast();
     const [intelResult, setIntelResult] = useState<GetMarketIntelligenceOutput | null>(null);
     const [salaryResult, setSalaryResult] = useState<GetPersonalizedSalaryEstimateOutput | null>(null);
+    const [lastSearchInput, setLastSearchInput] = useState<MarketIntelFormValues | null>(null);
+    const [isCurrentSearchSaved, setIsCurrentSearchSaved] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [isGenerating, startTransition] = useTransition();
+    const [isGenerating, startGenerateTransition] = useTransition();
+    const [isSaving, startSaveTransition] = useTransition();
 
     const form = useForm<MarketIntelFormValues>({
         resolver: zodResolver(marketIntelSchema),
@@ -72,11 +77,12 @@ export function MarketIntelligence({ historyItem, onNewSearch }: MarketIntellige
             });
             setIntelResult(historyItem.intelResult);
             setSalaryResult(historyItem.salaryResult || null);
+            setLastSearchInput(historyItem.input);
+            setIsCurrentSearchSaved(true);
             setError(null);
         } else {
-            form.reset({ jobRole: '', companyName: '', location: '', yearsOfExperience: 0 });
-            setIntelResult(null);
-            setSalaryResult(null);
+            // Do not clear the form when onNewSearch is called, only when historyItem becomes null explicitly
+            // This preserves form state during analysis.
         }
     }, [historyItem, form]);
 
@@ -86,20 +92,20 @@ export function MarketIntelligence({ historyItem, onNewSearch }: MarketIntellige
             setError("You must be logged in to use this feature.");
             return;
         }
-        startTransition(async () => {
+        startGenerateTransition(async () => {
             setError(null);
             setIntelResult(null);
             setSalaryResult(null);
-            onNewSearch(); // Clear history selection in parent
+            onNewSearch(); 
+            setIsCurrentSearchSaved(false);
+            setLastSearchInput(data);
+
             try {
-                // Always fetch market intelligence first
                 const intelRes = await getMarketIntelligence({ jobRole: data.jobRole, companyName: data.companyName, location: data.location });
                 setIntelResult(intelRes);
 
-                let personalizedSalaryRes: GetPersonalizedSalaryEstimateOutput | null = null;
-                // If experience is provided, fetch personalized salary using skills from the first result
                 if (data.yearsOfExperience !== undefined && data.yearsOfExperience >= 0 && intelRes.skillsInDemand.length > 0) {
-                   personalizedSalaryRes = await getPersonalizedSalaryEstimate({ 
+                   const personalizedSalaryRes = await getPersonalizedSalaryEstimate({ 
                         jobRole: data.jobRole, 
                         yearsOfExperience: data.yearsOfExperience, 
                         location: data.location, 
@@ -107,20 +113,33 @@ export function MarketIntelligence({ historyItem, onNewSearch }: MarketIntellige
                     });
                     setSalaryResult(personalizedSalaryRes);
                 }
-                
-                 await addSearchToHistory(user.uid, {
-                    input: data,
-                    intelResult: intelRes,
-                    salaryResult: personalizedSalaryRes,
-                });
-
-
             } catch (e) {
                 setError("Failed to fetch market intelligence data.");
                 console.error(e);
             }
         });
     }
+
+    const handleSaveSearch = () => {
+        if (!user || !lastSearchInput || !intelResult) {
+            toast({ title: "Error", description: "No results to save.", variant: "destructive" });
+            return;
+        }
+        startSaveTransition(async () => {
+            try {
+                await addSearchToHistory(user.uid, {
+                    input: lastSearchInput,
+                    intelResult: intelResult,
+                    salaryResult: salaryResult,
+                });
+                setIsCurrentSearchSaved(true);
+                toast({ title: "Success", description: "Search saved to your history." });
+            } catch (error) {
+                console.error("Failed to save search:", error);
+                toast({ title: "Error", description: "Could not save your search.", variant: "destructive" });
+            }
+        });
+    };
 
     return (
         <div className="space-y-4">
@@ -161,6 +180,17 @@ export function MarketIntelligence({ historyItem, onNewSearch }: MarketIntellige
 
              {(intelResult || salaryResult) && (
                  <div className="space-y-4 pt-2 text-sm">
+                    <div className="flex justify-end">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleSaveSearch}
+                            disabled={isSaving || isCurrentSearchSaved}
+                        >
+                            {isSaving ? <Loader2 className="animate-spin" /> : <Bookmark />}
+                            {isCurrentSearchSaved ? 'Saved' : 'Save this Search'}
+                        </Button>
+                    </div>
                     <Accordion type="multiple" defaultValue={['personalized-salary', 'growth-path']} className="w-full space-y-2">
                         {salaryResult && (
                             <AccordionItem value="personalized-salary">
