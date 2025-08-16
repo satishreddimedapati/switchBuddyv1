@@ -216,10 +216,16 @@ export default function JobIntelligencePage() {
     }
     
      const generateLinkedInRecruiterUrl = () => {
-        const query = encodeURIComponent(`${searchTerm} recruiter`);
         const url = new URL('https://www.linkedin.com/search/results/people/');
+        const query = `${searchTerm} recruiter`;
         url.searchParams.set('keywords', query);
         return url.toString();
+    }
+
+    const generateNaukriUrl = () => {
+        if (!searchTerm) return 'https://www.naukri.com';
+        const keyword = searchTerm.toLowerCase().replace(/\s+/g, '-');
+        return `https://www.naukri.com/${keyword}-jobs`;
     }
 
 
@@ -245,11 +251,18 @@ export default function JobIntelligencePage() {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
-                    <Button asChild className="w-full sm:w-auto">
-                        <a href={generateLinkedInJobsUrl()} target="_blank" rel="noopener noreferrer">
-                           <Linkedin className="mr-2"/> Search on LinkedIn
-                        </a>
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button asChild className="w-full sm:w-auto flex-1">
+                          <a href={generateLinkedInJobsUrl()} target="_blank" rel="noopener noreferrer">
+                             <Linkedin className="mr-2"/> LinkedIn
+                          </a>
+                      </Button>
+                      <Button asChild className="w-full sm:w-auto flex-1" variant="outline">
+                           <a href={generateNaukriUrl()} target="_blank" rel="noopener noreferrer">
+                             <Search className="mr-2"/> Naukri
+                          </a>
+                      </Button>
+                    </div>
                 </div>
                  <div className="flex flex-wrap gap-2 items-center">
                     <span className="text-sm font-medium">Quick Filters:</span>
