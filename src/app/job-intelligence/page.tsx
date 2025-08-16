@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -497,7 +498,7 @@ export default function JobIntelligencePage() {
                                                         <CardHeader className="p-0 text-left">
                                                             <CardTitle className="flex items-center gap-2"><DollarSign /> Salary Benchmark</CardTitle>
                                                             <CardDescription>An estimated salary for this role in the specified location.</CardDescription>
-                                                        </CardHeader>
+                                                        </Header>
                                                     </AccordionTrigger>
                                                     <AccordionContent>
                                                          <CardContent>
