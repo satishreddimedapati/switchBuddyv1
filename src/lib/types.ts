@@ -265,6 +265,7 @@ export type NetworkingActivity = z.infer<typeof NetworkingActivitySchema>;
 export const GetCompanyInsightsInputSchema = z.object({
   companyName: z.string().describe('The name of the company to get insights for.'),
 });
+export type GetCompanyInsightsInput = z.infer<typeof GetCompanyInsightsInputSchema>;
 
 export const GetCompanyInsightsOutputSchema = z.object({
   culture: z.string().describe("A summary of the company's work culture."),
@@ -272,41 +273,62 @@ export const GetCompanyInsightsOutputSchema = z.object({
   pros: z.array(z.string()).describe('A list of common pros of working at the company.'),
   cons: z.array(z.string()).describe('A list of common cons of working at the company.'),
 });
+export type GetCompanyInsightsOutput = z.infer<typeof GetCompanyInsightsOutputSchema>;
 
 
 export const GetSalaryBenchmarkInputSchema = z.object({
   jobRole: z.string().describe('The job role, e.g., "Angular Developer".'),
   location: z.string().describe('The city or region, e.g., "Bangalore".'),
 });
+export type GetSalaryBenchmarkInput = z.infer<typeof GetSalaryBenchmarkInputSchema>;
 
 export const GetSalaryBenchmarkOutputSchema = z.object({
   salaryRange: z.string().describe('The estimated salary range, e.g., "₹8.5 LPA – ₹12 LPA".'),
   commentary: z.string().describe('A brief commentary on the salary range and market conditions.'),
 });
+export type GetSalaryBenchmarkOutput = z.infer<typeof GetSalaryBenchmarkOutputSchema>;
+
 
 export const GetMarketIntelligenceInputSchema = z.object({
   jobRole: z.string().describe('The job role, e.g., "Software Engineer".'),
   companyName: z.string().describe('The name of the target company.'),
-  location: z.string().describe('The city or region, e.g., "Bangalore".'),
+  location: z.string().describe('The city or region, e.g., "Bangalore", or multiple locations like "Bangalore, Hyderabad".'),
 });
 
 export const GetMarketIntelligenceOutputSchema = z.object({
-  growthPath: z.array(z.string()).describe('A typical career progression path, e.g., ["Junior Dev", "Senior Dev", "Tech Lead"].'),
-  marketDemand: z.object({
-    demandIndex: z.string().describe('A qualitative rating of demand, e.g., "High", "+15% YoY".'),
-    commentary: z.string().describe('A brief analysis of the job market demand.'),
+  growthPath: z.array(
+    z.object({
+        role: z.string().describe("A role in the career path, e.g., 'Senior .NET Developer'."),
+        salaryRange: z.string().describe("The typical salary range for this role, e.g., '₹10–14 LPA'.")
+    })
+  ).describe('A typical career progression path with salary benchmarks for each level.'),
+
+  skillsInDemand: z.array(z.string()).describe('A list of trending skills and tools for this role, e.g., ["ASP.NET Core", "Azure", "Microservices"].'),
+  
+  locationComparison: z.object({
+    commentary: z.string().describe('A comparison of the locations provided, focusing on salary differences and cost of living.'),
   }),
+
+  topCompaniesHiring: z.array(z.string()).describe('A list of 3-5 companies currently hiring for this role in the specified locations.'),
+
   alumniInsights: z.object({
     avgTenure: z.string().describe('The average tenure for this role at the company.'),
-    commonNextSteps: z.array(z.string()).describe('Common companies or roles alumni move to.'),
+    careerSwitches: z.array(z.string()).describe('Examples of common career switches or paths alumni take, e.g., "TCS -> Senior Developer at Infosys".'),
   }),
-  interviewDifficulty: z.object({
+
+  interviewPrep: z.object({
       difficultyRating: z.string().describe('A rating of the interview difficulty, e.g., "Medium", "7/10".'),
-      commentary: z.string().describe('A brief explanation of why the interview is rated this way.'),
+      commonQuestionCategories: z.array(z.string()).describe('A list of common question categories for interviews, e.g., "Data structures & algorithms".'),
   }),
+
   applicationStrategy: z.object({
-      recommendedStrategy: z.string().describe('The best suggested way to apply (e.g., "Referral", "LinkedIn Easy Apply").'),
-      responseProbability: z.string().describe('An estimated probability of getting a response, e.g., "High", "Low".'),
+      bestTimeToApply: z.string().describe('A tip on the best time of year or week to apply for this role.'),
+      successRates: z.array(
+        z.object({
+            method: z.string().describe('The application method, e.g., "Referral".'),
+            probability: z.string().describe('The estimated success probability, e.g., "70%".')
+        })
+      ).describe('A list of application methods and their estimated success probabilities.'),
   })
 });
 
