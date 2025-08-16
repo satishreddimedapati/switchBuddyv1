@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { db } from '@/lib/firebase';
 import { DailyTask, GenerateDailySummaryOutput } from '@/lib/types';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, getDocs } from 'firebase/firestore';
 import { format as formatDateFns } from 'date-fns';
 import { generateDailySummary } from '@/ai/flows/schedule-optimizer';
 import { sendDailyDebrief } from '@/ai/flows/send-daily-debrief';
@@ -83,9 +83,4 @@ export function AutomatedDebriefScheduler() {
 
     // This component doesn't render anything to the UI
     return null;
-}
-// Helper to get docs once, since onSnapshot is for real-time listeners
-async function getDocs(q: any) {
-    const { getDocs: getDocsFromFirestore } = await import('firebase/firestore');
-    return await getDocsFromFirestore(q);
 }
