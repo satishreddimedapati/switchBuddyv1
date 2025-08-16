@@ -123,7 +123,7 @@ export const InterviewPlanSchema = z.object({
   createdAt: z.union([z.instanceof(Date), z.string()]), // Allow Date or ISO string
 });
 
-export type InterviewPlan = z.infer<typeof InterviewPlanSchema> & { questions?: InterviewSessionQuestion[] };
+export type InterviewPlan = z.infer<typeof InterviewPlanSchema>;
 
 // Helper to convert Firestore data to a serializable InterviewPlan
 export function toSerializableInterviewPlan(docData: any): Omit<InterviewPlan, 'id'> {
@@ -237,3 +237,25 @@ export const EvaluateInterviewAnswersResponseSchema = z.object({
     evaluations: z.array(EvaluationSchema).describe("An array of evaluations for each question-answer pair."),
 });
 export type EvaluateInterviewAnswersResponse = z.infer<typeof EvaluateInterviewAnswersResponseSchema>;
+
+// NETWORKING HUB SCHEMAS
+
+export const HrContactSchema = z.object({
+    id: z.string(),
+    userId: z.string(),
+    jobRole: z.string(),
+    hrName: z.string(),
+    company: z.string(),
+    linkedinUrl: z.string().url(),
+    email: z.string().email().optional(),
+});
+export type HrContact = z.infer<typeof HrContactSchema>;
+
+export const NetworkingActivitySchema = z.object({
+    id: z.string(),
+    userId: z.string(),
+    date: z.string(), // ISO String
+    note: z.string(),
+    status: z.enum(['Pending', 'Replied', 'No Response']),
+});
+export type NetworkingActivity = z.infer<typeof NetworkingActivitySchema>;
