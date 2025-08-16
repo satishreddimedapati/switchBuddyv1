@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from "@/lib/firebase";
-import type { MarketIntelHistoryItem } from "@/lib/types";
+import type { MarketIntelHistoryItem, GetMarketIntelligenceOutput, GetPersonalizedSalaryEstimateOutput } from "@/lib/types";
 import { collection, addDoc, query, where, getDocs, orderBy, serverTimestamp } from "firebase/firestore";
 
 const historyCollection = collection(db, "market_intelligence_history");
@@ -16,10 +16,35 @@ export async function addSearchToHistory(
     }
 
     try {
-        // Sanitize the AI output by creating a plain object from the results.
-        // This is the most robust way to ensure serializability for Firestore.
-        const cleanIntelResult = JSON.parse(JSON.stringify(searchData.intelResult));
-        const cleanSalaryResult = searchData.salaryResult ? JSON.parse(JSON.stringify(searchData.salaryResult)) : null;
+        // Deeply sanitize the AI output to ensure it's a plain object for Firestore.
+        // This is the most robust way to fix the serialization errors.
+        const intelResult = searchData.intelResult;
+        const cleanIntelResult: GetMarketIntelligenceOutput = {
+            growthPath: intelResult.growthPath.map(p => ({ role: p.role, salaryRange: p.salaryRange })),
+            skillsInDemand: [...intelResult.skillsInDemand],
+            locationComparison: { commentary: intelResult.locationComparison.commentary },
+            topCompaniesHiring: [...intelResult.topCompaniesHiring],
+            alumniInsights: { 
+                avgTenure: intelResult.alumniInsights.avgTenure,
+                careerSwitches: [...intelResult.alumniInsights.careerSwitches] 
+            },
+            interviewPrep: {
+                difficultyRating: intelResult.interviewPrep.difficultyRating,
+                commonQuestionCategories: [...intelResult.interviewPrep.commonQuestionCategories]
+            },
+            applicationStrategy: {
+                bestTimeToApply: intelResult.applicationStrategy.bestTimeToApply,
+                successRates: intelResult.applicationStrategy.successRates.map(r => ({ method: r.method, probability: r.probability }))
+            }
+        };
+
+        let cleanSalaryResult: GetPersonalizedSalaryEstimateOutput | null = null;
+        if (searchData.salaryResult) {
+            cleanSalaryResult = {
+                estimatedSalaryRange: searchData.salaryResult.estimatedSalaryRange,
+                commentary: searchData.salaryResult.commentary
+            };
+        }
 
         const dataToSave = {
             userId: userId,
