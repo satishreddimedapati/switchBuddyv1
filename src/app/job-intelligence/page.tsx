@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -22,27 +21,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 
 
-function SubmitButton({ action }: { action: 'analyze' | 'message' }) {
+function SubmitButton() {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" name="action" value={action} disabled={pending} className="w-full sm:w-auto">
+        <Button type="submit" name="action" value="analyze" disabled={pending} className="w-full">
             {pending ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
+                    Analyzing...
                 </>
             ) : (
-                action === 'analyze' ? (
-                    <>
-                        <Wand2 className="mr-2 h-4 w-4" />
-                        Generate Tailored CV
-                    </>
-                ) : (
-                    <>
-                         <MessageSquare className="mr-2 h-4 w-4" />
-                         Generate Cover Letter
-                    </>
-                )
+                <>
+                    <Wand2 className="mr-2 h-4 w-4" />
+                    Analyze My Fit
+                </>
             )}
         </Button>
     )
@@ -136,7 +128,7 @@ export default function JobIntelligencePage() {
           </p>
         </div>
 
-        <Accordion type="multiple" defaultValue={["market-intelligence"]} className="w-full space-y-4">
+        <Accordion type="multiple" defaultValue={["role-fit"]} className="w-full space-y-4">
             <AccordionItem value="job-search">
                 <Card>
                     <AccordionTrigger className="p-6">
@@ -194,33 +186,46 @@ export default function JobIntelligencePage() {
                     <AccordionTrigger className="p-6">
                         <CardHeader className="p-0 text-left">
                              <CardTitle className="flex items-center gap-2"><Cpu /> Resume & Role Analyzer</CardTitle>
-                            <CardDescription>Get a tailored resume and generate a professional cover letter.</CardDescription>
+                            <CardDescription>Analyze your resume against a job description for a fit score, tailored CV, and a professional cover letter.</CardDescription>
                         </CardHeader>
                     </AccordionTrigger>
                      <AccordionContent>
                          <CardContent>
                             <form action={formAction} className="space-y-4">
-                                 <div className="grid md:grid-cols-2 gap-4">
-                                    <Textarea name="resume" placeholder="Paste your current resume here..." rows={8} required />
-                                    <Textarea name="jobDescription" placeholder="Paste the target job description here..." rows={8} required />
-                                 </div>
-                                 
-                                 <Card>
-                                    <CardContent className="p-4 space-y-4">
-                                        <div className="space-y-2">
-                                            <Label className="font-semibold">Cover Letter Details</Label>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                <Input name="userName" placeholder="Your Full Name" required/>
-                                                <Input name="userContactInfo" placeholder="Phone, LinkedIn, GitHub, etc." required/>
-                                                <Input name="companyName" placeholder="Company Name" required />
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="resume">Your Resume</Label>
+                                        <Textarea id="resume" name="resume" placeholder="Paste your current resume here..." rows={8} required />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="jobDescription">Job Description</Label>
+                                        <Textarea id="jobDescription" name="jobDescription" placeholder="Paste the target job description here..." rows={8} required />
+                                    </div>
+                                </div>
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base">Cover Letter Details</CardTitle>
+                                    </CardHeader>
+                                     <CardContent className="space-y-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                            <div>
+                                                 <Label htmlFor="userName">Your Full Name</Label>
+                                                <Input id="userName" name="userName" placeholder="e.g. Satish Reddy" required/>
+                                            </div>
+                                             <div>
+                                                 <Label htmlFor="userContactInfo">Your Contact Info</Label>
+                                                <Input id="userContactInfo" name="userContactInfo" placeholder="Phone, LinkedIn URL, etc." required/>
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="companyName">Company Name</Label>
+                                                <Input id="companyName" name="companyName" placeholder="e.g. Deloitte" required />
                                             </div>
                                         </div>
-                                         <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t">
-                                            <SubmitButton action="analyze" />
-                                            <SubmitButton action="message" />
-                                        </div>
                                     </CardContent>
-                                 </Card>
+                                </Card>
+                                 <div className="flex justify-end">
+                                    <SubmitButton />
+                                </div>
                             </form>
                              {state.error && (
                                 <Alert variant="destructive" className="mt-4">
@@ -228,44 +233,95 @@ export default function JobIntelligencePage() {
                                     <AlertDescription>{state.message}</AlertDescription>
                                 </Alert>
                             )}
-                             {(state.fitScoreAnalysis || state.recruiterMessage) && (
-                                <div className="mt-6 grid md:grid-cols-2 gap-6">
-                                     {state.fitScoreAnalysis && (
-                                        <div className="space-y-4">
-                                            <h3 className="font-semibold text-lg">Tailored CV</h3>
-                                            <Card>
-                                                <CardContent className="p-4">
-                                                    <pre className="bg-muted/50 p-4 rounded-md whitespace-pre-wrap font-body text-sm leading-relaxed max-h-96 overflow-auto">
-                                                        {state.fitScoreAnalysis}
-                                                    </pre>
-                                                     <div className="flex justify-end mt-4">
-                                                        <Button variant="outline" onClick={() => handleCopyToClipboard(state.fitScoreAnalysis)}>
-                                                          <Copy className="mr-2" /> Copy CV Text
-                                                        </Button>
+
+                             {/* Results Dashboard */}
+                            {(state.analysis || state.recruiterMessage) && (
+                                <div className="mt-6 space-y-6">
+                                     {state.analysis && (
+                                        <Card>
+                                            <CardHeader>
+                                                <CardTitle>Analysis Complete</CardTitle>
+                                                <div className="flex items-center gap-4 text-sm pt-2">
+                                                    <div className="flex flex-col items-center">
+                                                        <span className="text-2xl font-bold text-primary">{state.analysis.fitScore}%</span>
+                                                        <span className="text-muted-foreground">Fit Score</span>
                                                     </div>
-                                                </CardContent>
-                                            </Card>
-                                        </div>
-                                    )}
-                                     {state.recruiterMessage && (
-                                        <div className="space-y-4">
-                                            <h3 className="font-semibold text-lg">Generated Cover Letter</h3>
-                                             <Card>
-                                                <CardContent className="p-4">
-                                                    <pre className="bg-muted/50 p-4 rounded-md whitespace-pre-wrap font-body text-sm leading-relaxed max-h-96 overflow-auto">
-                                                        {state.recruiterMessage}
-                                                    </pre>
-                                                     <div className="flex justify-end mt-4">
-                                                        <Button variant="outline" onClick={() => handleCopyToClipboard(state.recruiterMessage)}>
-                                                          <Copy className="mr-2" /> Copy Message
-                                                        </Button>
+                                                    <Separator orientation="vertical" className="h-10"/>
+                                                    <div>
+                                                        <p><strong>Skills Match:</strong> {state.analysis.breakdown.skillsMatch}</p>
+                                                        <p><strong>Experience Match:</strong> {state.analysis.breakdown.experienceMatch}</p>
                                                     </div>
-                                                </CardContent>
-                                            </Card>
-                                        </div>
+                                                </div>
+                                            </CardHeader>
+                                        </Card>
                                     )}
+                                    <Accordion type="multiple" defaultValue={["resume-optimizer", "recruiter-message"]} className="w-full space-y-4">
+                                         {state.analysis && (
+                                            <AccordionItem value="resume-optimizer">
+                                                <Card>
+                                                    <AccordionTrigger className="p-6">
+                                                        <CardHeader className="p-0 text-left">
+                                                            <CardTitle className="flex items-center gap-2">Resume Optimizer</CardTitle>
+                                                            <CardDescription>Your resume, tailored for this specific role.</CardDescription>
+                                                        </CardHeader>
+                                                    </AccordionTrigger>
+                                                    <AccordionContent>
+                                                        <CardContent>
+                                                            <div className="space-y-4">
+                                                                <div>
+                                                                    <h4 className="font-semibold mb-2">Missing Keywords</h4>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {state.analysis.missingSkills.map(skill => <Badge key={skill} variant="secondary">{skill}</Badge>)}
+                                                                    </div>
+                                                                </div>
+                                                                <Separator/>
+                                                                 <div>
+                                                                    <h4 className="font-semibold mb-2">Tailored CV</h4>
+                                                                    <pre className="bg-muted/50 p-4 rounded-md whitespace-pre-wrap font-body text-sm leading-relaxed max-h-96 overflow-auto">
+                                                                        {state.analysis.tailoredResume}
+                                                                    </pre>
+                                                                     <div className="flex justify-end mt-4">
+                                                                        <Button variant="outline" onClick={() => handleCopyToClipboard(state.analysis?.tailoredResume)}>
+                                                                          <Copy className="mr-2" /> Copy CV Text
+                                                                        </Button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </CardContent>
+                                                    </AccordionContent>
+                                                </Card>
+                                            </AccordionItem>
+                                         )}
+                                         {state.recruiterMessage && (
+                                             <AccordionItem value="recruiter-message">
+                                                <Card>
+                                                    <AccordionTrigger className="p-6">
+                                                        <CardHeader className="p-0 text-left">
+                                                            <CardTitle className="flex items-center gap-2">Recruiter Message</CardTitle>
+                                                             <CardDescription>A professional cover letter to send to the recruiter.</CardDescription>
+                                                        </CardHeader>
+                                                    </AccordionTrigger>
+                                                    <AccordionContent>
+                                                        <CardContent>
+                                                            <Textarea
+                                                                defaultValue={state.recruiterMessage}
+                                                                rows={15}
+                                                                className="bg-muted/50 p-4 rounded-md whitespace-pre-wrap font-body text-sm leading-relaxed max-h-96 overflow-auto"
+                                                            />
+                                                            <div className="flex justify-end mt-4">
+                                                                <Button variant="outline" onClick={() => handleCopyToClipboard(state.recruiterMessage)}>
+                                                                    <Copy className="mr-2" /> Copy Message
+                                                                </Button>
+                                                            </div>
+                                                        </CardContent>
+                                                    </AccordionContent>
+                                                </Card>
+                                             </AccordionItem>
+                                         )}
+                                    </Accordion>
                                 </div>
                             )}
+
                         </CardContent>
                     </AccordionContent>
                  </Card>
@@ -291,3 +347,5 @@ export default function JobIntelligencePage() {
       </div>
   );
 }
+
+    
