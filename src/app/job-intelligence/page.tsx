@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -21,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { GenerateInterviewPlanOutputSchema } from "@/lib/types";
+import { GenerateInterviewPlanOutput, GenerateInterviewPlanOutputSchema } from "@/lib/types";
 import { useAuth } from "@/lib/auth";
 import { addInterviewPlan } from "@/services/interview-plans";
 import { useRouter } from "next/navigation";
@@ -61,7 +60,7 @@ const smartFilters: Filter[] = [
     { label: "Bangalore", type: 'location', value: 'Bengaluru, Karnataka, India', paramName: 'location' },
 ];
 
-function InterviewPlanForm({ planData, onPlanCreated }: { planData: NonNullable<FormState['interviewPlan']>, onPlanCreated: () => void }) {
+function InterviewPlanForm({ planData, onPlanCreated }: { planData: GenerateInterviewPlanOutput, onPlanCreated: () => void }) {
     const { user } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
@@ -70,19 +69,15 @@ function InterviewPlanForm({ planData, onPlanCreated }: { planData: NonNullable<
     const form = useForm({
         resolver: zodResolver(GenerateInterviewPlanOutputSchema),
         defaultValues: {
-            topic: planData.topic,
-            difficulty: planData.difficulty,
-            questions: planData.questions,
-            durationMinutes: 30, 
-            totalInterviews: 10,
+            ...planData,
+            questions: planData.questions.join('\n'), // Pre-format for textarea
         }
     });
-    
+
     useEffect(() => {
         form.reset({
             ...planData,
-            durationMinutes: 30,
-            totalInterviews: 10,
+            questions: planData.questions.join('\n'),
         });
     }, [planData, form]);
 
@@ -98,7 +93,7 @@ function InterviewPlanForm({ planData, onPlanCreated }: { planData: NonNullable<
                 topic: data.topic,
                 difficulty: data.difficulty,
                 durationMinutes: data.durationMinutes || 30,
-                numberOfQuestions: data.questions.length,
+                numberOfQuestions: data.questions.split('\n').filter((q: string) => q.trim() !== '').length,
                 totalInterviews: data.totalInterviews || 10,
                 completedInterviews: 0,
             };
@@ -113,7 +108,7 @@ function InterviewPlanForm({ planData, onPlanCreated }: { planData: NonNullable<
             setIsSubmitting(false);
         }
     };
-
+    
     return (
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -141,12 +136,10 @@ function InterviewPlanForm({ planData, onPlanCreated }: { planData: NonNullable<
             </div>
              <div>
                 <Label>Predicted Questions</Label>
-                <Textarea 
-                    {...form.register('questions')} 
+                <Textarea
+                    {...form.register('questions')}
                     rows={6}
                     className="bg-muted/50"
-                    onChange={e => form.setValue('questions', e.target.value.split('\n'))}
-                    value={form.watch('questions')?.join('\n') || ''}
                 />
                 <p className="text-xs text-muted-foreground mt-1">You can edit these questions before creating the plan.</p>
              </div>
@@ -159,7 +152,6 @@ function InterviewPlanForm({ planData, onPlanCreated }: { planData: NonNullable<
         </form>
     );
 }
-
 
 export default function JobIntelligencePage() {
     const [searchTerm, setSearchTerm] = useState('');
@@ -223,11 +215,12 @@ export default function JobIntelligencePage() {
         })
     }
     
-    const resetAnalysis = () => {
-        if (state.message) {
-            state.message = '';
-        }
+    const handlePlanCreated = () => {
+        // This function will be called when the plan is created.
+        // We can use this to clear the analysis state if needed.
+        // For now, we just need it to exist.
     }
+
 
     return (
       <div className="flex flex-col gap-8">
@@ -466,7 +459,7 @@ export default function JobIntelligencePage() {
                                                     </AccordionTrigger>
                                                     <AccordionContent>
                                                          <CardContent>
-                                                            <InterviewPlanForm planData={state.interviewPlan} onPlanCreated={resetAnalysis} />
+                                                            <InterviewPlanForm planData={state.interviewPlan} onPlanCreated={handlePlanCreated} />
                                                         </CardContent>
                                                     </AccordionContent>
                                                 </Card>
