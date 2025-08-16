@@ -367,6 +367,26 @@ export const GenerateRecruiterMessageOutputSchema = z.object({
 });
 export type GenerateRecruiterMessageOutput = z.infer<typeof GenerateRecruiterMessageOutputSchema>;
 
+export const TailorResumeInputSchema = z.object({
+  resume: z.string().describe("The user's resume as plain text."),
+  jobDescription: z.string().describe("The job description as plain text."),
+});
+
+export const TailorResumeOutputSchema = z.object({
+  fitScore: z.number().describe("The percentage fit score."),
+  breakdown: z.object({
+    skillsMatch: z.string().describe("A brief analysis of skills match."),
+    experienceMatch: z.string().describe("A brief analysis of experience match."),
+    educationMatch: z.string().describe("A brief analysis of education match."),
+  }),
+  missingSkills: z.array(z.string()).describe("A list of missing skills."),
+  tailoredResume: z.string().describe("The full text of the tailored resume."),
+});
+
+export type TailorResumeInput = z.infer<typeof TailorResumeInputSchema>;
+export type TailorResumeOutput = z.infer<typeof TailorResumeOutputSchema>;
+
+
 export const highImpactSkills = [
     "React",
     "Angular",
