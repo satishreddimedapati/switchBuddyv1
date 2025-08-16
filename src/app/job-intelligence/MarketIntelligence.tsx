@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -15,14 +15,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BarChart, Briefcase, Building, DollarSign, Gauge, GitBranch, Lightbulb, Search, TrendingUp, Users, Map, Star, Clock, BrainCircuit, CheckCircle, Loader2, Wand2, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
-import { GetPersonalizedSalaryEstimateInputSchema, highImpactSkills } from "@/lib/types";
-import { Checkbox } from "@/components/ui/checkbox";
+import { MarketIntelHistoryItem } from "@/lib/types";
+import { addSearchToHistory } from "@/services/market-intelligence-history";
+import { useAuth } from "@/lib/auth";
+
 
 const marketIntelSchema = z.object({
-    jobRole: z.string().min(1),
-    companyName: z.string().min(1),
-    location: z.string().min(1),
-    yearsOfExperience: z.coerce.number().min(0),
+    jobRole: z.string().min(1, "Job role is required"),
+    companyName: z.string().min(1, "Company name is required"),
+    location: z.string().min(1, "Location is required"),
+    yearsOfExperience: z.coerce.number().min(0).optional(),
 })
 type MarketIntelFormValues = z.infer<typeof marketIntelSchema>;
 
@@ -38,7 +40,13 @@ function LoadingSkeleton() {
     )
 }
 
-export function MarketIntelligence() {
+interface MarketIntelligenceProps {
+    historyItem?: MarketIntelHistoryItem | null;
+    onNewSearch: () => void;
+}
+
+export function MarketIntelligence({ historyItem, onNewSearch }: MarketIntelligenceProps) {
+    const { user } = useAuth();
     const [intelResult, setIntelResult] = useState<GetMarketIntelligenceOutput | null>(null);
     const [salaryResult, setSalaryResult] = useState<GetPersonalizedSalaryEstimateOutput | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -52,28 +60,60 @@ export function MarketIntelligence() {
             location: '',
             yearsOfExperience: 0,
         }
-    })
+    });
+
+     useEffect(() => {
+        if (historyItem) {
+            form.reset({
+                jobRole: historyItem.input.jobRole,
+                companyName: historyItem.input.companyName,
+                location: historyItem.input.location,
+                yearsOfExperience: historyItem.input.yearsOfExperience,
+            });
+            setIntelResult(historyItem.intelResult);
+            setSalaryResult(historyItem.salaryResult || null);
+            setError(null);
+        } else {
+            form.reset({ jobRole: '', companyName: '', location: '', yearsOfExperience: 0 });
+            setIntelResult(null);
+            setSalaryResult(null);
+        }
+    }, [historyItem, form]);
+
 
     const onSubmit = (data: MarketIntelFormValues) => {
+        if (!user) {
+            setError("You must be logged in to use this feature.");
+            return;
+        }
         startTransition(async () => {
             setError(null);
             setIntelResult(null);
             setSalaryResult(null);
+            onNewSearch(); // Clear history selection in parent
             try {
                 // Always fetch market intelligence first
                 const intelRes = await getMarketIntelligence({ jobRole: data.jobRole, companyName: data.companyName, location: data.location });
                 setIntelResult(intelRes);
 
+                let personalizedSalaryRes: GetPersonalizedSalaryEstimateOutput | null = null;
                 // If experience is provided, fetch personalized salary using skills from the first result
-                if (data.yearsOfExperience > 0 && intelRes.skillsInDemand.length > 0) {
-                   const salaryRes = await getPersonalizedSalaryEstimate({ 
+                if (data.yearsOfExperience !== undefined && data.yearsOfExperience >= 0 && intelRes.skillsInDemand.length > 0) {
+                   personalizedSalaryRes = await getPersonalizedSalaryEstimate({ 
                         jobRole: data.jobRole, 
                         yearsOfExperience: data.yearsOfExperience, 
                         location: data.location, 
                         skills: intelRes.skillsInDemand 
                     });
-                    setSalaryResult(salaryRes);
+                    setSalaryResult(personalizedSalaryRes);
                 }
+                
+                 await addSearchToHistory(user.uid, {
+                    input: data,
+                    intelResult: intelRes,
+                    salaryResult: personalizedSalaryRes,
+                });
+
 
             } catch (e) {
                 setError("Failed to fetch market intelligence data.");
@@ -85,7 +125,7 @@ export function MarketIntelligence() {
     return (
         <div className="space-y-4">
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
                         <Label htmlFor="jobRole">Job Role</Label>
                         <Input id="jobRole" placeholder="e.g. Software Engineer" {...form.register('jobRole')} />
@@ -105,11 +145,10 @@ export function MarketIntelligence() {
                  <div>
                     <Label htmlFor="yearsOfExperience">Years of Experience (for personalized salary)</Label>
                     <Input id="yearsOfExperience" type="number" {...form.register('yearsOfExperience')} className="max-w-xs" />
-                    {form.formState.errors.yearsOfExperience && <p className="text-destructive text-sm mt-1">{form.formState.errors.yearsOfExperience.message}</p>}
                 </div>
                 
                 <div className="flex justify-end">
-                    <Button type="submit" disabled={isGenerating} className="w-full sm:w-auto">
+                     <Button type="submit" disabled={isGenerating || !form.formState.isValid} className="w-full sm:w-auto">
                          {isGenerating ? <Loader2 className="animate-spin mr-2"/> : <Search className="mr-2"/>}
                           Analyze Market
                     </Button>

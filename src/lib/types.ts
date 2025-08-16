@@ -349,6 +349,23 @@ export const GetPersonalizedSalaryEstimateOutputSchema = z.object({
 });
 export type GetPersonalizedSalaryEstimateOutput = z.infer<typeof GetPersonalizedSalaryEstimateOutputSchema>;
 
+
+export const MarketIntelHistoryItemSchema = z.object({
+    id: z.string().optional(),
+    userId: z.string(),
+    createdAt: z.union([z.instanceof(Date), z.string()]),
+    input: z.object({
+        jobRole: z.string(),
+        companyName: z.string(),
+        location: z.string(),
+        yearsOfExperience: z.number().optional(),
+    }),
+    intelResult: GetMarketIntelligenceOutputSchema,
+    salaryResult: GetPersonalizedSalaryEstimateOutputSchema.nullable(),
+});
+export type MarketIntelHistoryItem = z.infer<typeof MarketIntelHistoryItemSchema>;
+
+
 export const highImpactSkills = [
     "React",
     "Angular",
