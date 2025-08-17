@@ -32,11 +32,11 @@ interface DayActivity {
     penalty: number;
 }
 
-const calculateDayActivity = (tasksForDay: DailyTask[], allTasks: DailyTask[]): Omit<DayActivity, 'date' | 'label'> => {
+const calculateDayActivity = (tasksForDay: DailyTask[]): Omit<DayActivity, 'date' | 'label'> => {
     const day = tasksForDay.length > 0 ? tasksForDay[0].date : '';
     
     // Find tasks originally scheduled for this day but were rescheduled
-    const rescheduledAwayFromThisDay = allTasks.filter(t => t.rescheduled?.originalDate === day);
+    const rescheduledAwayFromThisDay = tasks.filter(t => t.rescheduled?.originalDate === day);
     
     // Tasks currently on this day
     const tasksOnThisDay = tasksForDay;
@@ -130,15 +130,15 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
             .map(([date, tasksForDay]) => ({
                 date,
                 label: formatActivityDate(date),
-                ...calculateDayActivity(tasksForDay, tasks),
+                ...calculateDayActivity(tasksForDay),
             }))
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    }, [filteredTasks, tasks]);
+    }, [filteredTasks]);
 
     const currentBalance = useMemo(() => {
         const groupedByDate = tasks.reduce((acc, task) => {
-            const date = task.rescheduled?.originalDate || task.date;
+            const date = task.date;
             if (!acc[date]) {
                 acc[date] = [];
             }
@@ -148,7 +148,7 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
 
         const totalNetChange = Object.values(groupedByDate)
             .reduce((total, tasksForDay) => {
-                 const dayActivity = calculateDayActivity(tasksForDay, tasks);
+                const dayActivity = calculateDayActivity(tasksForDay);
                 return total + dayActivity.netChange;
             }, 0);
             
@@ -198,7 +198,7 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
                                 <p className="text-muted-foreground">No activity for the selected period.</p>
                             </div>
                         ) : (
-                            <Accordion type="single" defaultValue={activityByDay[activityByDay.length -1]?.date} collapsible className="w-full space-y-2">
+                            <Accordion type="single" defaultValue={activityByDay[0]?.date} collapsible className="w-full space-y-2">
                                 {activityByDay.map(day => (
                                     <AccordionItem key={day.date} value={day.date} className="border-b-0">
                                         <Card className="bg-muted/50">
@@ -277,3 +277,5 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
         </Accordion>
     )
 }
+
+    
