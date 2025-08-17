@@ -37,8 +37,9 @@ export async function getFocusCoinBalance(userId: string): Promise<number> {
 
 export async function getUserRewards(userId: string): Promise<UserReward[]> {
     if (!userId) return [];
-    const rewardsCollection = collection(db, 'users', userId, 'redeemed_rewards');
-    const snapshot = await getDocs(query(rewardsCollection));
+    const rewardsCollection = collection(db, 'redeemed_rewards');
+    const q = query(rewardsCollection, where("userId", "==", userId));
+    const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserReward));
 }
 
@@ -50,7 +51,7 @@ export async function redeemReward(userId: string, reward: Reward): Promise<void
         throw new Error("Insufficient funds.");
     }
     
-    const rewardsCollection = collection(db, `users/${userId}/redeemed_rewards`);
+    const rewardsCollection = collection(db, "redeemed_rewards");
     await addDoc(rewardsCollection, {
         userId,
         rewardId: reward.id,
@@ -67,7 +68,7 @@ export async function redeemReward(userId: string, reward: Reward): Promise<void
 export async function claimReward(userId: string, userRewardId: string): Promise<void> {
     if (!userId) throw new Error("User not authenticated.");
 
-    const rewardRef = doc(db, `users/${userId}/redeemed_rewards`, userRewardId);
+    const rewardRef = doc(db, "redeemed_rewards", userRewardId);
     await updateDoc(rewardRef, {
         status: 'claimed',
         claimedAt: serverTimestamp(),
