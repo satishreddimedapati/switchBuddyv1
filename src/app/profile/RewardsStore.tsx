@@ -6,9 +6,10 @@ import { REWARD_CATEGORIES, Reward, RewardCategory } from "@/lib/rewards";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Coins, CheckCircle, Gift } from "lucide-react";
+import { Coins, CheckCircle, Gift, Trophy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 interface RewardsStoreProps {
     initialFocusCoins: number;
@@ -35,6 +36,14 @@ export function RewardsStore({ initialFocusCoins }: RewardsStoreProps) {
             });
         }
     };
+
+    const handleClaim = (rewardId: number) => {
+        setRedeemedRewards(prev => prev.filter(r => r.id !== rewardId));
+        toast({
+            title: "Reward Claimed!",
+            description: "Enjoy your well-deserved break.",
+        });
+    }
 
     const isRedeemed = (rewardId: number) => redeemedRewards.some(r => r.id === rewardId);
 
@@ -75,7 +84,7 @@ export function RewardsStore({ initialFocusCoins }: RewardsStoreProps) {
                                                         disabled={isRedeemed(reward.id)}
                                                     >
                                                         {isRedeemed(reward.id) ? (
-                                                            <><CheckCircle className="mr-2"/> Claimed</>
+                                                            <><CheckCircle className="mr-2"/> Unlocked</>
                                                         ) : (
                                                             <><Coins className="mr-2" /> Redeem for {reward.cost} 🧘</>
                                                         )}
@@ -88,6 +97,34 @@ export function RewardsStore({ initialFocusCoins }: RewardsStoreProps) {
                             </AccordionItem>
                         ))}
                     </Accordion>
+
+                    <Separator className="my-6" />
+
+                    <div>
+                        <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+                            <Trophy /> My Unclaimed Rewards
+                        </h3>
+                        {redeemedRewards.length > 0 ? (
+                            <div className="space-y-2">
+                                {redeemedRewards.map(reward => (
+                                    <Card key={reward.id} className="p-4 flex items-center justify-between">
+                                        <div>
+                                            <h4 className="font-semibold">{reward.icon} {reward.name}</h4>
+                                            <p className="text-sm text-muted-foreground">{reward.description}</p>
+                                        </div>
+                                        <Button variant="secondary" onClick={() => handleClaim(reward.id)}>
+                                            <CheckCircle className="mr-2" /> Mark as Claimed
+                                        </Button>
+                                    </Card>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-8 border rounded-lg border-dashed">
+                                <p className="text-muted-foreground">You have no unclaimed rewards. Redeem one from the store above!</p>
+                            </div>
+                        )}
+                    </div>
+
                 </CardContent>
             </Card>
         </div>
