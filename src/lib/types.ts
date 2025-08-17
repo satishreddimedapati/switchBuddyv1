@@ -506,13 +506,12 @@ export const TopicHistoryOutputSchema = z.object({
 
 export type TopicHistoryOutput = z.infer<typeof TopicHistoryOutputSchema>;
 
-// This would be the detailed, structured roadmap from the AI
 export const DailyTaskItemSchema = z.object({
     day: z.string().describe("The day of the week, e.g., 'Monday'."),
     date: z.string().optional().describe("The specific date for the task in YYYY-MM-DD format."),
     topic: z.string(),
     resource_type: z.string().describe("The type of resource, e.g. 'Video', 'Article'."),
-    resource_link: z.string().optional().describe("A URL to the resource. This is not required if the type is Video."),
+    resource_link: z.string().optional().describe("A URL to the resource."),
     challenge: z.string().optional(),
     completed: z.boolean().default(false).optional(),
 });
@@ -561,14 +560,14 @@ export function toSerializableLearningRoadmap(docData: any): LearningRoadmap {
      if (startDate) {
         if (typeof startDate === 'string') {
             serializable.startDate = startDate;
-        } else if (startDate.toDate) { // Check if it's a Firestore Timestamp
+        } else if (startDate?.toDate) {
             serializable.startDate = (startDate as Timestamp).toDate().toISOString();
         }
     }
      if (endDate) {
         if (typeof endDate === 'string') {
             serializable.endDate = endDate;
-        } else if (endDate.toDate) { // Check if it's a Firestore Timestamp
+        } else if (endDate?.toDate) {
             serializable.endDate = (endDate as Timestamp).toDate().toISOString();
         }
     }
@@ -588,5 +587,18 @@ export const RoadmapGenerationInputSchema = z.object({
     techFocus: z.array(z.string()),
     learningStyle: z.string(),
     preferredChannel: z.string().optional(),
+    history: z.array(TopicHistorySchema).optional(),
 });
 export type RoadmapGenerationInput = z.infer<typeof RoadmapGenerationInputSchema>;
+
+
+// Channel Suggestions
+export const ChannelSuggestionInputSchema = z.object({
+  topic: z.string().describe('The main topic the user wants to learn.'),
+});
+export type ChannelSuggestionInput = z.infer<typeof ChannelSuggestionInputSchema>;
+
+export const ChannelSuggestionOutputSchema = z.object({
+  channels: z.array(z.string()).describe('A list of 3-5 recommended YouTube channel or creator names.'),
+});
+export type ChannelSuggestionOutput = z.infer<typeof ChannelSuggestionOutputSchema>;

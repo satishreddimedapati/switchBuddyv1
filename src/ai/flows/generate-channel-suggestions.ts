@@ -7,15 +7,9 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { ChannelSuggestionInputSchema, ChannelSuggestionOutputSchema } from '@/lib/types';
 
-export const ChannelSuggestionInputSchema = z.object({
-  topic: z.string().describe('The main topic the user wants to learn.'),
-});
 export type ChannelSuggestionInput = z.infer<typeof ChannelSuggestionInputSchema>;
-
-export const ChannelSuggestionOutputSchema = z.object({
-  channels: z.array(z.string()).describe('A list of 3-5 recommended YouTube channel or creator names.'),
-});
 export type ChannelSuggestionOutput = z.infer<typeof ChannelSuggestionOutputSchema>;
 
 export async function generateChannelSuggestions(input: ChannelSuggestionInput): Promise<ChannelSuggestionOutput> {
