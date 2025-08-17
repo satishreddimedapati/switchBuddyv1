@@ -28,7 +28,7 @@ export function RoadmapDisplay({ roadmap }: RoadmapDisplayProps) {
          <Card>
             <CardHeader>
                 <CardTitle>{roadmap.topic}</CardTitle>
-                <CardDescription>Your {roadmap.duration}-month learning plan. Stay consistent!</CardDescription>
+                <CardDescription>Your {roadmap.duration}-day learning plan. Stay consistent!</CardDescription>
             </CardHeader>
             <CardContent>
                 <Accordion type="single" collapsible className="w-full">
@@ -109,6 +109,13 @@ export function RoadmapDisplay({ roadmap }: RoadmapDisplayProps) {
         </div>
     )
     
+    const renderContent = () => {
+        if (isMobile) {
+            return view === 'timeline' ? <RoadmapTimeline roadmap={roadmap} /> : <MobileDisplay />;
+        }
+        return view === 'timeline' ? <RoadmapTimeline roadmap={roadmap} /> : <DesktopDisplay />;
+    }
+    
     return (
         <div className="space-y-4">
             <div className="flex justify-end">
@@ -133,12 +140,7 @@ export function RoadmapDisplay({ roadmap }: RoadmapDisplayProps) {
                     </Button>
                 </div>
             </div>
-
-            {view === 'timeline' ? (
-                 <RoadmapTimeline roadmap={roadmap} />
-            ) : (
-                isMobile ? <MobileDisplay /> : <DesktopDisplay />
-            )}
+            {renderContent()}
         </div>
     );
 }
