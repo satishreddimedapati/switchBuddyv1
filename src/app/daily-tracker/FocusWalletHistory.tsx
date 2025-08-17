@@ -268,5 +268,3 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
         </Card>
     )
 }
-
-    
