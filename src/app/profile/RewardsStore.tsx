@@ -170,13 +170,14 @@ export function RewardsStore() {
                         {userRewards.length > 0 ? (
                             <div className="space-y-2">
                                 {userRewards.map(reward => (
-                                    <Card key={reward.id} className={cn("p-4 flex items-center justify-between", reward.status === 'claimed' && "bg-muted/50 text-muted-foreground")}>
-                                        <div>
+                                    <Card key={reward.id} className={cn("p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4", reward.status === 'claimed' && "bg-muted/50 text-muted-foreground")}>
+                                        <div className="flex-grow">
                                             <h4 className={cn("font-semibold", reward.status === 'claimed' && "text-muted-foreground")}>{reward.icon} {reward.name}</h4>
                                             <p className="text-sm">{reward.description}</p>
+                                            <Badge variant="outline" className="mt-2">Cost: {reward.cost} 🧘</Badge>
                                         </div>
                                         {reward.status === 'unclaimed' ? (
-                                            <Button variant="secondary" onClick={() => handleClaim(reward.id)} disabled={isInteracting}>
+                                            <Button variant="secondary" onClick={() => handleClaim(reward.id)} disabled={isInteracting} className="w-full sm:w-auto">
                                                 {isInteracting && <Loader2 className="mr-2 animate-spin" />}
                                                 <CheckCircle className="mr-2" /> Mark as Claimed
                                             </Button>
