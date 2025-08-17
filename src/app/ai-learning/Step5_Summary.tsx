@@ -75,7 +75,7 @@ export function Step5_Summary({ data, onRoadmapCreated }: Step5Props) {
                     <SummaryItem label="Experience" value={data.experienceLevel} />
                     <SummaryItem label="Tech Focus" value={<div className="flex flex-wrap gap-1">{data.techFocus.map(t => <Badge key={t} variant="secondary">{t}</Badge>)}</div>} />
                     <SummaryItem label="Learning Style" value={data.learningStyle} />
-                    <SummaryItem label="Commitment" value={`${data.timePerDay / 60} hrs/day for ${data.duration} months`} />
+                    <SummaryItem label="Commitment" value={`${data.timePerDay / 60} hrs/day for ${data.duration} days`} />
                     <SummaryItem label="Start Date" value={format(data.startDate, 'PPP')} />
                 </div>
                  {error && (

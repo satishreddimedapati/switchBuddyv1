@@ -518,7 +518,7 @@ export const LearningRoadmapSchema = z.object({
   userId: z.string(),
   topic: z.string(),
   timePerDay: z.number(), // in minutes
-  duration: z.number(), // in months
+  duration: z.number(), // in days
   goals: z.array(z.string()),
   experienceLevel: z.string(),
   techFocus: z.array(z.string()),

@@ -26,7 +26,7 @@ export interface RoadmapInputs {
 const initialInputs: RoadmapInputs = {
     topic: '',
     timePerDay: 90, // 1.5 hours in minutes
-    duration: 3, // 3 months
+    duration: 30, // 30 days
     startDate: new Date(),
     goals: [],
     experienceLevel: 'Beginner',

@@ -20,7 +20,7 @@ interface Step1Props {
 
 export function Step1_Topic({ data, onUpdate }: Step1Props) {
 
-    const totalSessions = (data.duration * 30); // Approximate days in a month
+    const totalSessions = data.duration;
 
     return (
         <Card>
@@ -56,11 +56,11 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                          <Slider
                             value={[data.duration]}
                             onValueChange={value => onUpdate({ duration: value[0] })}
-                            min={1}
-                            max={6}
+                            min={7}
+                            max={90}
                             step={1}
                         />
-                        <div className="text-center font-medium">{data.duration} {data.duration > 1 ? 'months' : 'month'}</div>
+                        <div className="text-center font-medium">{data.duration} {data.duration > 1 ? 'days' : 'day'}</div>
                     </div>
                      <div className="space-y-4">
                         <Label>Start Date</Label>
@@ -90,7 +90,7 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                 </div>
 
                 <div className="text-center text-sm text-muted-foreground p-3 bg-muted/50 rounded-md">
-                    Studying <span className="font-bold text-primary">{data.timePerDay / 60} hours/day</span> for <span className="font-bold text-primary">{data.duration} {data.duration > 1 ? 'months' : 'month'}</span> will result in approximately <span className="font-bold text-primary">{totalSessions}</span> learning sessions.
+                    Studying <span className="font-bold text-primary">{data.timePerDay / 60} hours/day</span> for <span className="font-bold text-primary">{data.duration} {data.duration > 1 ? 'days' : 'day'}</span> will result in approximately <span className="font-bold text-primary">{totalSessions}</span> learning sessions.
                 </div>
 
             </CardContent>
