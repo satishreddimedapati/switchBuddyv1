@@ -96,9 +96,9 @@ export function JobIntelligence() {
         <Accordion type="multiple" defaultValue={["role-fit"]} className="w-full space-y-4">
             <AccordionItem value="job-search">
                 <Card>
-                    <AccordionTrigger className="p-6">
-                        <CardHeader className="p-0 text-left">
-                            <CardTitle className="flex items-center gap-2"><Search /> Job Search & Recruiter Shortcut</CardTitle>
+                    <AccordionTrigger className="p-4 sm:p-6 text-left">
+                        <CardHeader className="p-0">
+                            <CardTitle className="flex items-center gap-2 text-base sm:text-xl"><Search /> Job Search & Recruiter Shortcut</CardTitle>
                         </CardHeader>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -148,9 +148,9 @@ export function JobIntelligence() {
             
             <AccordionItem value="role-fit">
                  <Card>
-                    <AccordionTrigger className="p-6">
-                        <CardHeader className="p-0 text-left">
-                             <CardTitle className="flex items-center gap-2"><Cpu /> Resume & Role Analyzer</CardTitle>
+                    <AccordionTrigger className="p-4 sm:p-6 text-left">
+                        <CardHeader className="p-0">
+                             <CardTitle className="flex items-center gap-2 text-base sm:text-xl"><Cpu /> Resume & Role Analyzer</CardTitle>
                             <CardDescription>Get a fit score, tailored resume, recruiter message, company insights, and more.</CardDescription>
                         </CardHeader>
                     </AccordionTrigger>
@@ -172,7 +172,7 @@ export function JobIntelligence() {
                                         <CardTitle className="text-base">Details for Analysis</CardTitle>
                                     </CardHeader>
                                      <CardContent>
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
                                                  <Label htmlFor="userName">Your Full Name</Label>
                                                 <Input id="userName" name="userName" placeholder="e.g. Satish Reddy" required/>
@@ -185,7 +185,7 @@ export function JobIntelligence() {
                                                 <Label htmlFor="companyName">Company Name</Label>
                                                 <Input id="companyName" name="companyName" placeholder="e.g. Siemens, Deloitte" required />
                                             </div>
-                                            <div className="sm:col-span-3">
+                                            <div className="sm:col-span-2">
                                                 <Label htmlFor="location">Job Location</Label>
                                                 <Input id="location" name="location" placeholder="e.g. Bangalore" required />
                                                 <p className="text-xs text-muted-foreground mt-1">Required for salary benchmark.</p>
@@ -194,7 +194,7 @@ export function JobIntelligence() {
                                      </CardContent>
                                 </Card>
                                  <div className="flex justify-end">
-                                    <Button type="submit" disabled={isAnalyzing} className="w-full">
+                                    <Button type="submit" disabled={isAnalyzing} className="w-full sm:w-auto">
                                         {isAnalyzing ? (
                                             <>
                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -239,9 +239,9 @@ export function JobIntelligence() {
                                         
                                         <AccordionItem value="resume-optimizer">
                                             <Card>
-                                                <AccordionTrigger className="p-6">
-                                                    <CardHeader className="p-0 text-left">
-                                                        <CardTitle className="flex items-center gap-2">Resume Optimizer</CardTitle>
+                                                <AccordionTrigger className="p-4 sm:p-6 text-left">
+                                                    <CardHeader className="p-0">
+                                                        <CardTitle className="flex items-center gap-2 text-base sm:text-xl">Resume Optimizer</CardTitle>
                                                         <CardDescription>Your resume, tailored for this specific role.</CardDescription>
                                                     </CardHeader>
                                                 </AccordionTrigger>
@@ -275,9 +275,9 @@ export function JobIntelligence() {
                                         {analysisState.recruiterMessage && (
                                             <AccordionItem value="recruiter-message">
                                             <Card>
-                                                <AccordionTrigger className="p-6">
-                                                    <CardHeader className="p-0 text-left">
-                                                        <CardTitle className="flex items-center gap-2">Recruiter Message</CardTitle>
+                                                <AccordionTrigger className="p-4 sm:p-6 text-left">
+                                                    <CardHeader className="p-0">
+                                                        <CardTitle className="flex items-center gap-2 text-base sm:text-xl">Recruiter Message</CardTitle>
                                                         <CardDescription>A professional cover letter to send to the recruiter.</CardDescription>
                                                     </CardHeader>
                                                 </AccordionTrigger>
@@ -301,9 +301,9 @@ export function JobIntelligence() {
                                         {analysisState.companyInsights && (
                                             <AccordionItem value="company-insights">
                                                 <Card>
-                                                    <AccordionTrigger className="p-6">
-                                                        <CardHeader className="p-0 text-left">
-                                                            <CardTitle className="flex items-center gap-2"><Lightbulb /> Company Insights</CardTitle>
+                                                    <AccordionTrigger className="p-4 sm:p-6 text-left">
+                                                        <CardHeader className="p-0">
+                                                            <CardTitle className="flex items-center gap-2 text-base sm:text-xl"><Lightbulb /> Company Insights</CardTitle>
                                                             <CardDescription>Learn about the company culture and interview process.</CardDescription>
                                                         </CardHeader>
                                                     </AccordionTrigger>
@@ -311,7 +311,7 @@ export function JobIntelligence() {
                                                         <CardContent className="space-y-4">
                                                             <div><h4 className="font-semibold">Culture</h4><p className="text-muted-foreground">{analysisState.companyInsights.culture}</p></div>
                                                             <div><h4 className="font-semibold">Interview Process</h4><p className="text-muted-foreground">{analysisState.companyInsights.interviewProcess}</p></div>
-                                                            <div className="grid grid-cols-2 gap-4">
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                                 <div><h4 className="font-semibold text-green-600">Pros</h4><ul className="list-disc pl-5 text-muted-foreground">{(analysisState.companyInsights.pros || []).map(pro => <li key={pro}>{pro}</li>)}</ul></div>
                                                                 <div><h4 className="font-semibold text-red-600">Cons</h4><ul className="list-disc pl-5 text-muted-foreground">{(analysisState.companyInsights.cons || []).map(con => <li key={con}>{con}</li>)}</ul></div>
                                                             </div>
@@ -323,9 +323,9 @@ export function JobIntelligence() {
                                          {analysisState.interviewPlan && (
                                             <AccordionItem value="interview-plan">
                                                 <Card>
-                                                    <AccordionTrigger className="p-6">
-                                                        <CardHeader className="p-0 text-left">
-                                                            <CardTitle className="flex items-center gap-2"><Video /> Automated Interview Prep</CardTitle>
+                                                    <AccordionTrigger className="p-4 sm:p-6 text-left">
+                                                        <CardHeader className="p-0">
+                                                            <CardTitle className="flex items-center gap-2 text-base sm:text-xl"><Video /> Automated Interview Prep</CardTitle>
                                                             <CardDescription>Create a tailored practice plan with one click.</CardDescription>
                                                         </CardHeader>
                                                     </AccordionTrigger>
@@ -340,9 +340,9 @@ export function JobIntelligence() {
                                         {analysisState.interviewQuestions && (
                                             <AccordionItem value="interview-questions">
                                                 <Card>
-                                                    <AccordionTrigger className="p-6">
-                                                        <CardHeader className="p-0 text-left">
-                                                            <CardTitle className="flex items-center gap-2"><HelpCircle /> Predicted Interview Questions</CardTitle>
+                                                    <AccordionTrigger className="p-4 sm:p-6 text-left">
+                                                        <CardHeader className="p-0">
+                                                            <CardTitle className="flex items-center gap-2 text-base sm:text-xl"><HelpCircle /> Predicted Interview Questions</CardTitle>
                                                             <CardDescription>AI-generated questions based on the job and your resume.</CardDescription>
                                                         </CardHeader>
                                                     </AccordionTrigger>
@@ -359,9 +359,9 @@ export function JobIntelligence() {
                                         {analysisState.salaryBenchmark && (
                                             <AccordionItem value="salary-benchmark">
                                                 <Card>
-                                                    <AccordionTrigger className="p-6">
-                                                        <CardHeader className="p-0 text-left">
-                                                            <CardTitle className="flex items-center gap-2"><DollarSign /> Salary Benchmark</CardTitle>
+                                                    <AccordionTrigger className="p-4 sm:p-6 text-left">
+                                                        <CardHeader className="p-0">
+                                                            <CardTitle className="flex items-center gap-2 text-base sm:text-xl"><DollarSign /> Salary Benchmark</CardTitle>
                                                             <CardDescription>An estimated salary for this role in the specified location.</CardDescription>
 
                                                         </CardHeader>
@@ -393,9 +393,9 @@ export function JobIntelligence() {
             
             <AccordionItem value="market-intelligence">
                  <Card>
-                    <AccordionTrigger className="p-6">
-                         <CardHeader className="p-0 text-left">
-                            <CardTitle className="flex items-center gap-2"><Building/> Market Intelligence & Salary Calculator</CardTitle>
+                    <AccordionTrigger className="p-4 sm:p-6 text-left">
+                         <CardHeader className="p-0">
+                            <CardTitle className="flex items-center gap-2 text-base sm:text-xl"><Building/> Market Intelligence & Salary Calculator</CardTitle>
                             <CardDescription>Get insights on career paths, skills, top companies and a personalized salary estimate.</CardDescription>
                         </CardHeader>
                     </AccordionTrigger>
@@ -411,3 +411,5 @@ export function JobIntelligence() {
       </div>
     );
 }
+
+    
