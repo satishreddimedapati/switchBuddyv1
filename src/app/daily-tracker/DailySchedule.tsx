@@ -11,42 +11,17 @@ import { groupTasksByTimeOfDay } from "./utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/lib/auth";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { format } from "date-fns";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { FocusWallet } from "./FocusWallet";
 
-export function DailySchedule() {
-  const { user } = useAuth();
-  const [tasks, setTasks] = useState<DailyTask[]>([]);
-  const [loading, setLoading] = useState(true);
+interface DailyScheduleProps {
+    tasks: DailyTask[];
+    loading: boolean;
+}
+
+export function DailySchedule({ tasks, loading }: DailyScheduleProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<DailyTask | undefined>(undefined);
-
-  useEffect(() => {
-    if (!user) {
-      setTasks([]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    const today = format(new Date(), 'yyyy-MM-dd');
-    const q = query(collection(db, "daily_tasks"), where("date", "==", today), where("userId", "==", user.uid));
-    
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const fetchedTasks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyTask));
-      setTasks(fetchedTasks);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching today's tasks: ", error);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
 
   const handleEdit = (task: DailyTask) => {
     setEditingTask(task);
@@ -78,9 +53,8 @@ export function DailySchedule() {
         <Button onClick={handleAddNew} className="w-full sm:w-auto"><PlusCircle /> Schedule Task</Button>
       </div>
 
-       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <FocusWallet tasks={tasks} />
-            <Card className="lg:col-span-2">
+       <div className="grid grid-cols-1">
+            <Card>
                 <CardHeader>
                 <CardTitle className="text-lg font-medium">Today's Progress</CardTitle>
                 </CardHeader>
@@ -100,7 +74,7 @@ export function DailySchedule() {
           <Skeleton className="h-24 w-full" />
         </div>
       ) : (
-        <Accordion type="multiple" className="w-full space-y-4">
+        <Accordion type="multiple" defaultValue={['Morning', 'Afternoon', 'Evening']} className="w-full space-y-4">
             {Object.entries({ Morning: morning, Afternoon: afternoon, Evening: evening }).map(([period, periodTasks]) => 
                 periodTasks.length > 0 && (
                     <Card key={period}>
