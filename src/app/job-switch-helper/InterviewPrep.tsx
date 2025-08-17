@@ -110,7 +110,7 @@ export function InterviewPrep() {
                 <CardContent>
                      {loading ? <LoadingState /> : (
                         Object.keys(groupedPlans).length > 0 ? (
-                            <Accordion type="multiple" defaultValue={Object.keys(groupedPlans)}>
+                            <Accordion type="multiple">
                                 {Object.entries(groupedPlans).map(([topic, topicPlans]) => (
                                     <AccordionItem value={topic} key={topic}>
                                         <AccordionTrigger className="text-lg font-semibold">{topic}</AccordionTrigger>
