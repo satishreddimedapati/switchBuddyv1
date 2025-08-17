@@ -54,36 +54,38 @@ export default function JobSwitchHelperPage() {
     return (
         <div className="flex flex-col gap-8">
              <div>
-                <div className="flex justify-between items-center">
-                    <h1 className="font-headline text-3xl font-bold tracking-tight">
-                        JobSwitch Helper
-                    </h1>
-                     {isMobile && (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                    <MoreHorizontal />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                {sections.map(section => (
-                                    <DropdownMenuItem key={section.value} onSelect={() => setActiveTab(section.value)}>
-                                        <section.icon className="mr-2" />
-                                        {section.label}
-                                    </DropdownMenuItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    )}
-                </div>
+                <h1 className="font-headline text-3xl font-bold tracking-tight">
+                    JobSwitch Helper
+                </h1>
                 <p className="text-muted-foreground">
                     All your job switching tools in one place.
                 </p>
             </div>
 
             {isMobile ? (
-                 <div className="mt-6">
-                    {renderContent()}
+                 <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-xl font-bold">{sections.find(s => s.value === activeTab)?.label}</h2>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <MoreHorizontal />
+                                    <span className="sr-only">Select view</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                {sections.map(section => (
+                                    <DropdownMenuItem key={section.value} onSelect={() => setActiveTab(section.value)} disabled={activeTab === section.value}>
+                                        <section.icon className="mr-2 h-4 w-4" />
+                                        {section.label}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                    <div className="mt-6">
+                        {renderContent()}
+                    </div>
                 </div>
             ) : (
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
