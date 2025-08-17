@@ -1,13 +1,15 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { DailyTask } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowDown, ArrowUp, Coins } from 'lucide-react';
+import { ArrowDown, ArrowUp, Coins, ChevronDown } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
 
 // Mock data, in a real app this would come from a user profile service
 const MOCK_CURRENT_BALANCE = 95;
@@ -17,6 +19,8 @@ interface FocusWalletProps {
 }
 
 export function FocusWallet({ tasks }: FocusWalletProps) {
+    const [isOpen, setIsOpen] = useState(false);
+    
     const {
         credits,
         debits,
@@ -64,40 +68,50 @@ export function FocusWallet({ tasks }: FocusWalletProps) {
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                    <Coins /> Focus Wallet
-                </CardTitle>
-                <CardDescription>Productivity rewards for today.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div>
-                    <p className="text-sm text-muted-foreground">Current Balance</p>
-                    <p className="text-3xl font-bold">{MOCK_CURRENT_BALANCE} 🧘</p>
-                </div>
-                <Separator />
-                <div className="space-y-2 text-sm">
-                   <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground flex items-center gap-1"><ArrowUp className="text-green-500" /> Today&apos;s Credits</span>
-                        <span className="font-semibold text-green-500">+{credits}</span>
-                   </div>
-                    <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground flex items-center gap-1"><ArrowDown className="text-red-500" /> Today&apos;s Debits</span>
-                        <span className="font-semibold text-red-500">-{debits}</span>
-                   </div>
-                </div>
-                 <Separator />
-                <div className="flex justify-between items-center font-semibold">
-                    <span>Net Change</span>
-                    <span className={cn(
-                        netChange > 0 && "text-green-500",
-                        netChange < 0 && "text-red-500",
-                    )}>
-                        {netChange > 0 ? `+${netChange}` : netChange} 🧘
-                    </span>
-                </div>
-            </CardContent>
-        </Card>
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+            <Card>
+                <CollapsibleTrigger asChild>
+                     <CardHeader className="cursor-pointer">
+                        <div className="flex justify-between items-center">
+                             <div className='flex items-center gap-2'>
+                                <Coins />
+                                <CardTitle className="text-lg">Focus Wallet</CardTitle>
+                             </div>
+                             <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <ChevronDown className={cn("transition-transform", isOpen && "rotate-180")} />
+                                <span className="sr-only">Toggle wallet details</span>
+                            </Button>
+                        </div>
+                        <p className="text-3xl font-bold pt-2">{MOCK_CURRENT_BALANCE} 🧘</p>
+                        <CardDescription>Click to see today's activity.</CardDescription>
+                    </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                    <CardContent className="space-y-4 pt-0">
+                        <Separator />
+                        <div className="space-y-2 text-sm">
+                        <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground flex items-center gap-1"><ArrowUp className="text-green-500" /> Today&apos;s Credits</span>
+                                <span className="font-semibold text-green-500">+{credits}</span>
+                        </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground flex items-center gap-1"><ArrowDown className="text-red-500" /> Today&apos;s Debits</span>
+                                <span className="font-semibold text-red-500">-{debits}</span>
+                        </div>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between items-center font-semibold">
+                            <span>Net Change</span>
+                            <span className={cn(
+                                netChange > 0 && "text-green-500",
+                                netChange < 0 && "text-red-500",
+                            )}>
+                                {netChange > 0 ? `+${netChange}` : netChange} 🧘
+                            </span>
+                        </div>
+                    </CardContent>
+                </CollapsibleContent>
+            </Card>
+        </Collapsible>
     )
 }
