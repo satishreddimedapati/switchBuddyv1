@@ -13,8 +13,8 @@ import { format, isToday, isYesterday, startOfDay, endOfDay, startOfWeek, endOfW
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
-// Mock data, in a real app this would come from a user profile service
-const MOCK_CURRENT_BALANCE = 95;
+// Let's assume a starting balance for demonstration purposes
+const STARTING_BALANCE = 50;
 
 interface FocusWalletHistoryProps {
     tasks: DailyTask[];
@@ -34,11 +34,14 @@ interface DayActivity {
 }
 
 const calculateDayActivity = (tasksForDay: DailyTask[]): Omit<DayActivity, 'date' | 'label'> => {
+    if (tasksForDay.length === 0) {
+        return { credits: 0, debits: 0, netChange: 0, completedTasksList: [], missedTasksList: [], bonus: 0, penalty: 0 };
+    }
     const totalTasks = tasksForDay.length;
     const completed = tasksForDay.filter(t => t.completed);
     
     // Only count debits for tasks on or before today
-    const taskDate = new Date(tasksForDay[0].date);
+    const taskDate = startOfDay(new Date(tasksForDay[0].date));
     const isPastOrToday = isBefore(taskDate, new Date()) || isToday(taskDate);
 
     const missed = isPastOrToday ? tasksForDay.filter(t => !t.completed) : [];
@@ -119,6 +122,26 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
 
     }, [filteredTasks]);
 
+    const currentBalance = useMemo(() => {
+         const groupedByDate = tasks.reduce((acc, task) => {
+            const date = task.date;
+            if (!acc[date]) {
+                acc[date] = [];
+            }
+            acc[date].push(task);
+            return acc;
+        }, {} as Record<string, DailyTask[]>);
+
+        const totalNetChange = Object.values(groupedByDate)
+            .reduce((total, tasksForDay) => {
+                const { netChange } = calculateDayActivity(tasksForDay);
+                return total + netChange;
+            }, 0);
+            
+        return STARTING_BALANCE + totalNetChange;
+    }, [tasks]);
+
+
     if (loading) {
         return (
             <Card>
@@ -136,7 +159,7 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div>
                         <CardTitle className="flex items-center gap-2"><Coins /> Focus Wallet History</CardTitle>
-                        <CardDescription>Your productivity log. Current Balance: <span className="font-bold">{MOCK_CURRENT_BALANCE} 🧘</span></CardDescription>
+                        <CardDescription>Your productivity log. Current Balance: <span className="font-bold">{currentBalance} 🧘</span></CardDescription>
                     </div>
                     <Select value={filter} onValueChange={setFilter}>
                         <SelectTrigger className="w-full sm:w-[180px]">
