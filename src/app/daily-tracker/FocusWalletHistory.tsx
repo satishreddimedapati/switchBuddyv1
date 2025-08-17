@@ -234,7 +234,7 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
                                                             {day.bonus > 0 && (
                                                                 <div className="flex items-center gap-2 text-xs font-medium pt-1 mt-1 border-t">
                                                                     <CheckCircle className="h-3 w-3 text-green-500" />
-                                                                    <span className="flex-grow">Completion Bonus (&gt;80%)</span>
+                                                                    <span className="flex-grow">Completion Bonus (>80%)</span>
                                                                     <Badge variant="outline" className="font-mono text-green-600">+{day.bonus}</Badge>
                                                                 </div>
                                                             )}
@@ -257,7 +257,7 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
                                                                 {day.penalty > 0 && (
                                                                     <div className="flex items-center gap-2 text-xs font-medium pt-1 mt-1 border-t">
                                                                         <XCircle className="h-3 w-3 text-red-500" />
-                                                                        <span className="flex-grow">Miss Penalty (&gt;50%)</span>
+                                                                        <span className="flex-grow">Miss Penalty (>50%)</span>
                                                                         <Badge variant="outline" className="font-mono text-red-600">-{day.penalty}</Badge>
                                                                     </div>
                                                                 )}
@@ -277,7 +277,3 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
         </Accordion>
     )
 }
-
-    
-
-    
