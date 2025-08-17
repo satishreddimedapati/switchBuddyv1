@@ -13,8 +13,8 @@ import { format, isToday, isYesterday, startOfDay, endOfDay, startOfWeek, endOfW
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
-// Let's assume a starting balance for demonstration purposes
-const STARTING_BALANCE = 50;
+// We'll start the balance at 0 for a true reflection of net changes.
+const STARTING_BALANCE = 0;
 
 interface FocusWalletHistoryProps {
     tasks: DailyTask[];
@@ -268,3 +268,5 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
         </Card>
     )
 }
+
+    
