@@ -511,8 +511,8 @@ const DailyTaskItemSchema = z.object({
     day: z.string().describe("The day of the week, e.g., 'Monday'."),
     date: z.string().optional().describe("The specific date for the task in YYYY-MM-DD format."),
     topic: z.string(),
-    resource_type: z.string(),
-    resource_link: z.string().optional(),
+    resource_type: z.string().describe("The type of resource, e.g. 'Video', 'Article'."),
+    resource_link: z.string().optional().describe("A URL to the resource."),
     challenge: z.string().optional(),
     completed: z.boolean().default(false).optional(),
 });

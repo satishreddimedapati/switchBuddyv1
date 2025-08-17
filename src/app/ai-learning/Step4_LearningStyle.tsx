@@ -37,13 +37,13 @@ export function Step4_LearningStyle({ data, onUpdate }: Step4Props) {
                     {learningStyles.map(style => (
                         <ToggleGroupItem 
                             key={style.id}
-                            value={style.id}
+                            value={style.title}
                             className="h-auto p-0"
                             asChild
                         >
                             <Card className={cn(
                                 "p-4 cursor-pointer transition-all w-full",
-                                data.learningStyle === style.id && "ring-2 ring-primary bg-primary/10"
+                                data.learningStyle === style.title && "ring-2 ring-primary bg-primary/10"
                             )}>
                                 <div className="flex items-center gap-4">
                                     <style.icon className="h-8 w-8 text-primary" />
