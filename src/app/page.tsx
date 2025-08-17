@@ -10,7 +10,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { getJobApplications } from "@/services/job-applications";
-import { Award, Briefcase, CalendarCheck, CheckCircle, ListTodo, PlusCircle, Video } from "lucide-react";
+import { Award, Briefcase, CalendarCheck, CheckCircle, ListTodo, PlusCircle, Video, CalendarPlus, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useEffect, useState, useMemo } from "react";
 import type { JobApplication, InterviewPlan, DailyTask } from "@/lib/types";
@@ -112,6 +112,38 @@ export default function DashboardPage() {
             Today is {format(new Date(), 'EEEE, MMMM d')}. Let&apos;s make some progress.
           </p>
         </div>
+
+        <Card>
+            <CardHeader>
+                <CardTitle className="text-lg">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Button asChild variant="outline">
+                    <Link href="/tracker">
+                        <PlusCircle />
+                        Add Job
+                    </Link>
+                </Button>
+                <Button asChild variant="outline">
+                    <Link href="/daily-tracker">
+                        <CalendarPlus />
+                        Schedule Task
+                    </Link>
+                </Button>
+                <Button asChild variant="outline">
+                    <Link href="/interview-prep/new">
+                        <Video />
+                        New Prep Plan
+                    </Link>
+                </Button>
+                <Button asChild variant="outline">
+                    <Link href="/job-intelligence">
+                        <Search />
+                        Analyze Role
+                    </Link>
+                </Button>
+            </CardContent>
+        </Card>
 
         <Accordion type="multiple" defaultValue={['agenda']} className="w-full space-y-4">
            {/* Today's Agenda */}
