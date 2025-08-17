@@ -37,7 +37,7 @@ User Inputs:
 Based on these inputs, create a structured roadmap. The roadmap should be broken down into weeks. Each week should have a clear theme. Each day within the week should have a specific topic, a suggested resource type (e.g., 'Video', 'Article', 'Interactive Tutorial'), a small challenge or exercise, and a calculated date.
 
 Rules:
-1.  **CRITICAL**: The total number of daily tasks in the final output MUST EXACTLY match the user's selected 'duration'. Do not round down or create incomplete weeks. If the duration is 23 days, there must be 23 daily tasks in total across all weeks.
+1.  Generate a plan that is approximately the user's selected 'duration'. It's okay to be a few days over or under. The code will handle the exact count.
 2.  If 'learnOnWeekends' is false, the calculated dates for tasks must skip Saturdays and Sundays.
 3.  Group the daily tasks into weeks.
 4.  The content and complexity must be appropriate for the user's experience level.
@@ -61,7 +61,7 @@ const generateLearningRoadmapFlow = ai.defineFlow(
     const { output } = await prompt(input);
 
     if (!output || !output.weeks || output.weeks.length === 0) {
-        throw new Error("The AI failed to generate a valid roadmap structure.");
+        throw new Error("The AI failed to generate a valid roadmap structure. Please try again.");
     }
 
     // Flatten all tasks into a single array
@@ -69,10 +69,10 @@ const generateLearningRoadmapFlow = ai.defineFlow(
     
     // Check if the AI generated at least enough tasks
     if (allTasks.length < input.duration) {
-      throw new Error(`AI generation error: Could not generate the required number of tasks. Expected ${input.duration}, but got ${allTasks.length}. Please try again.`);
+      console.warn(`AI generated fewer tasks (${allTasks.length}) than requested (${input.duration}). The roadmap will be shorter.`);
     }
 
-    // Truncate to the exact duration
+    // Truncate to the exact duration if AI provides more, or use the generated amount if less.
     const tasks = allTasks.slice(0, input.duration);
 
     let currentDate = new Date(input.startDate);
@@ -84,8 +84,10 @@ const generateLearningRoadmapFlow = ai.defineFlow(
     tasks.forEach((task) => {
         // Find the next valid learning day
         if (!input.learnOnWeekends) {
-            while (currentDate.getDay() === 0 || currentDate.getDay() === 6) { // 0 is Sunday, 6 is Saturday
+            let dayOfWeek = currentDate.getDay();
+            while (dayOfWeek === 0 || dayOfWeek === 6) { // 0 is Sunday, 6 is Saturday
                 currentDate = addDays(currentDate, 1);
+                dayOfWeek = currentDate.getDay();
             }
         }
 
