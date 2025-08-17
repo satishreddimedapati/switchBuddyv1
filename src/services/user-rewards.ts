@@ -37,9 +37,8 @@ export async function getFocusCoinBalance(userId: string): Promise<number> {
 
 export async function getUserRewards(userId: string): Promise<UserReward[]> {
     if (!userId) return [];
-    // Correctly reference the subcollection
     const rewardsCollection = collection(db, 'users', userId, 'redeemed_rewards');
-    const snapshot = await getDocs(rewardsCollection);
+    const snapshot = await getDocs(query(rewardsCollection));
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserReward));
 }
 
@@ -51,8 +50,6 @@ export async function redeemReward(userId: string, reward: Reward): Promise<void
         throw new Error("Insufficient funds.");
     }
     
-    // The balance is calculated dynamically, so we just add the reward record.
-    // The cost will be factored into the balance calculation next time it's called.
     const rewardsCollection = collection(db, `users/${userId}/redeemed_rewards`);
     await addDoc(rewardsCollection, {
         userId,
