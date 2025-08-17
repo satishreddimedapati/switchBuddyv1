@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +39,7 @@ export default function SignupPage() {
       // Create a document for the new user in the 'users' collection
       await setDoc(doc(db, "users", user.uid), {
         email: user.email,
-        createdAt: new Date(),
+        createdAt: serverTimestamp(),
       });
 
       toast({ title: 'Success', description: 'Account created successfully!' });

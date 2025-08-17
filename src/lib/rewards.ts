@@ -1,3 +1,4 @@
+import { z } from 'zod';
 
 export interface Reward {
     id: number;
@@ -13,6 +14,20 @@ export interface RewardCategory {
     color: string;
     rewards: Reward[];
 }
+
+export const UserRewardSchema = z.object({
+    id: z.string(),
+    userId: z.string(),
+    rewardId: z.number(),
+    name: z.string(),
+    description: z.string(),
+    icon: z.string(),
+    cost: z.number(),
+    status: z.enum(['unclaimed', 'claimed']),
+    redeemedAt: z.any(), // Firestore Timestamp
+    claimedAt: z.any().optional(), // Firestore Timestamp
+});
+export type UserReward = z.infer<typeof UserRewardSchema>;
 
 export const REWARD_CATEGORIES: RewardCategory[] = [
     {

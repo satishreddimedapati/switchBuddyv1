@@ -1,24 +1,23 @@
 
 'use client';
 
-import { useMemo, useState } from 'react';
-import type { DailyTask } from '@/lib/types';
+import { useMemo, useState, useEffect, useCallback } from 'react';
+import type { DailyTask, UserReward } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowDown, ArrowUp, Coins, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowDown, ArrowUp, Coins, CheckCircle, XCircle, Gift, ShoppingBag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { format, isToday, isYesterday, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isBefore, parseISO } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuth } from '@/lib/auth';
+import { getUserRewards } from '@/services/user-rewards';
+import { Button } from '@/components/ui/button';
+import { PurchasedRewardsSummary } from './PurchasedRewardsSummary';
 
 
 const STARTING_BALANCE = 0;
-
-interface FocusWalletHistoryProps {
-    tasks: DailyTask[];
-    loading: boolean;
-}
 
 interface DayActivity {
     date: string;
@@ -28,48 +27,46 @@ interface DayActivity {
     netChange: number;
     completedTasksList: DailyTask[];
     missedTasksList: DailyTask[];
+    redeemedRewardsList: UserReward[];
     bonus: number;
     penalty: number;
 }
 
-const calculateDayActivity = (tasksForDay: DailyTask[], allTasks: DailyTask[]): Omit<DayActivity, 'date' | 'label'> => {
-    const day = tasksForDay.length > 0 ? tasksForDay[0].date : '';
+const calculateDayActivity = (tasksForDay: DailyTask[], allTasks: DailyTask[], rewardsForDay: UserReward[]): Omit<DayActivity, 'date' | 'label'> => {
+    const day = tasksForDay.length > 0 ? tasksForDay[0].date : (rewardsForDay.length > 0 ? format(parseISO(rewardsForDay[0].redeemedAt), 'yyyy-MM-dd') : '');
     
-    // Find tasks originally scheduled for this day but were rescheduled
     const rescheduledAwayFromThisDay = allTasks.filter(t => t.rescheduled?.originalDate === day);
-    
-    // Tasks currently on this day
     const tasksOnThisDay = tasksForDay;
 
-    // Filter out tasks that were rescheduled away from this day but might still appear if the date filter is wide
     const completedOnThisDay = tasksOnThisDay.filter(t => t.completed);
 
-    const taskDate = startOfDay(parseISO(day));
+    const taskDate = day ? startOfDay(parseISO(day)) : new Date();
     const isPastOrToday = isBefore(taskDate, new Date()) || isToday(taskDate);
     
-    // Missed tasks are tasks ON this day that are not complete, OR tasks that were moved AWAY from this day
     const missedOnThisDay = isPastOrToday ? tasksOnThisDay.filter(t => !t.completed) : [];
     
     const allMissedAndRescheduled = [...missedOnThisDay, ...rescheduledAwayFromThisDay];
     const totalTasksForDay = completedOnThisDay.length + allMissedAndRescheduled.length;
 
-    const credits = completedOnThisDay.length;
-    const debits = allMissedAndRescheduled.length;
+    const taskCredits = completedOnThisDay.length;
+    const taskDebits = allMissedAndRescheduled.length;
+    const rewardDebits = rewardsForDay.reduce((sum, reward) => sum + reward.cost, 0);
 
-    const completionBonus = totalTasksForDay > 0 && (credits / totalTasksForDay) >= 0.8 ? 5 : 0;
-    const missPenalty = isPastOrToday && totalTasksForDay > 0 && (debits / totalTasksForDay) >= 0.5 ? 5 : 0;
+    const completionBonus = totalTasksForDay > 0 && (taskCredits / totalTasksForDay) >= 0.8 ? 5 : 0;
+    const missPenalty = isPastOrToday && totalTasksForDay > 0 && (taskDebits / totalTasksForDay) >= 0.5 ? 5 : 0;
 
-    const calculatedCredits = credits + completionBonus;
-    const calculatedDebits = debits + missPenalty;
+    const calculatedCredits = taskCredits + completionBonus;
+    const calculatedDebits = taskDebits + missPenalty;
 
-    const net = calculatedCredits - calculatedDebits;
+    const net = calculatedCredits - calculatedDebits - rewardDebits;
 
     return {
         credits: calculatedCredits,
-        debits: calculatedDebits,
+        debits: calculatedDebits + rewardDebits,
         netChange: net,
         completedTasksList: completedOnThisDay,
         missedTasksList: allMissedAndRescheduled,
+        redeemedRewardsList: rewardsForDay,
         bonus: completionBonus,
         penalty: missPenalty,
     };
@@ -84,9 +81,22 @@ function formatActivityDate(dateString: string): string {
 
 
 export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) {
+    const { user } = useAuth();
     const [filter, setFilter] = useState('this-week');
-    
-    const filteredTasks = useMemo(() => {
+    const [userRewards, setUserRewards] = useState<UserReward[]>([]);
+    const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+
+     const fetchRewards = useCallback(async () => {
+        if (!user) return;
+        const rewards = await getUserRewards(user.uid);
+        setUserRewards(rewards);
+    }, [user]);
+
+    useEffect(() => {
+        fetchRewards();
+    }, [fetchRewards]);
+
+    const filteredData = useMemo(() => {
         const now = new Date();
         let startDate: Date;
         let endDate: Date;
@@ -109,36 +119,52 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
                  endDate = endOfWeek(now, { weekStartsOn: 1 });
         }
 
-        return tasks.filter(task => {
+        const filteredTasks = tasks.filter(task => {
             const taskDate = parseISO(task.date);
             return taskDate >= startDate && taskDate <= endDate;
         });
 
-    }, [tasks, filter]);
+        const filteredRewards = userRewards.filter(reward => {
+            const rewardDate = parseISO(reward.redeemedAt);
+            return rewardDate >= startDate && rewardDate <= endDate;
+        });
+
+        return { tasks: filteredTasks, rewards: filteredRewards };
+
+    }, [tasks, userRewards, filter]);
 
     const activityByDay = useMemo(() => {
-        const groupedByDate = filteredTasks.reduce((acc, task) => {
-            const date = task.date;
-            if (!acc[date]) {
-                acc[date] = [];
-            }
-            acc[date].push(task);
-            return acc;
-        }, {} as Record<string, DailyTask[]>);
+        const groupedData: Record<string, { tasks: DailyTask[], rewards: UserReward[] }> = {};
 
-        return Object.entries(groupedByDate)
-            .map(([date, tasksForDay]) => ({
+        filteredData.tasks.forEach(task => {
+            const date = task.date;
+            if (!groupedData[date]) {
+                groupedData[date] = { tasks: [], rewards: [] };
+            }
+            groupedData[date].tasks.push(task);
+        });
+
+        filteredData.rewards.forEach(reward => {
+            const date = format(parseISO(reward.redeemedAt), 'yyyy-MM-dd');
+             if (!groupedData[date]) {
+                groupedData[date] = { tasks: [], rewards: [] };
+            }
+            groupedData[date].rewards.push(reward);
+        });
+
+        return Object.entries(groupedData)
+            .map(([date, { tasks: tasksForDay, rewards: rewardsForDay }]) => ({
                 date,
                 label: formatActivityDate(date),
-                ...calculateDayActivity(tasksForDay, tasks),
+                ...calculateDayActivity(tasksForDay, tasks, rewardsForDay),
             }))
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    }, [filteredTasks, tasks]);
+    }, [filteredData, tasks]);
 
     const currentBalance = useMemo(() => {
         const groupedByDate = tasks.reduce((acc, task) => {
-            const date = task.rescheduled?.originalDate || task.date;
+            const date = task.date;
             if (!acc[date]) {
                 acc[date] = [];
             }
@@ -148,12 +174,14 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
 
         const totalNetChange = Object.values(groupedByDate)
             .reduce((total, tasksForDay) => {
-                 const dayActivity = calculateDayActivity(tasksForDay, tasks);
-                return total + dayActivity.netChange;
+                const dayActivity = calculateDayActivity(tasksForDay, tasks, []); // pass empty rewards here as we only care about tasks for historical balance
+                return total + dayActivity.credits - dayActivity.debits; // Only task-based change
             }, 0);
             
-        return STARTING_BALANCE + totalNetChange;
-    }, [tasks]);
+        const totalCostOfRedeemed = userRewards.reduce((total, reward) => total + reward.cost, 0);
+
+        return STARTING_BALANCE + totalNetChange - totalCostOfRedeemed;
+    }, [tasks, userRewards]);
 
 
     if (loading) {
@@ -180,7 +208,7 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
                         </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-6 pb-6">
-                        <div className="pb-4">
+                        <div className="pb-4 flex flex-wrap gap-2 items-center">
                              <Select value={filter} onValueChange={setFilter}>
                                 <SelectTrigger className="w-full sm:w-[180px]">
                                     <SelectValue placeholder="Select a range" />
@@ -191,6 +219,19 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
                                     <SelectItem value="this-month">This Month</SelectItem>
                                 </SelectContent>
                             </Select>
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsSummaryOpen(true)}
+                                disabled={filteredData.rewards.length === 0}
+                            >
+                                <ShoppingBag className="mr-2 h-4 w-4" />
+                                View Purchases ({filteredData.rewards.length})
+                            </Button>
+                             <PurchasedRewardsSummary 
+                                isOpen={isSummaryOpen} 
+                                onOpenChange={setIsSummaryOpen}
+                                rewards={filteredData.rewards} 
+                            />
                         </div>
                        
                         {activityByDay.length === 0 ? (
@@ -198,7 +239,7 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
                                 <p className="text-muted-foreground">No activity for the selected period.</p>
                             </div>
                         ) : (
-                            <Accordion type="single" defaultValue={activityByDay[activityByDay.length -1]?.date} collapsible className="w-full space-y-2">
+                            <Accordion type="single" defaultValue={activityByDay[0]?.date} collapsible className="w-full space-y-2">
                                 {activityByDay.map(day => (
                                     <AccordionItem key={day.date} value={day.date} className="border-b-0">
                                         <Card className="bg-muted/50">
@@ -218,29 +259,31 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
                                                 </div>
                                             </AccordionTrigger>
                                             <AccordionContent className="px-4 pb-4">
-                                            <Accordion type="multiple" className="w-full space-y-2">
-                                                    <AccordionItem value="credits">
-                                                        <AccordionTrigger className="p-3 bg-background rounded-md text-base">
-                                                            <span className="flex items-center gap-2 font-semibold text-green-600"><ArrowUp /> Credits Earned (+{day.credits})</span>
-                                                        </AccordionTrigger>
-                                                        <AccordionContent className="p-4 border rounded-b-md space-y-2 text-sm">
-                                                            {day.completedTasksList.map(task => (
-                                                                <div key={task.id} className="flex items-center gap-2 text-xs">
-                                                                    <CheckCircle className="h-3 w-3 text-green-500" />
-                                                                    <span className="flex-grow truncate">{task.title}</span>
-                                                                    <Badge variant="outline" className="font-mono text-green-600">+1</Badge>
-                                                                </div>
-                                                            ))}
-                                                            {day.bonus > 0 && (
-                                                                <div className="flex items-center gap-2 text-xs font-medium pt-1 mt-1 border-t">
-                                                                    <CheckCircle className="h-3 w-3 text-green-500" />
-                                                                    <span className="flex-grow">Completion Bonus (&gt;80%)</span>
-                                                                    <Badge variant="outline" className="font-mono text-green-600">+{day.bonus}</Badge>
-                                                                </div>
-                                                            )}
-                                                            {day.completedTasksList.length === 0 && day.bonus === 0 && <p className="text-xs text-muted-foreground">No credits earned this day.</p>}
-                                                        </AccordionContent>
-                                                    </AccordionItem>
+                                            <Accordion type="multiple" defaultValue={['credits']} className="w-full space-y-2">
+                                                    {day.credits > 0 && (
+                                                        <AccordionItem value="credits">
+                                                            <AccordionTrigger className="p-3 bg-background rounded-md text-base">
+                                                                <span className="flex items-center gap-2 font-semibold text-green-600"><ArrowUp /> Credits Earned (+{day.credits})</span>
+                                                            </AccordionTrigger>
+                                                            <AccordionContent className="p-4 border rounded-b-md space-y-2 text-sm">
+                                                                {day.completedTasksList.map(task => (
+                                                                    <div key={task.id} className="flex items-center gap-2 text-xs">
+                                                                        <CheckCircle className="h-3 w-3 text-green-500" />
+                                                                        <span className="flex-grow truncate">{task.title}</span>
+                                                                        <Badge variant="outline" className="font-mono text-green-600">+1</Badge>
+                                                                    </div>
+                                                                ))}
+                                                                {day.bonus > 0 && (
+                                                                    <div className="flex items-center gap-2 text-xs font-medium pt-1 mt-1 border-t">
+                                                                        <CheckCircle className="h-3 w-3 text-green-500" />
+                                                                        <span className="flex-grow">Completion Bonus (>80%)</span>
+                                                                        <Badge variant="outline" className="font-mono text-green-600">+{day.bonus}</Badge>
+                                                                    </div>
+                                                                )}
+                                                            </AccordionContent>
+                                                        </AccordionItem>
+                                                    )}
+                                                    
                                                     {day.debits > 0 && (
                                                         <AccordionItem value="debits">
                                                             <AccordionTrigger className="p-3 bg-background rounded-md text-base">
@@ -257,10 +300,17 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
                                                                 {day.penalty > 0 && (
                                                                     <div className="flex items-center gap-2 text-xs font-medium pt-1 mt-1 border-t">
                                                                         <XCircle className="h-3 w-3 text-red-500" />
-                                                                        <span className="flex-grow">Miss Penalty (&gt;50%)</span>
+                                                                        <span className="flex-grow">Miss Penalty (>50%)</span>
                                                                         <Badge variant="outline" className="font-mono text-red-600">-{day.penalty}</Badge>
                                                                     </div>
                                                                 )}
+                                                                {day.redeemedRewardsList.map(reward => (
+                                                                    <div key={reward.id} className="flex items-center gap-2 text-xs pt-1 mt-1 border-t">
+                                                                        <Gift className="h-3 w-3 text-red-500" />
+                                                                        <span className="flex-grow truncate">Redeemed: {reward.name}</span>
+                                                                        <Badge variant="outline" className="font-mono text-red-600">-{reward.cost}</Badge>
+                                                                    </div>
+                                                                ))}
                                                             </AccordionContent>
                                                         </AccordionItem>
                                                     )}
@@ -277,3 +327,5 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
         </Accordion>
     )
 }
+
+    
