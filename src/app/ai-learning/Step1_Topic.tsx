@@ -12,9 +12,10 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CalendarIcon, Loader2, Wand2 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
-import { useState, useTransition } from 'react';
-import { generateRoadmapSuggestions } from '@/ai/flows/generate-roadmap-suggestions';
+import { useState, useTransition, useEffect, useMemo } from 'react';
+import { generateRoadmapSuggestions, RoadmapSuggestionOutput } from '@/ai/flows/generate-roadmap-suggestions';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface Step1Props {
     data: RoadmapInputs;
@@ -24,28 +25,53 @@ interface Step1Props {
 export function Step1_Topic({ data, onUpdate }: Step1Props) {
     const { toast } = useToast();
     const [isSuggesting, startSuggestionTransition] = useTransition();
+    const [suggestion, setSuggestion] = useState<RoadmapSuggestionOutput | null>(null);
 
-    const handleGetSuggestion = () => {
-        if (!data.topic) {
-            toast({ title: "Topic needed", description: "Please enter a topic first to get suggestions.", variant: "destructive" });
-            return;
-        }
-        startSuggestionTransition(async () => {
-            try {
-                const suggestion = await generateRoadmapSuggestions({ topic: data.topic });
-                onUpdate({
-                    timePerDay: suggestion.suggestedTimePerDay,
-                    duration: suggestion.suggestedDurationDays,
+    useEffect(() => {
+        if (data.topic.length > 2) {
+            const timer = setTimeout(() => {
+                startSuggestionTransition(async () => {
+                    try {
+                        const res = await generateRoadmapSuggestions({ topic: data.topic });
+                        setSuggestion(res);
+                        // Do not auto-apply, let the user decide.
+                    } catch (error) {
+                        console.error("Failed to get suggestion", error);
+                    }
                 });
-                toast({ title: "Suggestions applied!", description: "The AI has suggested an optimal schedule." });
-            } catch (error) {
-                console.error("Failed to get suggestion", error);
-                toast({ title: "Error", description: "Could not retrieve AI suggestions.", variant: "destructive" });
-            }
-        });
+            }, 1000); // Debounce for 1 second
+            return () => clearTimeout(timer);
+        }
+    }, [data.topic]);
+    
+    const applySuggestion = () => {
+        if(suggestion) {
+            onUpdate({
+                timePerDay: suggestion.suggestedTimePerDay,
+                duration: suggestion.suggestedDurationDays,
+            });
+            toast({ title: "AI Suggestion Applied!", description: suggestion.reasoning });
+        }
     }
 
-    const totalSessions = data.duration;
+    const dynamicSuggestion = useMemo(() => {
+        if (!suggestion) return { durationText: '', timeText: ''};
+        
+        const totalHours = suggestion.totalEffortHours;
+        const timePerDayHours = data.timePerDay / 60;
+        const durationDays = data.duration;
+
+        // Calculate suggested duration based on user's time commitment
+        const suggestedDays = Math.round(totalHours / timePerDayHours);
+        const durationText = `With ${timePerDayHours.toFixed(1)} hrs/day, this might take ~${suggestedDays} days.`;
+
+        // Calculate suggested time based on user's duration
+        const suggestedHours = totalHours / durationDays;
+        const timeText = `To finish in ${durationDays} days, you'd need ~${suggestedHours.toFixed(1)} hrs/day.`;
+
+        return { durationText, timeText };
+    }, [data.timePerDay, data.duration, suggestion]);
+
 
     return (
         <Card>
@@ -64,12 +90,26 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                     />
                 </div>
 
-                <div className="flex justify-end">
-                    <Button variant="ghost" size="sm" onClick={handleGetSuggestion} disabled={isSuggesting || !data.topic}>
-                         {isSuggesting ? <Loader2 className="mr-2 animate-spin" /> : <Wand2 className="mr-2" />}
-                        Get AI Suggestion
-                    </Button>
-                </div>
+                {isSuggesting && (
+                    <div className="flex items-center text-sm text-muted-foreground">
+                        <Loader2 className="mr-2 animate-spin" />
+                        Getting AI suggestions...
+                    </div>
+                )}
+                
+                {suggestion && !isSuggesting && (
+                    <Alert>
+                        <Wand2 className="h-4 w-4" />
+                        <AlertTitle>AI Suggestion</AlertTitle>
+                        <AlertDescription>
+                            {suggestion.reasoning} We suggest studying for 
+                            <span className="font-bold"> {suggestion.suggestedTimePerDay / 60} hours/day</span> for 
+                            <span className="font-bold"> {suggestion.suggestedDurationDays} days</span>. 
+                            <Button variant="link" onClick={applySuggestion} className="p-0 h-auto ml-1">Apply this suggestion.</Button>
+                        </AlertDescription>
+                    </Alert>
+                )}
+
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div className="space-y-4">
@@ -78,8 +118,8 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                             value={[data.timePerDay]}
                             onValueChange={value => onUpdate({ timePerDay: value[0] })}
                             min={30}
-                            max={180}
-                            step={30}
+                            max={240}
+                            step={15}
                         />
                         <div className="text-center font-medium">{data.timePerDay / 60} hours</div>
                     </div>
@@ -89,7 +129,7 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                             value={[data.duration]}
                             onValueChange={value => onUpdate({ duration: value[0] })}
                             min={7}
-                            max={90}
+                            max={120}
                             step={1}
                         />
                         <div className="text-center font-medium">{data.duration} {data.duration > 1 ? 'days' : 'day'}</div>
@@ -120,11 +160,12 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                         </Popover>
                     </div>
                 </div>
-
-                <div className="text-center text-sm text-muted-foreground p-3 bg-muted/50 rounded-md">
-                    Studying <span className="font-bold text-primary">{data.timePerDay / 60} hours/day</span> for <span className="font-bold text-primary">{data.duration} {data.duration > 1 ? 'days' : 'day'}</span> will result in approximately <span className="font-bold text-primary">{totalSessions}</span> learning sessions.
-                </div>
-
+                 {suggestion && (
+                    <div className="text-center text-sm text-muted-foreground p-3 bg-muted/50 rounded-md space-y-1">
+                        <p>{dynamicSuggestion.durationText}</p>
+                        <p>{dynamicSuggestion.timeText}</p>
+                    </div>
+                 )}
             </CardContent>
         </Card>
     );
