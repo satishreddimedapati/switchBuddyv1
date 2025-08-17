@@ -4,14 +4,27 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import type { LearningRoadmap } from '@/lib/types';
-import { getLearningRoadmapsForUser } from '@/services/learning-roadmaps';
+import { getLearningRoadmapsForUser, deleteLearningRoadmap } from '@/services/learning-roadmaps';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { RoadmapGenerator } from './RoadmapGenerator';
 import { RoadmapDisplay } from './RoadmapDisplay';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 function LoadingState() {
     return (
@@ -28,9 +41,11 @@ function LoadingState() {
 
 export default function AiLearningPage() {
     const { user } = useAuth();
+    const { toast } = useToast();
     const [roadmaps, setRoadmaps] = useState<LearningRoadmap[]>([]);
     const [loading, setLoading] = useState(true);
     const [isBuilding, setIsBuilding] = useState(false);
+    const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
     const fetchRoadmaps = async () => {
         if (!user) {
@@ -49,7 +64,21 @@ export default function AiLearningPage() {
 
     const handleRoadmapCreated = () => {
         setIsBuilding(false);
-        fetchRoadmaps(); // Refetch the roadmaps after creation
+        fetchRoadmaps();
+    }
+    
+    const handleDelete = async (roadmapId: string) => {
+        if (!user) return;
+        setIsDeleting(roadmapId);
+        try {
+            await deleteLearningRoadmap(roadmapId, user.uid);
+            toast({ title: "Success", description: "Roadmap deleted successfully." });
+            fetchRoadmaps(); // Refetch after deletion
+        } catch (error) {
+            toast({ title: "Error", description: "Failed to delete roadmap.", variant: "destructive" });
+        } finally {
+            setIsDeleting(null);
+        }
     }
 
     if (loading) {
@@ -80,19 +109,51 @@ export default function AiLearningPage() {
             {roadmaps.length > 0 ? (
                 <Accordion type="single" collapsible className="w-full space-y-4">
                     {roadmaps.map(roadmap => (
-                        <AccordionItem value={roadmap.id!} key={roadmap.id}>
-                             <Card>
-                                <AccordionTrigger className="p-6 hover:no-underline">
-                                    <CardHeader className="p-0 text-left">
-                                        <CardTitle>{roadmap.topic}</CardTitle>
-                                        <CardDescription>{roadmap.duration} month plan focusing on: {roadmap.goals.join(', ')}</CardDescription>
-                                    </CardHeader>
-                                </AccordionTrigger>
-                                <AccordionContent className="p-6 pt-0">
+                         <Card key={roadmap.id}>
+                            <AccordionItem value={roadmap.id!} className="border-b-0">
+                                <div className="p-6 flex justify-between items-center">
+                                    <AccordionTrigger className="p-0 hover:no-underline flex-1">
+                                        <CardHeader className="p-0 text-left">
+                                            <CardTitle>{roadmap.topic}</CardTitle>
+                                            <CardDescription>{roadmap.duration} day plan focusing on: {roadmap.goals.join(', ')}</CardDescription>
+                                        </CardHeader>
+                                    </AccordionTrigger>
+                                    <div className="flex items-center gap-2 ml-4">
+                                        <Button variant="ghost" size="icon" asChild>
+                                            <Link href={`/ai-learning/edit/${roadmap.id}`}>
+                                                <Edit className="h-4 w-4" />
+                                                <span className="sr-only">Edit</span>
+                                            </Link>
+                                        </Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                                                     {isDeleting === roadmap.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4" />}
+                                                     <span className="sr-only">Delete</span>
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        This action cannot be undone. This will permanently delete your learning roadmap.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDelete(roadmap.id!)} className="bg-destructive hover:bg-destructive/90">
+                                                        Delete
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
+                                </div>
+                                <AccordionContent className="px-6 pb-6">
                                     <RoadmapDisplay roadmap={roadmap} />
                                 </AccordionContent>
-                             </Card>
-                        </AccordionItem>
+                             </AccordionItem>
+                         </Card>
                     ))}
                 </Accordion>
             ) : (

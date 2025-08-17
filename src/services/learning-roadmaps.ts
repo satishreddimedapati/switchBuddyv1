@@ -4,7 +4,7 @@
 import { db } from "@/lib/firebase";
 import type { LearningRoadmap } from "@/lib/types";
 import { toSerializableLearningRoadmap } from "@/lib/types";
-import { collection, getDocs, doc, addDoc, query, where, serverTimestamp, orderBy } from "firebase/firestore";
+import { collection, getDocs, doc, addDoc, query, where, serverTimestamp, orderBy, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
 
 const roadmapsCollection = collection(db, "learning_roadmaps");
 
@@ -32,6 +32,25 @@ export async function getLearningRoadmapsForUser(userId: string): Promise<Learni
     }
 }
 
+export async function getLearningRoadmap(roadmapId: string): Promise<LearningRoadmap | null> {
+    try {
+        const roadmapRef = doc(db, "learning_roadmaps", roadmapId);
+        const docSnap = await getDoc(roadmapRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            const serializableData = toSerializableLearningRoadmap(data);
+            return { id: docSnap.id, ...serializableData } as LearningRoadmap;
+        } else {
+            return null;
+        }
+    } catch (error) {
+        console.error("Error fetching roadmap:", error);
+        return null;
+    }
+}
+
+
 export async function addLearningRoadmap(roadmapData: Omit<LearningRoadmap, 'id' | 'createdAt'>): Promise<string> {
     if (!roadmapData.userId) {
         throw new Error("Authentication required to add a roadmap.");
@@ -43,4 +62,26 @@ export async function addLearningRoadmap(roadmapData: Omit<LearningRoadmap, 'id'
     });
 
     return docRef.id;
+}
+
+export async function updateLearningRoadmap(roadmapId: string, updates: Partial<Omit<LearningRoadmap, 'id' | 'userId'>>, userId: string) {
+    const roadmapRef = doc(db, "learning_roadmaps", roadmapId);
+    const roadmapDoc = await getDoc(roadmapRef);
+
+    if (!roadmapDoc.exists() || roadmapDoc.data().userId !== userId) {
+        throw new Error("Permission denied or roadmap not found.");
+    }
+
+    await updateDoc(roadmapRef, updates);
+}
+
+export async function deleteLearningRoadmap(roadmapId: string, userId: string) {
+    const roadmapRef = doc(db, "learning_roadmaps", roadmapId);
+    const roadmapDoc = await getDoc(roadmapRef);
+
+    if (!roadmapDoc.exists() || roadmapDoc.data().userId !== userId) {
+        throw new Error("Permission denied or roadmap not found.");
+    }
+    
+    await deleteDoc(roadmapRef);
 }
