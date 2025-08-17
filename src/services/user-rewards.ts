@@ -6,6 +6,7 @@ import { collection, getDocs, doc, updateDoc, addDoc, query, where, serverTimest
 import type { DailyTask } from "@/lib/types";
 import { calculateDayActivity } from "@/app/profile/utils";
 import type { Reward, UserReward } from "@/lib/rewards";
+import { toSerializableUserReward } from "@/lib/types";
 
 export async function getFocusCoinBalance(userId: string): Promise<number> {
     if (!userId) return 0;
@@ -37,10 +38,13 @@ export async function getFocusCoinBalance(userId: string): Promise<number> {
 
 export async function getUserRewards(userId: string): Promise<UserReward[]> {
     if (!userId) return [];
-    const rewardsCollection = collection(db, 'redeemed_rewards');
+    const rewardsCollection = collection(db, "redeemed_rewards");
     const q = query(rewardsCollection, where("userId", "==", userId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserReward));
+    return snapshot.docs.map(doc => {
+        const serializableData = toSerializableUserReward(doc.data());
+        return { id: doc.id, ...serializableData };
+    });
 }
 
 export async function redeemReward(userId: string, reward: Reward): Promise<void> {

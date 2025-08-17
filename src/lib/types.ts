@@ -458,4 +458,30 @@ export const SendDailyDebriefOutputSchema = z.object({
 });
 export type SendDailyDebriefOutput = z.infer<typeof SendDailyDebriefOutputSchema>;
 
-    
+export const UserRewardSchema = z.object({
+    id: z.string(),
+    userId: z.string(),
+    rewardId: z.number(),
+    name: z.string(),
+    description: z.string(),
+    icon: z.string(),
+    cost: z.number(),
+    status: z.enum(['unclaimed', 'claimed']),
+    redeemedAt: z.string(), 
+    claimedAt: z.string().optional(),
+});
+export type UserReward = z.infer<typeof UserRewardSchema>;
+
+export function toSerializableUserReward(docData: any): UserReward {
+    const { redeemedAt, claimedAt, ...rest } = docData;
+    const serializable: any = { ...rest };
+
+    if (redeemedAt) {
+        serializable.redeemedAt = (redeemedAt as Timestamp).toDate().toISOString();
+    }
+    if (claimedAt) {
+        serializable.claimedAt = (claimedAt as Timestamp).toDate().toISOString();
+    }
+
+    return serializable as UserReward;
+}
