@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { DailyTrackerTabs } from "./DailyTrackerTabs";
@@ -6,7 +7,7 @@ import { MissedTasksGate } from "./MissedTasksGate";
 import { useAuth } from "@/lib/auth";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { DailyTask } from "@/lib/types";
-import { getMissedTasks, getFocusCoinBalance } from "@/services/daily-tasks";
+import { getMissedTasks } from "@/services/daily-tasks";
 import { Skeleton } from "@/components/ui/skeleton";
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -17,6 +18,7 @@ import { Coins } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getUserRewards } from "@/services/user-rewards";
 import type { UserReward } from "@/lib/types";
+import { getFocusCoinBalance } from "@/services/user-rewards";
 
 function FocusWalletFAB({ balance, tasks, rewards, loading }: { balance: number, tasks: DailyTask[], rewards: UserReward[], loading: boolean }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -110,7 +112,7 @@ export default function DailyTrackerPage() {
         });
 
         const unsubscribeRewards = onSnapshot(rewardsQuery, (querySnapshot) => {
-            const fetchedRewards = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserReward));
+            const fetchedRewards = querySnapshot.docs.map(doc => toSerializableUserReward({ id: doc.id, ...doc.data() }));
             setRewards(fetchedRewards);
         }, (error) => {
             console.error("Error fetching rewards: ", error);
@@ -124,7 +126,11 @@ export default function DailyTrackerPage() {
 
      useEffect(() => {
         if (user) {
-            getFocusCoinBalance(user.uid).then(setBalance);
+            const calculateBalance = async () => {
+                const newBalance = await getFocusCoinBalance(user.uid);
+                setBalance(newBalance);
+            }
+            calculateBalance();
         }
     }, [recentTasks, rewards, user]);
     
@@ -179,3 +185,5 @@ export default function DailyTrackerPage() {
         </div>
     );
 }
+
+    

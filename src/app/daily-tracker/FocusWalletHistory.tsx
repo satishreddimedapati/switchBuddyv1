@@ -109,7 +109,7 @@ export function FocusWalletHistory({ tasks, rewards, loading }: FocusWalletHisto
 
         const filteredTasks = tasks.filter(task => {
             const taskDate = parseISO(task.date);
-            return isWithinInterval(taskDate, interval);
+            return isValid(taskDate) && isWithinInterval(taskDate, interval);
         });
 
         const filteredRewards = rewards.filter(reward => {
@@ -136,7 +136,9 @@ export function FocusWalletHistory({ tasks, rewards, loading }: FocusWalletHisto
 
         filteredData.rewards.forEach(reward => {
              if (typeof reward.redeemedAt !== 'string' || !reward.redeemedAt) return;
-            const date = format(parseISO(reward.redeemedAt), 'yyyy-MM-dd');
+             const rewardDate = parseISO(reward.redeemedAt);
+             if (!isValid(rewardDate)) return;
+             const date = format(rewardDate, 'yyyy-MM-dd');
              if (!groupedData[date]) {
                 groupedData[date] = { tasks: [], rewards: [] };
             }
@@ -280,9 +282,6 @@ export function FocusWalletHistory({ tasks, rewards, loading }: FocusWalletHisto
             </ScrollArea>
         </div>
     )
-
-    
-
-    
+}
 
     
