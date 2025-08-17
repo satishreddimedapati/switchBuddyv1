@@ -1,13 +1,14 @@
 
 'use client';
 
+import * as React from 'react';
 import type { LearningRoadmap } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { BookOpen, ExternalLink, TestTube2, Video, MessageSquare, ArrowRight } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { BookOpen, ExternalLink, TestTube2, Video, MessageSquare } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const resourceIcons = {
     'Video': <Video className="h-4 w-4" />,
@@ -20,72 +21,116 @@ interface RoadmapTimelineProps {
   roadmap: LearningRoadmap;
 }
 
+function DailyCheckpoint({ task }: { task: LearningRoadmap['roadmap']['weeks'][0]['daily_tasks'][0] }) {
+    return (
+        <HoverCard>
+            <HoverCardTrigger asChild>
+                <button className="h-4 w-4 bg-muted-foreground rounded-full hover:bg-primary transition-colors"></button>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-80">
+                <div className="space-y-2">
+                    <h4 className="font-semibold">{task.day}: {task.topic}</h4>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {resourceIcons[task.resource_type as keyof typeof resourceIcons] || <ExternalLink className="h-4 w-4" />}
+                        <span>{task.resource_type}</span>
+                    </div>
+                    {task.resource_link && (
+                        <Button variant="outline" size="sm" asChild>
+                            <a href={task.resource_link} target="_blank" rel="noopener noreferrer" className="text-xs">
+                                <ExternalLink className="h-3 w-3 mr-2" />
+                                Open Resource
+                            </a>
+                        </Button>
+                    )}
+                    {task.challenge && (
+                        <div className="mt-2 pt-2 border-t">
+                            <p className="text-sm font-semibold">Challenge:</p>
+                            <p className="text-sm text-muted-foreground italic">&quot;{task.challenge}&quot;</p>
+                        </div>
+                    )}
+                </div>
+            </HoverCardContent>
+        </HoverCard>
+    )
+}
+
+function WeekMilestone({ week }: { week: LearningRoadmap['roadmap']['weeks'][0] }) {
+    return (
+        <div className="flex flex-col items-center text-center w-48 shrink-0">
+            <div className="h-10 w-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-lg mb-2">
+                {week.week}
+            </div>
+            <p className="font-semibold text-sm">Week {week.week}</p>
+            <p className="text-xs text-muted-foreground">{week.theme}</p>
+        </div>
+    )
+}
+
 export function RoadmapTimeline({ roadmap }: RoadmapTimelineProps) {
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Your Learning Journey</CardTitle>
-                <CardDescription>Hover over the daily checkpoints to see your tasks.</CardDescription>
+                <CardDescription>A visual timeline of your personalized plan. Hover over the checkpoints for details.</CardDescription>
             </CardHeader>
             <CardContent>
-                <ScrollArea className="w-full pb-4">
-                    <div className="flex items-center space-x-4 min-w-max">
+                {/* Desktop View: Horizontal Scroll */}
+                <div className="hidden md:block">
+                    <ScrollArea className="w-full pb-4">
+                        <div className="flex items-center space-x-4 min-w-max">
+                            {roadmap.roadmap.weeks.map((week, weekIndex) => (
+                                <React.Fragment key={week.week}>
+                                    <WeekMilestone week={week} />
+                                    
+                                    {weekIndex < roadmap.roadmap.weeks.length - 1 && (
+                                        <div className="flex items-center flex-1 min-w-[300px] lg:min-w-[400px]">
+                                            <div className="w-full h-1 bg-border relative flex items-center justify-between px-6">
+                                                {week.daily_tasks.slice(0, 5).map((task, dayIndex) => (
+                                                     <DailyCheckpoint key={dayIndex} task={task} />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </React.Fragment>
+                            ))}
+                        </div>
+                         <ScrollBar orientation="horizontal" />
+                    </ScrollArea>
+                </div>
+
+                {/* Mobile View: Vertical Snake */}
+                <div className="md:hidden">
+                    <div className="flex flex-col items-center space-y-2">
                         {roadmap.roadmap.weeks.map((week, weekIndex) => (
-                            <React.Fragment key={week.week}>
-                                <div className="flex flex-col items-center text-center w-48">
-                                    <div className="h-10 w-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-lg mb-2">
-                                        {week.week}
-                                    </div>
-                                    <p className="font-semibold text-sm">Week {week.week}</p>
-                                    <p className="text-xs text-muted-foreground">{week.theme}</p>
-                                </div>
-                                
+                             <React.Fragment key={week.week}>
+                                <WeekMilestone week={week} />
+
                                 {weekIndex < roadmap.roadmap.weeks.length - 1 && (
-                                    <div className="flex items-center flex-1 min-w-[400px]">
-                                        <div className="w-full h-1 bg-border relative flex items-center justify-between px-6">
+                                    <>
+                                    {/* Connector line from milestone to path */}
+                                    <div className="w-px h-6 bg-border"></div>
+
+                                    {/* Daily path */}
+                                    <div className={cn("flex w-full items-center justify-center", weekIndex % 2 !== 0 && "flex-row-reverse")}>
+                                        <div className="w-full h-1 bg-border relative flex items-center justify-evenly">
                                             {week.daily_tasks.slice(0, 5).map((task, dayIndex) => (
-                                                 <HoverCard key={dayIndex}>
-                                                    <HoverCardTrigger asChild>
-                                                        <button className="h-4 w-4 bg-muted-foreground rounded-full hover:bg-primary transition-colors"></button>
-                                                    </HoverCardTrigger>
-                                                    <HoverCardContent className="w-80">
-                                                        <div className="space-y-2">
-                                                            <h4 className="font-semibold">{task.day}: {task.topic}</h4>
-                                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                                {resourceIcons[task.resource_type as keyof typeof resourceIcons] || <ExternalLink className="h-4 w-4" />}
-                                                                <span>{task.resource_type}</span>
-                                                            </div>
-                                                            {task.resource_link && (
-                                                                <Button variant="outline" size="sm" asChild>
-                                                                    <a href={task.resource_link} target="_blank" rel="noopener noreferrer" className="text-xs">
-                                                                        <ExternalLink className="h-3 w-3 mr-2" />
-                                                                        Open Resource
-                                                                    </a>
-                                                                </Button>
-                                                            )}
-                                                            {task.challenge && (
-                                                                <div className="mt-2 pt-2 border-t">
-                                                                    <p className="text-sm font-semibold">Challenge:</p>
-                                                                    <p className="text-sm text-muted-foreground italic">&quot;{task.challenge}&quot;</p>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </HoverCardContent>
-                                                </HoverCard>
+                                                <DailyCheckpoint key={dayIndex} task={task} />
                                             ))}
                                         </div>
                                     </div>
+                                    
+                                    {/* Connector line from path to next milestone */}
+                                     <div className="w-full flex">
+                                        <div className={cn("w-px h-6 bg-border", weekIndex % 2 !== 0 ? "ml-auto" : "mr-auto")}></div>
+                                    </div>
+                                    </>
                                 )}
                             </React.Fragment>
                         ))}
                     </div>
-                     <ScrollBar orientation="horizontal" />
-                </ScrollArea>
+                </div>
             </CardContent>
         </Card>
     );
 }
-
-// Dummy React import for type-only usage
-import * as React from 'react';
