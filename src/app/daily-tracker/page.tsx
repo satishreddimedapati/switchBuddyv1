@@ -16,7 +16,7 @@ import { FocusWalletHistory } from "./FocusWalletHistory";
 export default function DailyTrackerPage() {
     const { user } = useAuth();
     const [missedTasks, setMissedTasks] = useState<DailyTask[]>([]);
-    const [recentTasks, setRecentTasks] = useState<DailyTask[]>([]); // Will hold last 7 days of tasks
+    const [recentTasks, setRecentTasks] = useState<DailyTask[]>([]); // Will hold last 30 days of tasks
     const [loading, setLoading] = useState(true);
     const [gateLoading, setGateLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -57,12 +57,12 @@ export default function DailyTrackerPage() {
         }
         setLoading(true);
         
-        // Fetch tasks from the last 7 days
-        const sevenDaysAgo = format(subDays(new Date(), 7), 'yyyy-MM-dd');
+        // Fetch tasks from the last 30 days for filtering
+        const thirtyDaysAgo = format(subDays(new Date(), 30), 'yyyy-MM-dd');
         const q = query(
             collection(db, "daily_tasks"), 
             where("userId", "==", user.uid),
-            where("date", ">=", sevenDaysAgo)
+            where("date", ">=", thirtyDaysAgo)
         );
         
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
