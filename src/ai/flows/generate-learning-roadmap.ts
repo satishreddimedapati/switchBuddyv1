@@ -45,6 +45,7 @@ Rules:
 6. If the learning style is Video, suggest a conceptual YouTube link. If it's reading, suggest a blog or documentation link.
 7. For each daily_task, calculate and include a 'date' field in "YYYY-MM-DD" format. The date calculation must start from the provided 'startDate' and respect the 'learnOnWeekends' preference.
 8. The 'day' field should be the day of the week, e.g., 'Monday'.
+9. Be creative and motivating in your topic descriptions and challenges! Make learning fun.
 
 Generate the output as a valid JSON object matching the defined schema.
 `,
@@ -62,15 +63,19 @@ const generateLearningRoadmapFlow = ai.defineFlow(
     // Post-process dates to ensure they are correct according to weekend preference
     if (output && output.weeks) {
         let currentDate = new Date(input.startDate);
+        // Adjust for timezone offset to prevent date shifting
+        currentDate = new Date(currentDate.valueOf() + currentDate.getTimezoneOffset() * 60 * 1000);
+
         output.weeks.forEach(week => {
             week.daily_tasks.forEach(task => {
                  // Find the next valid learning day
                 if (!input.learnOnWeekends) {
-                    while (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
+                    while (currentDate.getDay() === 0 || currentDate.getDay() === 6) { // 0 is Sunday, 6 is Saturday
                         currentDate = addDays(currentDate, 1);
                     }
                 }
                 task.date = format(currentDate, 'yyyy-MM-dd');
+                task.day = format(currentDate, 'EEEE');
                 currentDate = addDays(currentDate, 1);
             });
         });

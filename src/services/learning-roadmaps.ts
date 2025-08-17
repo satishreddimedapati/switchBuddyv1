@@ -56,12 +56,8 @@ export async function addLearningRoadmap(roadmapData: Omit<LearningRoadmap, 'id'
         throw new Error("Authentication required to add a roadmap.");
     }
     
-    // Convert Date object to Timestamp for Firestore
-    const { startDate, endDate, ...restOfData } = roadmapData;
     const dataToStore = {
-        ...restOfData,
-        startDate: new Date(startDate), // Ensure it's a Date object for Timestamp conversion
-        endDate: new Date(endDate),
+        ...roadmapData,
         createdAt: serverTimestamp(),
     };
 

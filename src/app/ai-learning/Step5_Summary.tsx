@@ -40,15 +40,13 @@ export function Step5_Summary({ data, onRoadmapCreated }: Step5Props) {
                 startDate: format(data.startDate, 'yyyy-MM-dd'),
             });
             
-            if (!aiResult || !aiResult.weeks) {
-                 throw new Error("The AI failed to generate a valid roadmap structure.");
+            if (!aiResult || !aiResult.weeks || aiResult.weeks.length === 0) {
+                 throw new Error("The AI failed to generate a valid roadmap structure. Please try adjusting your inputs or try again later.");
             }
 
             await addLearningRoadmap({
                 ...data,
                 userId: user.uid,
-                startDate: data.startDate.toISOString(), // Store as ISO string
-                endDate: data.endDate.toISOString(), // Store as ISO string
                 roadmap: aiResult,
             });
 
@@ -77,7 +75,7 @@ export function Step5_Summary({ data, onRoadmapCreated }: Step5Props) {
                     <SummaryItem label="Topic" value={data.topic} />
                     <SummaryItem label="Goals" value={<div className="flex flex-wrap gap-1">{data.goals.map(g => <Badge key={g} variant="secondary">{g}</Badge>)}</div>} />
                     <SummaryItem label="Experience" value={data.experienceLevel} />
-                    <SummaryItem label="Tech Focus" value={<div className="flex flex-wrap gap-1">{data.techFocus.map(t => <Badge key={t} variant="secondary">{t}</Badge>)}</div>} />
+                    <SummaryItem label="Tech Focus" value={<div className="flex flex-wrap gap-1">{data.techFocus.length > 0 ? data.techFocus.map(t => <Badge key={t} variant="secondary">{t}</Badge>) : <span className='text-muted-foreground'>None</span>}</div>} />
                     <SummaryItem label="Learning Style" value={data.learningStyle} />
                     <SummaryItem label="Commitment" value={`${data.timePerDay / 60} hrs/day for ${data.duration} days`} />
                     <SummaryItem label="Schedule" value={`${format(data.startDate, 'PPP')} to ${format(data.endDate, 'PPP')}`} />

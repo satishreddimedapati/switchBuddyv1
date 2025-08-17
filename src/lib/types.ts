@@ -95,7 +95,7 @@ export type MissedTask = z.infer<typeof MissedTaskSchema>;
 export const GenerateDailySummaryOutputSchema = z.object({
   motivationalSummary: z
     .string()
-    .describe("A short, encouraging summary of the day's achievements."),
+    .describe("A short, encouraging summary of the user's accomplishments."),
   nextDayPriorities: z
     .array(z.string())
     .describe('The top 3 recommended priority tasks for tomorrow.'),
@@ -533,15 +533,15 @@ export type LearningRoadmap = z.infer<typeof LearningRoadmapSchema>;
 
 export function toSerializableLearningRoadmap(docData: any): LearningRoadmap {
     const { createdAt, startDate, endDate, ...rest } = docData;
-    const serializable: any = {
-        ...rest,
-        createdAt: (createdAt as Timestamp)?.toDate().toISOString(),
-    };
-    if (startDate) {
-        serializable.startDate = (startDate.toDate ? (startDate as Timestamp).toDate() : new Date(startDate)).toISOString();
+    const serializable: any = { ...rest };
+    if (createdAt && createdAt.toDate) {
+      serializable.createdAt = (createdAt as Timestamp).toDate().toISOString();
     }
-    if (endDate) {
-        serializable.endDate = (endDate.toDate ? (endDate as Timestamp).toDate() : new Date(endDate)).toISOString();
+    if (startDate && startDate.toDate) {
+        serializable.startDate = (startDate as Timestamp).toDate().toISOString();
+    }
+    if (endDate && endDate.toDate) {
+        serializable.endDate = (endDate as Timestamp).toDate().toISOString();
     }
     return serializable as LearningRoadmap;
 }
