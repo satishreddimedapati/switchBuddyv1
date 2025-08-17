@@ -9,7 +9,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel"
 import { Card, CardContent } from "@/components/ui/card"
-import type { TopicHistory } from "@/ai/flows/generate-topic-history"
+import type { TopicHistory } from "@/lib/types"
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2 } from "lucide-react";
 

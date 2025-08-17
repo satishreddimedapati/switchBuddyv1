@@ -1,4 +1,5 @@
 
+
 import {z} from 'zod';
 import type { Timestamp } from 'firebase/firestore';
 
@@ -559,3 +560,22 @@ export const RoadmapGenerationInputSchema = z.object({
     learningStyle: z.string(),
 });
 export type RoadmapGenerationInput = z.infer<typeof RoadmapGenerationInputSchema>;
+
+
+export const TopicHistorySchema = z.object({
+    emoji: z.string().describe("A single emoji that represents the fact."),
+    title: z.string().describe("A short, catchy title for the fact (e.g., 'The Inventor')."),
+    fact: z.string().describe("A single, interesting fact or piece of trivia about the topic."),
+});
+export type TopicHistory = z.infer<typeof TopicHistorySchema>;
+
+export const TopicHistoryInputSchema = z.object({
+  topic: z.string().describe('The technology topic to get history for.'),
+});
+export type TopicHistoryInput = z.infer<typeof TopicHistoryInputSchema>;
+
+export const TopicHistoryOutputSchema = z.object({
+  history: z.array(TopicHistorySchema).length(7).describe('An array of 7 interesting historical facts about the topic.'),
+});
+
+export type TopicHistoryOutput = z.infer<typeof TopicHistoryOutputSchema>;

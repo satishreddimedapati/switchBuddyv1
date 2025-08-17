@@ -13,8 +13,9 @@ import { addLearningRoadmap } from '@/services/learning-roadmaps';
 import { Loader2, Rocket } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { format } from 'date-fns';
-import { generateTopicHistory, TopicHistory } from '@/ai/flows/generate-topic-history';
+import { generateTopicHistory } from '@/ai/flows/generate-topic-history';
 import { TopicHistoryDisplay } from './TopicHistoryDisplay';
+import type { TopicHistory } from '@/lib/types';
 
 interface Step5Props {
     data: RoadmapInputs;
