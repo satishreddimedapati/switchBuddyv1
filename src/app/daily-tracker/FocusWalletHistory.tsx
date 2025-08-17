@@ -130,6 +130,7 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
     }, [filteredTasks]);
 
     const currentBalance = useMemo(() => {
+        // Group all tasks by date to calculate total balance, not just filtered ones.
         const groupedByDate = tasks.reduce((acc, task) => {
             const date = task.date;
             if (!acc[date]) {
@@ -139,15 +140,11 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
             return acc;
         }, {} as Record<string, DailyTask[]>);
 
+        // Calculate net change for each day and sum it up.
         const totalNetChange = Object.values(groupedByDate)
             .reduce((total, tasksForDay) => {
-                // Ensure we only calculate net change for past/today's tasks for balance
-                const taskDate = startOfDay(new Date(tasksForDay[0].date));
-                if (isBefore(taskDate, new Date()) || isToday(taskDate)) {
-                    const { netChange } = calculateDayActivity(tasksForDay);
-                    return total + netChange;
-                }
-                return total;
+                const { netChange } = calculateDayActivity(tasksForDay);
+                return total + netChange;
             }, 0);
             
         return STARTING_BALANCE + totalNetChange;
