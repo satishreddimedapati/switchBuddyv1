@@ -6,9 +6,9 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { RoadmapGenerationInputSchema, RoadmapGenerationOutputSchema } from '@/lib/types';
+import { RoadmapGenerationInputSchema, RoadmapGenerationOutputSchema, WeeklyPlan } from '@/lib/types';
 import { z } from 'zod';
-import { addDays, format } from 'date-fns';
+import { addDays, format, getISOWeek } from 'date-fns';
 
 export type RoadmapGenerationInput = z.infer<typeof RoadmapGenerationInputSchema>;
 export type RoadmapGenerationOutput = z.infer<typeof RoadmapGenerationOutputSchema>;
@@ -59,37 +59,58 @@ const generateLearningRoadmapFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await prompt(input);
-    
-    // Post-process dates and validate task count
-    if (output && output.weeks) {
-        let currentDate = new Date(input.startDate);
-        // Adjust for timezone offset to prevent date shifting
-        currentDate = new Date(currentDate.valueOf() + currentDate.getTimezoneOffset() * 60 * 1000);
-        
-        let totalTasksGenerated = 0;
 
-        output.weeks.forEach(week => {
-            week.daily_tasks.forEach(task => {
-                 // Find the next valid learning day
-                if (!input.learnOnWeekends) {
-                    while (currentDate.getDay() === 0 || currentDate.getDay() === 6) { // 0 is Sunday, 6 is Saturday
-                        currentDate = addDays(currentDate, 1);
-                    }
-                }
-                task.date = format(currentDate, 'yyyy-MM-dd');
-                task.day = format(currentDate, 'EEEE');
-                currentDate = addDays(currentDate, 1);
-                totalTasksGenerated++;
-            });
-        });
-
-        if (totalTasksGenerated !== input.duration) {
-             throw new Error(`AI generation error: Expected ${input.duration} tasks but received ${totalTasksGenerated}. Please try again.`);
-        }
-    } else {
+    if (!output || !output.weeks || output.weeks.length === 0) {
         throw new Error("The AI failed to generate a valid roadmap structure.");
     }
 
-    return output!;
+    // Flatten all tasks into a single array and truncate to the exact duration
+    const allTasks = output.weeks.flatMap(week => week.daily_tasks);
+    const tasks = allTasks.slice(0, input.duration);
+
+    if (tasks.length !== input.duration) {
+      throw new Error(`AI generation error: Could not generate the required number of tasks. Expected ${input.duration}, but got ${tasks.length} after processing. Please try again.`);
+    }
+
+    let currentDate = new Date(input.startDate);
+    // Adjust for timezone offset to prevent date shifting
+    currentDate = new Date(currentDate.valueOf() + currentDate.getTimezoneOffset() * 60 * 1000);
+
+    const newWeeksMap = new Map<number, WeeklyPlan>();
+
+    tasks.forEach((task, index) => {
+      // Find the next valid learning day
+      if (!input.learnOnWeekends) {
+          while (currentDate.getDay() === 0 || currentDate.getDay() === 6) { // 0 is Sunday, 6 is Saturday
+              currentDate = addDays(currentDate, 1);
+          }
+      }
+
+      task.date = format(currentDate, 'yyyy-MM-dd');
+      task.day = format(currentDate, 'EEEE');
+
+      const weekNumber = getISOWeek(currentDate);
+      
+      if (!newWeeksMap.has(weekNumber)) {
+          // Find the original week theme if it exists
+          const originalWeek = output.weeks.find(w => w.daily_tasks.some(dt => dt.topic === task.topic));
+          newWeeksMap.set(weekNumber, {
+              week: newWeeksMap.size + 1, // Simple week counter
+              theme: originalWeek?.theme || `Week ${newWeeksMap.size + 1} Learning`,
+              daily_tasks: [],
+          });
+      }
+      
+      newWeeksMap.get(weekNumber)!.daily_tasks.push(task);
+      
+      currentDate = addDays(currentDate, 1);
+    });
+
+    const finalRoadmap: RoadmapGenerationOutput = { weeks: Array.from(newWeeksMap.values()) };
+    
+    // Sort weeks just in case
+    finalRoadmap.weeks.sort((a,b) => a.week - b.week);
+    
+    return finalRoadmap;
   }
 );
