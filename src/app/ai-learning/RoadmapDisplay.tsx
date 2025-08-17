@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { LearningRoadmap, WeeklyPlan } from '@/lib/types';
+import type { LearningRoadmap, WeeklyPlan, TopicHistory } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { DailyTaskItem } from './DailyTaskItem';
@@ -10,14 +10,15 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RoadmapTimeline } from './RoadmapTimeline';
 import { Button } from '@/components/ui/button';
-import { List, GitBranch } from 'lucide-react';
+import { List, GitBranch, History } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { TopicHistoryDisplay } from './TopicHistoryDisplay';
 
 interface RoadmapDisplayProps {
     roadmap: LearningRoadmap;
 }
 
-type ViewMode = 'list' | 'timeline';
+type ViewMode = 'list' | 'timeline' | 'history';
 
 export function RoadmapDisplay({ roadmap }: RoadmapDisplayProps) {
     const isMobile = useIsMobile();
@@ -110,6 +111,9 @@ export function RoadmapDisplay({ roadmap }: RoadmapDisplayProps) {
     )
     
     const renderContent = () => {
+        if (view === 'history' && roadmap.history) {
+             return <TopicHistoryDisplay history={roadmap.history} topic={roadmap.topic} />;
+        }
         if (isMobile) {
             return view === 'timeline' ? <RoadmapTimeline roadmap={roadmap} /> : <MobileDisplay />;
         }
@@ -120,6 +124,17 @@ export function RoadmapDisplay({ roadmap }: RoadmapDisplayProps) {
         <div className="space-y-4">
             <div className="flex justify-end">
                 <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
+                    {roadmap.history && (
+                        <Button
+                            variant={view === 'history' ? 'secondary' : 'ghost'}
+                            size="sm"
+                            onClick={() => setView('history')}
+                            className="h-8"
+                        >
+                            <History className="h-4 w-4" />
+                            <span className="ml-2 hidden sm:inline">History</span>
+                        </Button>
+                    )}
                     <Button
                         variant={view === 'timeline' ? 'secondary' : 'ghost'}
                         size="sm"

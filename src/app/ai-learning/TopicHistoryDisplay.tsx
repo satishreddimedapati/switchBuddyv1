@@ -31,16 +31,6 @@ function HistoryCard({ item }: { item: TopicHistory }) {
     );
 }
 
-function LoadingCards() {
-    return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <Skeleton className="h-64 w-full" />
-            <Skeleton className="h-64 w-full" />
-            <Skeleton className="h-64 w-full" />
-        </div>
-    )
-}
-
 
 export function TopicHistoryDisplay({ history, topic }: TopicHistoryDisplayProps) {
     return (
@@ -55,9 +45,9 @@ export function TopicHistoryDisplay({ history, topic }: TopicHistoryDisplayProps
                 </div>
             ) : (
                 <Carousel className="w-full" opts={{ loop: true }}>
-                    <CarouselContent>
+                    <CarouselContent className="-ml-1">
                         {history.map((item, index) => (
-                            <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                            <CarouselItem key={index} className="pl-1 md:basis-1/2 lg:basis-1/3">
                                 <div className="p-1 h-80">
                                     <HistoryCard item={item} />
                                 </div>

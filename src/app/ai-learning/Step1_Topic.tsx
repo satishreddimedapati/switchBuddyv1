@@ -14,6 +14,7 @@ import { CalendarIcon, Loader2, Wand2, AlertTriangle } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useState, useTransition, useEffect, useMemo, useCallback } from 'react';
 import { generateRoadmapSuggestions, RoadmapSuggestionOutput } from '@/ai/flows/generate-roadmap-suggestions';
+import { generateTopicHistory } from '@/ai/flows/generate-topic-history';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
@@ -53,8 +54,16 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
             const timer = setTimeout(() => {
                 startSuggestionTransition(async () => {
                     try {
-                        const res = await generateRoadmapSuggestions({ topic: data.topic });
-                        setSuggestion(res);
+                        const [suggestionRes, historyRes] = await Promise.all([
+                            generateRoadmapSuggestions({ topic: data.topic }),
+                            generateTopicHistory({ topic: data.topic })
+                        ]);
+                        
+                        setSuggestion(suggestionRes);
+                        if(historyRes?.history) {
+                            onUpdate({ history: historyRes.history });
+                        }
+
                     } catch (error) {
                         console.error("Failed to get suggestion", error);
                     }
@@ -133,7 +142,7 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                 {isSuggesting && (
                     <div className="flex items-center text-sm text-muted-foreground">
                         <Loader2 className="mr-2 animate-spin" />
-                        Getting AI suggestions...
+                        Getting AI suggestions & topic history...
                     </div>
                 )}
                 

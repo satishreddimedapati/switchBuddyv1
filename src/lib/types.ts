@@ -477,10 +477,10 @@ export function toSerializableUserReward(docData: any): UserReward {
     const { redeemedAt, claimedAt, ...rest } = docData;
     const serializable: any = { ...rest };
 
-    if (redeemedAt) {
+    if (redeemedAt && redeemedAt.toDate) {
         serializable.redeemedAt = (redeemedAt as Timestamp).toDate().toISOString();
     }
-    if (claimedAt) {
+    if (claimedAt && claimedAt.toDate) {
         serializable.claimedAt = (claimedAt as Timestamp).toDate().toISOString();
     }
 
@@ -488,6 +488,23 @@ export function toSerializableUserReward(docData: any): UserReward {
 }
 
 // AI Learning Schemas
+export const TopicHistorySchema = z.object({
+    emoji: z.string().describe("A single emoji that represents the fact."),
+    title: z.string().describe("A short, catchy title for the fact (e.g., 'The Inventor')."),
+    fact: z.string().describe("A single, interesting fact or piece of trivia about the topic."),
+});
+export type TopicHistory = z.infer<typeof TopicHistorySchema>;
+
+export const TopicHistoryInputSchema = z.object({
+  topic: z.string().describe('The technology topic to get history for.'),
+});
+export type TopicHistoryInput = z.infer<typeof TopicHistoryInputSchema>;
+
+export const TopicHistoryOutputSchema = z.object({
+  history: z.array(TopicHistorySchema).length(7).describe('An array of 7 interesting historical facts about the topic.'),
+});
+
+export type TopicHistoryOutput = z.infer<typeof TopicHistoryOutputSchema>;
 
 // This would be the detailed, structured roadmap from the AI
 const DailyTaskItemSchema = z.object({
@@ -528,22 +545,18 @@ export const LearningRoadmapSchema = z.object({
   techFocus: z.array(z.string()),
   learningStyle: z.string(),
   roadmap: RoadmapGenerationOutputSchema,
+  history: z.array(TopicHistorySchema).optional(),
   createdAt: z.any(),
 });
 export type LearningRoadmap = z.infer<typeof LearningRoadmapSchema>;
 
 export function toSerializableLearningRoadmap(docData: any): LearningRoadmap {
-    const { createdAt, startDate, endDate, ...rest } = docData;
+    const { createdAt, ...rest } = docData;
     const serializable: any = { ...rest };
     if (createdAt && createdAt.toDate) {
       serializable.createdAt = (createdAt as Timestamp).toDate().toISOString();
     }
-    if (startDate && startDate.toDate) {
-        serializable.startDate = (startDate as Timestamp).toDate().toISOString();
-    }
-    if (endDate && endDate.toDate) {
-        serializable.endDate = (endDate as Timestamp).toDate().toISOString();
-    }
+    // No need to check for startDate or endDate here as they are stored as strings
     return serializable as LearningRoadmap;
 }
 
@@ -560,22 +573,3 @@ export const RoadmapGenerationInputSchema = z.object({
     learningStyle: z.string(),
 });
 export type RoadmapGenerationInput = z.infer<typeof RoadmapGenerationInputSchema>;
-
-
-export const TopicHistorySchema = z.object({
-    emoji: z.string().describe("A single emoji that represents the fact."),
-    title: z.string().describe("A short, catchy title for the fact (e.g., 'The Inventor')."),
-    fact: z.string().describe("A single, interesting fact or piece of trivia about the topic."),
-});
-export type TopicHistory = z.infer<typeof TopicHistorySchema>;
-
-export const TopicHistoryInputSchema = z.object({
-  topic: z.string().describe('The technology topic to get history for.'),
-});
-export type TopicHistoryInput = z.infer<typeof TopicHistoryInputSchema>;
-
-export const TopicHistoryOutputSchema = z.object({
-  history: z.array(TopicHistorySchema).length(7).describe('An array of 7 interesting historical facts about the topic.'),
-});
-
-export type TopicHistoryOutput = z.infer<typeof TopicHistoryOutputSchema>;

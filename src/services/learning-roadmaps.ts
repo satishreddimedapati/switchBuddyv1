@@ -67,7 +67,7 @@ export async function addLearningRoadmap(roadmapData: Omit<LearningRoadmap, 'id'
 }
 
 
-export async function updateLearningRoadmap(roadmapId: string, updates: Partial<Omit<LearningRoadmap, 'id' | 'userId'>>, userId: string) {
+export async function updateLearningRoadmap(roadmapId: string, updates: Partial<Omit<LearningRoadmap, 'id' | 'userId' | 'createdAt'>>, userId: string) {
     const roadmapRef = doc(db, "learning_roadmaps", roadmapId);
     const roadmapDoc = await getDoc(roadmapRef);
 
@@ -75,13 +75,7 @@ export async function updateLearningRoadmap(roadmapId: string, updates: Partial<
         throw new Error("Permission denied or roadmap not found.");
     }
 
-    const { startDate, ...rest } = updates;
-    const dataToUpdate: any = { ...rest };
-    if (startDate) {
-        dataToUpdate.startDate = new Date(startDate); // Convert ISO string back to Date for Firestore
-    }
-
-    await updateDoc(roadmapRef, dataToUpdate);
+    await updateDoc(roadmapRef, updates);
 }
 
 export async function deleteLearningRoadmap(roadmapId: string, userId: string) {

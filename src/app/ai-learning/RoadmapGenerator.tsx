@@ -11,6 +11,8 @@ import { Step5_Summary } from './Step5_Summary';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { format, addDays } from 'date-fns';
+import type { TopicHistory } from '@/lib/types';
+
 
 export interface RoadmapInputs {
     topic: string;
@@ -23,6 +25,7 @@ export interface RoadmapInputs {
     experienceLevel: string;
     techFocus: string[];
     learningStyle: string;
+    history?: TopicHistory[];
 }
 
 const initialInputs: RoadmapInputs = {
@@ -36,6 +39,7 @@ const initialInputs: RoadmapInputs = {
     experienceLevel: 'Beginner',
     techFocus: [],
     learningStyle: 'Video Tutorials',
+    history: undefined,
 }
 
 interface RoadmapGeneratorProps {
