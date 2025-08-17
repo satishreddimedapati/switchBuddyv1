@@ -25,6 +25,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { updateTask } from "@/services/daily-tasks";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Separator } from "@/components/ui/separator";
 
 function LoadingSkeleton() {
     return (
@@ -33,19 +35,10 @@ function LoadingSkeleton() {
                 <Skeleton className="h-8 w-1/3" />
                 <Skeleton className="h-4 w-1/2" />
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Skeleton className="h-28" />
-                <Skeleton className="h-28" />
-                <Skeleton className="h-28" />
-            </div>
-            <div className="grid gap-6 lg:grid-cols-5">
-                <div className="lg:col-span-3 space-y-6">
-                    <Skeleton className="h-48" />
-                    <Skeleton className="h-48" />
-                </div>
-                <div className="lg:col-span-2">
-                    <Skeleton className="h-64" />
-                </div>
+            <div className="space-y-4">
+                 <Skeleton className="h-48 w-full" />
+                 <Skeleton className="h-48 w-full" />
+                 <Skeleton className="h-48 w-full" />
             </div>
         </div>
     )
@@ -120,132 +113,158 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {stats.map((stat) => {
-            const Icon = stat.icon;
-            return (
-                <Card key={stat.title}>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      {stat.title}
-                    </CardTitle>
-                    {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stat.value}</div>
-                  </CardContent>
-                </Card>
-            );
-          })}
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-5 items-start">
-            <div className="lg:col-span-3 space-y-6">
+        <Accordion type="multiple" defaultValue={['agenda', 'applications', 'prep']} className="w-full space-y-4">
+           {/* Today's Agenda */}
+           <AccordionItem value="agenda">
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Today&apos;s Agenda</CardTitle>
-                        <CardDescription>{tasksCompleted} of {todaysTasks.length} tasks completed today.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Progress value={tasksProgress} />
-                        <div className="max-h-80 overflow-y-auto pr-2 space-y-3">
-                            {todaysTasks.length > 0 ? (
-                                todaysTasks.map(task => (
-                                    <div key={task.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors">
-                                        <Checkbox 
-                                            id={`task-${task.id}`}
-                                            checked={task.completed} 
-                                            onCheckedChange={(checked) => handleTaskToggle(task.id, Boolean(checked))}
-                                        />
-                                        <label 
-                                            htmlFor={`task-${task.id}`}
-                                            className={cn("flex-grow text-sm", task.completed && "line-through text-muted-foreground")}
-                                        >
-                                            <span className="font-medium">{task.title}</span>
-                                            <span className="text-muted-foreground ml-2">{format(parse(task.time, 'HH:mm', new Date()), 'h:mm a')}</span>
-                                        </label>
-                                        <Badge variant={task.type === 'interview' ? 'default' : 'secondary'} className="capitalize">{task.type}</Badge>
+                    <AccordionTrigger className="p-6 hover:no-underline">
+                        <CardHeader className="p-0 text-left">
+                            <CardTitle>Today&apos;s Agenda</CardTitle>
+                            <CardDescription>{tasksCompleted} of {todaysTasks.length} tasks completed today.</CardDescription>
+                        </CardHeader>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-6">
+                        <div className="space-y-4">
+                            <Progress value={tasksProgress} />
+                            <div className="max-h-80 overflow-y-auto pr-2 space-y-3">
+                                {todaysTasks.length > 0 ? (
+                                    todaysTasks.map(task => (
+                                        <div key={task.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors">
+                                            <Checkbox 
+                                                id={`task-${task.id}`}
+                                                checked={task.completed} 
+                                                onCheckedChange={(checked) => handleTaskToggle(task.id, Boolean(checked))}
+                                            />
+                                            <label 
+                                                htmlFor={`task-${task.id}`}
+                                                className={cn("flex-grow text-sm", task.completed && "line-through text-muted-foreground")}
+                                            >
+                                                <span className="font-medium">{task.title}</span>
+                                                <span className="text-muted-foreground ml-2">{format(parse(task.time, 'HH:mm', new Date()), 'h:mm a')}</span>
+                                            </label>
+                                            <Badge variant={task.type === 'interview' ? 'default' : 'secondary'} className="capitalize">{task.type}</Badge>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-8">
+                                        <p className="text-muted-foreground">No tasks scheduled for today.</p>
+                                        <Button variant="link" asChild><Link href="/daily-tracker"><PlusCircle className="mr-2"/>Schedule Your Day</Link></Button>
                                     </div>
-                                ))
-                            ) : (
-                                <div className="text-center py-8">
-                                    <p className="text-muted-foreground">No tasks scheduled for today.</p>
-                                    <Button variant="link" asChild><Link href="/daily-tracker"><PlusCircle className="mr-2"/>Schedule Your Day</Link></Button>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
-                    </CardContent>
+                    </AccordionContent>
                 </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Recent Applications</CardTitle>
-                        <CardDescription>Your latest tracked job applications.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                        {jobApplications.length > 0 ? (
-                            jobApplications.slice(0, 3).map(job => (
-                                <div key={job.id} className="flex justify-between items-center text-sm p-2 rounded-md hover:bg-muted/50 transition-colors">
-                                    <div>
-                                        <p className="font-medium">{job.title}</p>
-                                        <p className="text-muted-foreground">{job.company}</p>
-                                    </div>
-                                    <Badge variant="outline">{job.stage}</Badge>
+           </AccordionItem>
+           
+           {/* Job Application Overview */}
+           <AccordionItem value="applications">
+                <Card>
+                    <AccordionTrigger className="p-6 hover:no-underline">
+                        <CardHeader className="p-0 text-left">
+                           <CardTitle>Job Application Overview</CardTitle>
+                            <CardDescription>A summary of your application stats and recent activity.</CardDescription>
+                        </CardHeader>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-6">
+                         <div className="space-y-6">
+                            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                              {stats.map((stat) => {
+                                const Icon = stat.icon;
+                                return (
+                                    <Card key={stat.title}>
+                                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">
+                                          {stat.title}
+                                        </CardTitle>
+                                        {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
+                                      </CardHeader>
+                                      <CardContent>
+                                        <div className="text-2xl font-bold">{stat.value}</div>
+                                      </CardContent>
+                                    </Card>
+                                );
+                              })}
+                            </div>
+                            <Separator />
+                            <div>
+                                <h3 className="text-md font-semibold mb-2">Recent Applications</h3>
+                                <div className="space-y-2">
+                                    {jobApplications.length > 0 ? (
+                                        jobApplications.slice(0, 3).map(job => (
+                                            <div key={job.id} className="flex justify-between items-center text-sm p-2 rounded-md hover:bg-muted/50 transition-colors">
+                                                <div>
+                                                    <p className="font-medium">{job.title}</p>
+                                                    <p className="text-muted-foreground">{job.company}</p>
+                                                </div>
+                                                <Badge variant="outline">{job.stage}</Badge>
+                                            </div>
+                                        ))
+                                    ) : (
+                                         <div className="text-center py-8">
+                                            <p className="text-muted-foreground">No jobs tracked yet.</p>
+                                            <Button variant="link" asChild><Link href="/tracker"><PlusCircle className="mr-2"/>Add a Job</Link></Button>
+                                        </div>
+                                    )}
                                 </div>
-                            ))
-                        ) : (
-                             <div className="text-center py-8">
-                                <p className="text-muted-foreground">No jobs tracked yet.</p>
-                                <Button variant="link" asChild><Link href="/tracker"><PlusCircle className="mr-2"/>Add a Job</Link></Button>
+                                {jobApplications.length > 0 && (
+                                    <div className="mt-4">
+                                        <Button variant="secondary" className="w-full" asChild><Link href="/tracker">View All Applications</Link></Button>
+                                    </div>
+                                )}
+                            </div>
+                         </div>
+                    </AccordionContent>
+                </Card>
+           </AccordionItem>
+           
+           {/* Interview Prep Zone */}
+           <AccordionItem value="prep">
+                <Card>
+                    <AccordionTrigger className="p-6 hover:no-underline">
+                        <CardHeader className="p-0 text-left">
+                            <CardTitle>Interview Prep Zone</CardTitle>
+                            <CardDescription>Your active practice plans.</CardDescription>
+                        </CardHeader>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-6">
+                        <div className="space-y-4">
+                            {activeInterviewPlans.length > 0 ? (
+                               activeInterviewPlans.slice(0, 3).map(plan => (
+                                   <div key={plan.id} className="p-4 rounded-md border bg-muted/30">
+                                       <div className="flex justify-between items-start">
+                                            <div>
+                                                <p className="font-semibold">{plan.topic}</p>
+                                                <Badge variant="secondary" className="mt-1">{plan.difficulty}</Badge>
+                                            </div>
+                                            <Button size="sm" asChild>
+                                               <Link href={`/interview-prep`}><Video className="mr-2"/>Start</Link>
+                                           </Button>
+                                       </div>
+                                       <div className="mt-3 space-y-2">
+                                           <Progress value={(plan.completedInterviews / plan.totalInterviews) * 100} />
+                                           <p className="text-xs text-muted-foreground">Progress: {plan.completedInterviews} / {plan.totalInterviews} completed</p>
+                                       </div>
+                                   </div>
+                               ))
+                           ) : (
+                               <div className="text-center py-10">
+                                    <p className="text-muted-foreground">No active interview plans.</p>
+                                    <Button variant="link" asChild><Link href="/interview-prep/new"><PlusCircle className="mr-2"/>Create a New Plan</Link></Button>
+                                </div>
+                           )}
+                        </div>
+                        {activeInterviewPlans.length > 0 && (
+                            <div className="mt-4">
+                                <Button className="w-full" asChild>
+                                    <Link href="/interview-prep">Go to Prep Dashboard</Link>
+                                </Button>
                             </div>
                         )}
-                    </CardContent>
-                    {jobApplications.length > 0 && (
-                        <CardFooter>
-                            <Button variant="secondary" className="w-full" asChild><Link href="/tracker">View All Applications</Link></Button>
-                        </CardFooter>
-                    )}
+                    </AccordionContent>
                 </Card>
-            </div>
-             <Card className="lg:col-span-2">
-                <CardHeader>
-                    <CardTitle>Interview Prep Zone</CardTitle>
-                    <CardDescription>Your active practice plans.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {activeInterviewPlans.length > 0 ? (
-                       activeInterviewPlans.slice(0, 3).map(plan => (
-                           <div key={plan.id} className="p-4 rounded-md border bg-muted/30">
-                               <div className="flex justify-between items-start">
-                                    <div>
-                                        <p className="font-semibold">{plan.topic}</p>
-                                        <Badge variant="secondary" className="mt-1">{plan.difficulty}</Badge>
-                                    </div>
-                                    <Button size="sm" asChild>
-                                       <Link href={`/interview-prep`}><Video className="mr-2"/>Start</Link>
-                                   </Button>
-                               </div>
-                               <div className="mt-3 space-y-2">
-                                   <Progress value={(plan.completedInterviews / plan.totalInterviews) * 100} />
-                                   <p className="text-xs text-muted-foreground">Progress: {plan.completedInterviews} / {plan.totalInterviews} completed</p>
-                               </div>
-                           </div>
-                       ))
-                   ) : (
-                       <div className="text-center py-10">
-                            <p className="text-muted-foreground">No active interview plans.</p>
-                            <Button variant="link" asChild><Link href="/interview-prep/new"><PlusCircle className="mr-2"/>Create a New Plan</Link></Button>
-                        </div>
-                   )}
-                </CardContent>
-                {activeInterviewPlans.length > 0 && (
-                    <CardFooter>
-                        <Button className="w-full" asChild>
-                            <Link href="/interview-prep">Go to Prep Dashboard</Link>
-                        </Button>
-                    </CardFooter>
-                )}
-            </Card>
-        </div>
+           </AccordionItem>
+        </Accordion>
       </div>
   );
 }
