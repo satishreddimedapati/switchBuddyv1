@@ -13,7 +13,6 @@ import { format, isToday, isYesterday, startOfDay, endOfDay, startOfWeek, endOfW
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
-// We'll start the balance at 0 for a true reflection of net changes.
 const STARTING_BALANCE = 0;
 
 interface FocusWalletHistoryProps {
@@ -40,7 +39,6 @@ const calculateDayActivity = (tasksForDay: DailyTask[]): Omit<DayActivity, 'date
     const totalTasks = tasksForDay.length;
     const completed = tasksForDay.filter(t => t.completed);
     
-    // Only count debits for tasks on or before today
     const taskDate = startOfDay(new Date(tasksForDay[0].date));
     const isPastOrToday = isBefore(taskDate, new Date()) || isToday(taskDate);
 
