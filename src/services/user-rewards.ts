@@ -7,6 +7,7 @@ import type { DailyTask } from "@/lib/types";
 import { calculateDayActivity } from "@/app/profile/utils";
 import type { Reward, UserReward } from "@/lib/rewards";
 import { toSerializableUserReward } from "@/lib/types";
+import { Timestamp } from "firebase/firestore";
 
 export async function getFocusCoinBalance(userId: string): Promise<number> {
     if (!userId) return 0;
@@ -42,8 +43,16 @@ export async function getUserRewards(userId: string): Promise<UserReward[]> {
     const q = query(rewardsCollection, where("userId", "==", userId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => {
-        const serializableData = toSerializableUserReward(doc.data());
-        return { id: doc.id, ...serializableData };
+        const data = doc.data();
+        const redeemedAt = data.redeemedAt instanceof Timestamp ? data.redeemedAt.toDate().toISOString() : data.redeemedAt;
+        const claimedAt = data.claimedAt instanceof Timestamp ? data.claimedAt.toDate().toISOString() : data.claimedAt;
+
+        return {
+            id: doc.id,
+            ...data,
+            redeemedAt,
+            claimedAt,
+        } as UserReward;
     });
 }
 
@@ -78,3 +87,5 @@ export async function claimReward(userId: string, userRewardId: string): Promise
         claimedAt: serverTimestamp(),
     });
 }
+
+    

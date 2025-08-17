@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { format, isToday, isYesterday, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isBefore, parseISO } from 'date-fns';
+import { format, isToday, isYesterday, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isBefore, parseISO, isValid } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { PurchasedRewardsSummary } from './PurchasedRewardsSummary';
@@ -118,7 +118,9 @@ export function FocusWalletHistory({ tasks, rewards, loading }: FocusWalletHisto
         });
 
         const filteredRewards = rewards.filter(reward => {
+            if (typeof reward.redeemedAt !== 'string') return false; // Guard against non-string values
             const rewardDate = parseISO(reward.redeemedAt);
+            if (!isValid(rewardDate)) return false; // Guard against invalid dates
             return rewardDate >= startDate && rewardDate <= endDate;
         });
 
@@ -138,6 +140,7 @@ export function FocusWalletHistory({ tasks, rewards, loading }: FocusWalletHisto
         });
 
         filteredData.rewards.forEach(reward => {
+             if (typeof reward.redeemedAt !== 'string') return;
             const date = format(parseISO(reward.redeemedAt), 'yyyy-MM-dd');
              if (!groupedData[date]) {
                 groupedData[date] = { tasks: [], rewards: [] };
@@ -288,4 +291,5 @@ export function FocusWalletHistory({ tasks, rewards, loading }: FocusWalletHisto
             </ScrollArea>
         </div>
     )
-}
+
+    
