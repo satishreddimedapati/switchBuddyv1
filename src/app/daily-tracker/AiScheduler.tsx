@@ -7,7 +7,7 @@ import {
 import {
   generateDailySummary,
 } from '@/ai/flows/schedule-optimizer';
-import { GenerateDailyPlanOutput, GenerateDailySummaryOutput, ScheduledTask } from '@/lib/types';
+import { GenerateDailyPlanOutput, GenerateDailySummaryOutput, MissedTask, ScheduledTask } from '@/lib/types';
 import {Button} from '@/components/ui/button';
 import {
   Card,
@@ -21,7 +21,7 @@ import {useAuth} from '@/lib/auth';
 import {db} from '@/lib/firebase';
 import {DailyTask} from '@/lib/types';
 import {collection, onSnapshot, query, where} from 'firebase/firestore';
-import {format as formatDateFns, parse} from 'date-fns';
+import {format as formatDateFns, parse, addDays} from 'date-fns';
 import {useEffect, useState, useTransition} from 'react';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
 import {BrainCircuit, CheckCircle2, Coffee, Lightbulb, Loader2, Plus, Sparkles, Target, CalendarPlus, Send} from 'lucide-react';
@@ -53,6 +53,7 @@ export function AiScheduler() {
   const [summaryError, setSummaryError] = useState<string | null>(null);
   
   const [isAddingTask, startAddTaskTransition] = useTransition();
+  const [isReschedulingTask, startRescheduleTransition] = useTransition();
   
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -142,6 +143,41 @@ export function AiScheduler() {
             })
         }
     })
+  }
+
+  const handleRescheduleTask = (item: MissedTask) => {
+     if (!user) return;
+     startRescheduleTransition(async () => {
+        try {
+            const tomorrow = addDays(new Date(), 1);
+            const timeString = item.rescheduledTime.replace('Tomorrow ', '');
+            const parsedTime = parse(timeString, 'ha', new Date());
+
+            const newTask: Omit<DailyTask, 'id'> = {
+                title: item.title,
+                description: "Rescheduled from the previous day's debrief.",
+                date: formatDateFns(tomorrow, 'yyyy-MM-dd'),
+                time: formatDateFns(parsedTime, 'HH:mm'),
+                type: 'schedule', // Defaulting to 'schedule' type
+                completed: false,
+            };
+
+            await addTask(newTask, user.uid);
+
+             toast({
+                title: "Task Rescheduled!",
+                description: `"${item.title}" was added to your schedule for tomorrow.`
+            });
+
+        } catch (error) {
+            console.error("Failed to reschedule task:", error);
+            toast({
+                title: "Error",
+                description: "Could not reschedule the task.",
+                variant: 'destructive',
+            })
+        }
+     });
   }
 
   const handleGenerateSummary = () => {
@@ -359,9 +395,19 @@ export function AiScheduler() {
                             <div className="p-3 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 rounded-r-md">
                                 <ul className="space-y-1 list-none">
                                     {summaryResult.missedTasks.map((item, index) => (
-                                    <li key={index} className="flex justify-between items-center">
-                                        <span>{item.title}</span>
-                                        <Badge variant="outline">{item.rescheduledTime}</Badge>
+                                    <li key={index} className="flex justify-between items-center gap-2">
+                                        <div>
+                                            <span>{item.title}</span>
+                                            <Badge variant="outline" className="ml-2">{item.rescheduledTime}</Badge>
+                                        </div>
+                                        <Button 
+                                            size="sm" 
+                                            variant="ghost" 
+                                            onClick={() => handleRescheduleTask(item)}
+                                            disabled={isReschedulingTask}
+                                        >
+                                            <Plus className="h-4 w-4 mr-1" /> Add
+                                        </Button>
                                     </li>
                                     ))}
                                 </ul>
