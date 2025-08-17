@@ -31,7 +31,8 @@ export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
     
     const getResourceLink = () => {
         if (task.resource_type === 'Video' || task.resource_type === 'Video Tutorials') {
-            const query = preferredChannel ? `${preferredChannel} ${task.topic}` : task.topic;
+            const baseQuery = `${task.day}: ${task.topic}`;
+            const query = preferredChannel ? `${baseQuery} ${preferredChannel}` : baseQuery;
             return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
         }
         return task.resource_link;
