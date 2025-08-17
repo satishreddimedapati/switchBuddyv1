@@ -26,3 +26,4 @@ import '@/ai/flows/generate-task-description.ts';
 import '@/ai/flows/generate-learning-roadmap.ts';
 import '@/ai/flows/generate-roadmap-suggestions.ts';
 import '@/ai/flows/generate-topic-history.ts';
+import '@/ai/flows/generate-channel-suggestions.ts';

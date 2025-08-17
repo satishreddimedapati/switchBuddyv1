@@ -6,11 +6,12 @@ import type { DailyTaskItem as DailyTaskItemType } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { BookOpen, ExternalLink, TestTube2, Video, MessageSquare } from 'lucide-react';
+import { BookOpen, ExternalLink, TestTube2, Video, MessageSquare, Youtube } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface DailyTaskItemProps {
     task: DailyTaskItemType;
+    preferredChannel?: string;
 }
 
 const resourceIcons = {
@@ -20,13 +21,23 @@ const resourceIcons = {
     'Chat Lessons': <MessageSquare className="h-4 w-4" />,
 };
 
-export function DailyTaskItem({ task }: DailyTaskItemProps) {
+export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
     const [isCompleted, setIsCompleted] = useState(task.completed || false);
     
     // In a real app, you'd likely persist this change.
     const handleToggle = () => setIsCompleted(!isCompleted);
     
     const ResourceIcon = resourceIcons[task.resource_type as keyof typeof resourceIcons] || <ExternalLink className="h-4 w-4" />;
+    
+    const getResourceLink = () => {
+        if (task.resource_type === 'Video' || task.resource_type === 'Video Tutorials') {
+            const query = preferredChannel ? `${preferredChannel} ${task.topic}` : task.topic;
+            return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+        }
+        return task.resource_link;
+    }
+
+    const resourceLink = getResourceLink();
 
     return (
         <Card className={cn(
@@ -52,10 +63,14 @@ export function DailyTaskItem({ task }: DailyTaskItemProps) {
                             {ResourceIcon}
                             <span>{task.resource_type}</span>
                         </div>
-                        {task.resource_link && (
+                        {resourceLink && (
                              <Button variant="outline" size="sm" asChild>
-                                <a href={task.resource_link} target="_blank" rel="noopener noreferrer">
-                                    <ExternalLink className="h-3 w-3 mr-2" />
+                                <a href={resourceLink} target="_blank" rel="noopener noreferrer">
+                                     {task.resource_type === 'Video' || task.resource_type === 'Video Tutorials' ? (
+                                        <Youtube className="h-3 w-3 mr-2 text-red-600" />
+                                     ) : (
+                                        <ExternalLink className="h-3 w-3 mr-2" />
+                                     )}
                                     Open Resource
                                 </a>
                             </Button>

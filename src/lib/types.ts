@@ -507,12 +507,12 @@ export const TopicHistoryOutputSchema = z.object({
 export type TopicHistoryOutput = z.infer<typeof TopicHistoryOutputSchema>;
 
 // This would be the detailed, structured roadmap from the AI
-const DailyTaskItemSchema = z.object({
+export const DailyTaskItemSchema = z.object({
     day: z.string().describe("The day of the week, e.g., 'Monday'."),
     date: z.string().optional().describe("The specific date for the task in YYYY-MM-DD format."),
     topic: z.string(),
     resource_type: z.string().describe("The type of resource, e.g. 'Video', 'Article'."),
-    resource_link: z.string().optional().describe("A URL to the resource."),
+    resource_link: z.string().optional().describe("A URL to the resource. This is not required if the type is Video."),
     challenge: z.string().optional(),
     completed: z.boolean().default(false).optional(),
 });
@@ -544,6 +544,7 @@ export const LearningRoadmapSchema = z.object({
   experienceLevel: z.string(),
   techFocus: z.array(z.string()),
   learningStyle: z.string(),
+  preferredChannel: z.string().optional(),
   roadmap: RoadmapGenerationOutputSchema,
   history: z.array(TopicHistorySchema).optional(),
   createdAt: z.any(),
@@ -557,11 +558,19 @@ export function toSerializableLearningRoadmap(docData: any): LearningRoadmap {
     if (createdAt?.toDate) {
       serializable.createdAt = (createdAt as Timestamp).toDate().toISOString();
     }
-    if (startDate) {
-      serializable.startDate = (startDate as Timestamp).toDate().toISOString();
+     if (startDate) {
+        if (typeof startDate === 'string') {
+            serializable.startDate = startDate;
+        } else if (startDate.toDate) { // Check if it's a Firestore Timestamp
+            serializable.startDate = (startDate as Timestamp).toDate().toISOString();
+        }
     }
-    if (endDate) {
-      serializable.endDate = (endDate as Timestamp).toDate().toISOString();
+     if (endDate) {
+        if (typeof endDate === 'string') {
+            serializable.endDate = endDate;
+        } else if (endDate.toDate) { // Check if it's a Firestore Timestamp
+            serializable.endDate = (endDate as Timestamp).toDate().toISOString();
+        }
     }
     
     return serializable as LearningRoadmap;
@@ -578,5 +587,6 @@ export const RoadmapGenerationInputSchema = z.object({
     experienceLevel: z.string(),
     techFocus: z.array(z.string()),
     learningStyle: z.string(),
+    preferredChannel: z.string().optional(),
 });
 export type RoadmapGenerationInput = z.infer<typeof RoadmapGenerationInputSchema>;

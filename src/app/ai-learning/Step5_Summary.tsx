@@ -52,6 +52,7 @@ export function Step5_Summary({ data, onRoadmapCreated }: Step5Props) {
                 endDate: data.endDate.toISOString(),
                 roadmap: roadmapResult,
                 history: data.history,
+                preferredChannel: data.preferredChannel,
             });
             
             toast({ 
@@ -88,6 +89,9 @@ export function Step5_Summary({ data, onRoadmapCreated }: Step5Props) {
                     <SummaryItem label="Experience" value={data.experienceLevel} />
                     <SummaryItem label="Tech Focus" value={<div className="flex flex-wrap gap-1">{data.techFocus.length > 0 ? data.techFocus.map(t => <Badge key={t} variant="secondary">{t}</Badge>) : <span className='text-muted-foreground'>None</span>}</div>} />
                     <SummaryItem label="Learning Style" value={data.learningStyle} />
+                    {data.preferredChannel && (
+                         <SummaryItem label="Preferred Channel" value={<Badge variant="outline">{data.preferredChannel}</Badge>} />
+                    )}
                     <SummaryItem label="Commitment" value={`${data.timePerDay / 60} hrs/day for ${data.duration} days`} />
                     <SummaryItem label="Schedule" value={`${format(data.startDate, 'PPP')} to ${format(data.endDate, 'PPP')}`} />
                     <SummaryItem label="Weekends" value={<Badge variant={data.learnOnWeekends ? "default" : "secondary"}>{data.learnOnWeekends ? "Yes" : "No"}</Badge>} />

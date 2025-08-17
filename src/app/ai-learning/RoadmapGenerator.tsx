@@ -26,6 +26,7 @@ export interface RoadmapInputs {
     techFocus: string[];
     learningStyle: string;
     history?: TopicHistory[];
+    preferredChannel?: string;
 }
 
 const initialInputs: RoadmapInputs = {
@@ -40,6 +41,7 @@ const initialInputs: RoadmapInputs = {
     techFocus: [],
     learningStyle: 'Video Tutorials',
     history: undefined,
+    preferredChannel: undefined,
 }
 
 interface RoadmapGeneratorProps {
