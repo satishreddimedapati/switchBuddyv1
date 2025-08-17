@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { format, isToday, isYesterday, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isBefore, parseISO, isValid } from 'date-fns';
+import { format, isToday, isYesterday, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isBefore, parseISO, isValid, isWithinInterval } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { PurchasedRewardsSummary } from './PurchasedRewardsSummary';
@@ -91,37 +91,32 @@ export function FocusWalletHistory({ tasks, rewards, loading }: FocusWalletHisto
 
     const filteredData = useMemo(() => {
         const now = new Date();
-        let startDate: Date;
-        let endDate: Date;
+        let interval: { start: Date, end: Date };
 
         switch (filter) {
             case 'today':
-                startDate = startOfDay(now);
-                endDate = endOfDay(now);
+                interval = { start: startOfDay(now), end: endOfDay(now) };
                 break;
             case 'this-week':
-                startDate = startOfWeek(now, { weekStartsOn: 1 });
-                endDate = endOfWeek(now, { weekStartsOn: 1 });
+                interval = { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) };
                 break;
             case 'this-month':
-                startDate = startOfMonth(now);
-                endDate = endOfMonth(now);
+                interval = { start: startOfMonth(now), end: endOfMonth(now) };
                 break;
             default: // Default to this week
-                 startDate = startOfWeek(now, { weekStartsOn: 1 });
-                 endDate = endOfWeek(now, { weekStartsOn: 1 });
+                interval = { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) };
         }
 
         const filteredTasks = tasks.filter(task => {
             const taskDate = parseISO(task.date);
-            return taskDate >= startDate && taskDate <= endDate;
+            return isWithinInterval(taskDate, interval);
         });
 
         const filteredRewards = rewards.filter(reward => {
             if (typeof reward.redeemedAt !== 'string' || !reward.redeemedAt) return false;
             const rewardDate = parseISO(reward.redeemedAt);
             if (!isValid(rewardDate)) return false; 
-            return rewardDate >= startDate && rewardDate <= endDate;
+            return isWithinInterval(rewardDate, interval);
         });
 
         return { tasks: filteredTasks, rewards: filteredRewards };
@@ -228,16 +223,16 @@ export function FocusWalletHistory({ tasks, rewards, loading }: FocusWalletHisto
                                             {day.credits > 0 && (
                                                 <div className='p-3 bg-background rounded-md'>
                                                     <h4 className="flex items-center gap-2 font-semibold text-green-600 mb-2"><ArrowUp /> Credits Earned (+{day.credits})</h4>
-                                                    <div className="p-4 border rounded-md space-y-2 text-sm bg-muted/50">
+                                                    <div className="space-y-2 text-sm">
                                                         {day.completedTasksList.map(task => (
-                                                            <div key={task.id} className="flex items-center gap-2 text-xs">
+                                                            <div key={task.id} className="flex items-center gap-2 text-xs p-2 rounded-md bg-muted/50">
                                                                 <CheckCircle className="h-3 w-3 text-green-500" />
                                                                 <span className="flex-grow truncate">{task.title}</span>
                                                                 <Badge variant="outline" className="font-mono text-green-600">+1</Badge>
                                                             </div>
                                                         ))}
                                                         {day.bonus > 0 && (
-                                                            <div className="flex items-center gap-2 text-xs font-medium pt-1 mt-1 border-t">
+                                                            <div className="flex items-center gap-2 text-xs font-medium p-2 rounded-md bg-muted/50">
                                                                 <CheckCircle className="h-3 w-3 text-green-500" />
                                                                 <span className="flex-grow">Completion Bonus (&gt;80%)</span>
                                                                 <Badge variant="outline" className="font-mono text-green-600">+{day.bonus}</Badge>
@@ -250,23 +245,23 @@ export function FocusWalletHistory({ tasks, rewards, loading }: FocusWalletHisto
                                             {day.debits > 0 && (
                                                 <div className='p-3 bg-background rounded-md'>
                                                      <h4 className="flex items-center gap-2 font-semibold text-red-600 mb-2"><ArrowDown /> Debits Incurred (-{day.debits})</h4>
-                                                    <div className="p-4 border rounded-md space-y-2 text-sm bg-muted/50">
+                                                    <div className="space-y-2 text-sm">
                                                         {day.missedTasksList.map(task => (
-                                                            <div key={task.id} className="flex items-center gap-2 text-xs">
+                                                            <div key={task.id} className="flex items-center gap-2 text-xs p-2 rounded-md bg-muted/50">
                                                                 <XCircle className="h-3 w-3 text-red-500" />
                                                                 <span className="flex-grow truncate">{task.title}</span>
                                                                 <Badge variant="outline" className="font-mono text-red-600">-1</Badge>
                                                             </div>
                                                         ))}
                                                         {day.penalty > 0 && (
-                                                            <div className="flex items-center gap-2 text-xs font-medium pt-1 mt-1 border-t">
+                                                            <div className="flex items-center gap-2 text-xs font-medium p-2 rounded-md bg-muted/50">
                                                                 <XCircle className="h-3 w-3 text-red-500" />
                                                                 <span className="flex-grow">Miss Penalty (&gt;50%)</span>
                                                                 <Badge variant="outline" className="font-mono text-red-600">-{day.penalty}</Badge>
                                                             </div>
                                                         )}
                                                         {day.redeemedRewardsList.map(reward => (
-                                                            <div key={reward.id} className="flex items-center gap-2 text-xs pt-1 mt-1 border-t">
+                                                            <div key={reward.id} className="flex items-center gap-2 text-xs p-2 rounded-md bg-muted/50">
                                                                 <Gift className="h-3 w-3 text-red-500" />
                                                                 <span className="flex-grow truncate">Redeemed: {reward.name}</span>
                                                                 <Badge variant="outline" className="font-mono text-red-600">-{reward.cost}</Badge>
@@ -285,6 +280,8 @@ export function FocusWalletHistory({ tasks, rewards, loading }: FocusWalletHisto
             </ScrollArea>
         </div>
     )
+
+    
 
     
 
