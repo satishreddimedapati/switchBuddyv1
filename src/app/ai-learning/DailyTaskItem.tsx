@@ -19,6 +19,7 @@ const resourceIcons = {
     'Article': <BookOpen className="h-4 w-4" />,
     'Interactive Tutorial': <TestTube2 className="h-4 w-4" />,
     'Chat Lessons': <MessageSquare className="h-4 w-4" />,
+    'Video Tutorials': <Video className="h-4 w-4" />,
 };
 
 export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
