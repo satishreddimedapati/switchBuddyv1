@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Briefcase, Cpu, Video } from "lucide-react";
+import { ChevronDown, Briefcase, Cpu, Video, MoreHorizontal } from "lucide-react";
 
 
 const sections = [
@@ -32,10 +32,11 @@ export default function JobSwitchHelperPage() {
     const [activeTab, setActiveTab] = useState(initialTab);
 
     useEffect(() => {
-        setActiveTab(initialTab);
-    }, [initialTab]);
-
-    const ActiveIcon = sections.find(s => s.value === activeTab)?.icon || Briefcase;
+        const tab = searchParams.get('tab');
+        if (tab && sections.some(s => s.value === tab)) {
+            setActiveTab(tab);
+        }
+    }, [searchParams]);
 
     const renderContent = () => {
         switch (activeTab) {
@@ -53,50 +54,49 @@ export default function JobSwitchHelperPage() {
     return (
         <div className="flex flex-col gap-8">
              <div>
-                <h1 className="font-headline text-3xl font-bold tracking-tight">
-                    JobSwitch Helper
-                </h1>
+                <div className="flex justify-between items-center">
+                    <h1 className="font-headline text-3xl font-bold tracking-tight">
+                        JobSwitch Helper
+                    </h1>
+                     {isMobile && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <MoreHorizontal />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                {sections.map(section => (
+                                    <DropdownMenuItem key={section.value} onSelect={() => setActiveTab(section.value)}>
+                                        <section.icon className="mr-2" />
+                                        {section.label}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
+                </div>
                 <p className="text-muted-foreground">
                     All your job switching tools in one place.
                 </p>
             </div>
 
             {isMobile ? (
-                 <div className="space-y-4">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="w-full justify-between">
-                                <span className="flex items-center gap-2">
-                                    <ActiveIcon /> {sections.find(s => s.value === activeTab)?.label}
-                                </span>
-                                <ChevronDown />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
-                            {sections.map(section => (
-                                <DropdownMenuItem key={section.value} onSelect={() => setActiveTab(section.value)}>
-                                    <section.icon className="mr-2" />
-                                    {section.label}
-                                </DropdownMenuItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    <div className="mt-6">
-                        {renderContent()}
-                    </div>
+                 <div className="mt-6">
+                    {renderContent()}
                 </div>
             ) : (
-                <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="tracker">Job Tracker</TabsTrigger>
-                        <TabsTrigger value="intelligence">Job Intelligence</TabsTrigger>
-                        <TabsTrigger value="interview-prep">Interview Prep</TabsTrigger>
+                        {sections.map(section => (
+                            <TabsTrigger key={section.value} value={section.value}>{section.label}</TabsTrigger>
+                        ))}
                     </TabsList>
                     <TabsContent value="tracker">
                         <JobTracker />
                     </TabsContent>
                     <TabsContent value="intelligence">
-                    <JobIntelligence />
+                        <JobIntelligence />
                     </TabsContent>
                     <TabsContent value="interview-prep">
                         <InterviewPrep />
