@@ -33,6 +33,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { sendDailyDebrief } from '@/ai/flows/send-daily-debrief';
 import { Toggle } from '@/components/ui/toggle';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
 export function AiScheduler() {
@@ -200,190 +201,199 @@ export function AiScheduler() {
   }
 
   return (
-    <div className="space-y-8">
+    <Accordion type="multiple" defaultValue={['item-1']} className="w-full space-y-4">
       {/* Smart Daily Plan Generator */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base md:text-2xl">
-            <BrainCircuit /> Your AI-Generated Daily Battle Plan
-          </CardTitle>
-          <CardDescription>
-            Tired of planning? Let your AI coach build a strict, motivational schedule to keep you on track and push you to succeed.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          
-          <Button
-            onClick={handleGeneratePlan}
-            disabled={isGeneratingPlan}
-          >
-            {isGeneratingPlan ? (
-              <Loader2 className="mr-2 animate-spin" />
-            ) : (
-              <Sparkles className="mr-2" />
-            )}
-            Generate My Battle Plan
-          </Button>
+      <AccordionItem value="item-1">
+        <Card>
+           <AccordionTrigger className="p-6">
+             <CardHeader className="p-0 text-left">
+                <CardTitle className="flex items-center gap-2 text-base md:text-2xl">
+                    <BrainCircuit /> Your AI-Generated Daily Battle Plan
+                </CardTitle>
+                <CardDescription>
+                    Let your AI coach build a strict, motivational schedule.
+                </CardDescription>
+            </CardHeader>
+           </AccordionTrigger>
+           <AccordionContent className="p-6 pt-0">
+             <Button
+                onClick={handleGeneratePlan}
+                disabled={isGeneratingPlan}
+              >
+                {isGeneratingPlan ? (
+                  <Loader2 className="mr-2 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-2" />
+                )}
+                Generate My Battle Plan
+              </Button>
 
-          {planError && (
-            <Alert variant="destructive" className="mt-4">
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{planError}</AlertDescription>
-            </Alert>
-          )}
+              {planError && (
+                <Alert variant="destructive" className="mt-4">
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{planError}</AlertDescription>
+                </Alert>
+              )}
 
-          {isGeneratingPlan && (
-             <div className="mt-4 space-y-2">
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-            </div>
-          )}
+              {isGeneratingPlan && (
+                <div className="mt-4 space-y-2">
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full" />
+                </div>
+              )}
 
-          {planResult && (
-            <div className="mt-6">
-              <ul className="space-y-1">
-                {planResult.optimizedSchedule.map((item, index) => (
-                  <li
-                    key={index}
-                    className="flex items-start gap-4 rounded-md p-3 border-b last:border-b-0"
-                  >
-                    <span className="font-mono text-sm text-muted-foreground w-20 pt-0.5">
-                      {item.time}
-                    </span>
-                    <div className="flex-grow flex items-start gap-4">
-                      <div className="pt-0.5">{getTaskIcon(item.task)}</div>
-                      <div>
-                        <p className="font-medium leading-tight">{item.task}</p>
-                        <p className="text-xs text-muted-foreground italic mt-1">&quot;{item.motivation}&quot;</p>
-                      </div>
-                    </div>
-                     <Button variant="ghost" size="icon" onClick={() => handleAddTask(item)} disabled={isAddingTask} aria-label="Add to schedule">
-                        <Plus className="h-4 w-4" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              {planResult && (
+                <div className="mt-6">
+                  <ul className="space-y-1">
+                    {planResult.optimizedSchedule.map((item, index) => (
+                      <li
+                        key={index}
+                        className="flex items-start gap-4 rounded-md p-3 border-b last:border-b-0"
+                      >
+                        <span className="font-mono text-sm text-muted-foreground w-20 pt-0.5">
+                          {item.time}
+                        </span>
+                        <div className="flex-grow flex items-start gap-4">
+                          <div className="pt-0.5">{getTaskIcon(item.task)}</div>
+                          <div>
+                            <p className="font-medium leading-tight">{item.task}</p>
+                            <p className="text-xs text-muted-foreground italic mt-1">&quot;{item.motivation}&quot;</p>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={() => handleAddTask(item)} disabled={isAddingTask} aria-label="Add to schedule">
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+           </AccordionContent>
+        </Card>
+      </AccordionItem>
       
       {/* Interview Topic Scheduler */}
-      <Card>
-        <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base md:text-2xl">
-                <CalendarPlus /> Interview Topic Scheduler
-            </CardTitle>
-            <CardDescription>
-                Generate a day-by-day interview preparation schedule for a user-selected topic.
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-            <InterviewTopicScheduler />
-        </CardContent>
-      </Card>
+       <AccordionItem value="item-2">
+         <Card>
+            <AccordionTrigger className="p-6">
+                <CardHeader className="p-0 text-left">
+                    <CardTitle className="flex items-center gap-2 text-base md:text-2xl">
+                        <CalendarPlus /> Interview Topic Scheduler
+                    </CardTitle>
+                    <CardDescription>
+                        Generate a day-by-day interview preparation schedule.
+                    </CardDescription>
+                </CardHeader>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0">
+                <InterviewTopicScheduler />
+            </AccordionContent>
+         </Card>
+      </AccordionItem>
 
       {/* Daily Debrief & Next-Day Recommendations */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base md:text-2xl">
-            <CheckCircle2 /> Daily Debrief &amp; Accountability
-          </CardTitle>
-          <CardDescription>
-            Review today&apos;s progress, see rescheduled tasks, and get your top priorities for tomorrow. Your backend service will send this automatically at 14:50 every day.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loadingTasks ? (
-            <Skeleton className="h-10 w-48" />
-          ) : (
-            <Button
-              onClick={handleGenerateSummary}
-              disabled={isGeneratingSummary || !tasks.length}
-            >
-              {isGeneratingSummary ? (
-                <Loader2 className="mr-2 animate-spin" />
+       <AccordionItem value="item-3">
+         <Card>
+            <AccordionTrigger className="p-6">
+                <CardHeader className="p-0 text-left">
+                  <CardTitle className="flex items-center gap-2 text-base md:text-2xl">
+                    <CheckCircle2 /> Daily Debrief &amp; Accountability
+                  </CardTitle>
+                  <CardDescription>
+                    Review today&apos;s progress and get priorities for tomorrow.
+                  </CardDescription>
+                </CardHeader>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0">
+              {loadingTasks ? (
+                <Skeleton className="h-10 w-48" />
               ) : (
-                <Sparkles className="mr-2" />
+                <Button
+                  onClick={handleGenerateSummary}
+                  disabled={isGeneratingSummary || !tasks.length}
+                >
+                  {isGeneratingSummary ? (
+                    <Loader2 className="mr-2 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-2" />
+                  )}
+                  Generate Daily Debrief
+                </Button>
               )}
-              Generate Daily Debrief
-            </Button>
-          )}
-           {summaryError && (
-            <Alert variant="destructive" className="mt-4">
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{summaryError}</AlertDescription>
-            </Alert>
-          )}
-           {isGeneratingSummary && (
-             <div className="mt-4 space-y-4">
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-4 w-1/2" />
-            </div>
-          )}
-           {summaryResult && (
-            <div className="mt-6 space-y-4 text-sm">
-                <div className="flex flex-wrap gap-4">
-                     <div className="flex-1 min-w-[120px] p-3 bg-muted/50 rounded-md">
-                        <p className="font-semibold">Today&apos;s Summary</p>
-                        <p className="text-2xl font-bold">{summaryResult.completedTasks}/{summaryResult.totalTasks}</p>
-                        <p className="text-xs text-muted-foreground">tasks completed</p>
-                     </div>
-                      <div className="flex-1 min-w-[120px] p-3 bg-muted/50 rounded-md">
-                        <p className="font-semibold">Streak</p>
-                        <p className="text-2xl font-bold">🔥 {summaryResult.streak}</p>
-                        <p className="text-xs text-muted-foreground">days in a row</p>
-                     </div>
+              {summaryError && (
+                <Alert variant="destructive" className="mt-4">
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{summaryError}</AlertDescription>
+                </Alert>
+              )}
+              {isGeneratingSummary && (
+                <div className="mt-4 space-y-4">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-4 w-1/2" />
                 </div>
-
-                {summaryResult.missedTasks.length > 0 && (
-                    <div>
-                        <h3 className="font-semibold mb-2 text-base">📌 Missed Tasks (Rescheduled)</h3>
-                        <div className="p-3 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 rounded-r-md">
-                            <ul className="space-y-1 list-none">
-                                {summaryResult.missedTasks.map((item, index) => (
-                                <li key={index} className="flex justify-between items-center">
-                                    <span>{item.title}</span>
-                                    <Badge variant="outline">{item.rescheduledTime}</Badge>
-                                </li>
-                                ))}
-                            </ul>
+              )}
+              {summaryResult && (
+                <>
+                <div className="mt-6 space-y-4 text-sm">
+                    <div className="flex flex-wrap gap-4">
+                        <div className="flex-1 min-w-[120px] p-3 bg-muted/50 rounded-md">
+                            <p className="font-semibold">Today&apos;s Summary</p>
+                            <p className="text-2xl font-bold">{summaryResult.completedTasks}/{summaryResult.totalTasks}</p>
+                            <p className="text-xs text-muted-foreground">tasks completed</p>
+                        </div>
+                          <div className="flex-1 min-w-[120px] p-3 bg-muted/50 rounded-md">
+                            <p className="font-semibold">Streak</p>
+                            <p className="text-2xl font-bold">🔥 {summaryResult.streak}</p>
+                            <p className="text-xs text-muted-foreground">days in a row</p>
                         </div>
                     </div>
-                )}
-                 
-                 <div>
-                    <h3 className="font-semibold mb-2 text-base">🎯 Top 3 Priorities for Tomorrow:</h3>
-                     <ul className="space-y-2 list-decimal pl-5">
-                        {summaryResult.nextDayPriorities.map((item, index) => (
-                           <li key={index}>{item}</li>
-                        ))}
-                    </ul>
+
+                    {summaryResult.missedTasks.length > 0 && (
+                        <div>
+                            <h3 className="font-semibold mb-2 text-base">📌 Missed Tasks (Rescheduled)</h3>
+                            <div className="p-3 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 rounded-r-md">
+                                <ul className="space-y-1 list-none">
+                                    {summaryResult.missedTasks.map((item, index) => (
+                                    <li key={index} className="flex justify-between items-center">
+                                        <span>{item.title}</span>
+                                        <Badge variant="outline">{item.rescheduledTime}</Badge>
+                                    </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+                    
+                    <div>
+                        <h3 className="font-semibold mb-2 text-base">🎯 Top 3 Priorities for Tomorrow:</h3>
+                        <ul className="space-y-2 list-decimal pl-5">
+                            {summaryResult.nextDayPriorities.map((item, index) => (
+                              <li key={index}>{item}</li>
+                            ))}
+                        </ul>
+                    </div>
                 </div>
-            </div>
-          )}
-        </CardContent>
-         {summaryResult && (
-          <CardFooter className="flex-col items-start gap-4 pt-4 border-t">
-              <div className="flex items-center gap-2">
-                 <Button onClick={handleSendNow} disabled={isSending}>
-                    {isSending ? <Loader2 className="animate-spin" /> : <Send />}
-                     Send to Telegram Now
-                 </Button>
-              </div>
-              {sendError && (
-                  <Alert variant="destructive" className="mt-2">
-                    <AlertDescription>{sendError}</AlertDescription>
-                  </Alert>
+                 <div className="flex items-center gap-2 mt-6 pt-4 border-t">
+                     <Button onClick={handleSendNow} disabled={isSending}>
+                        {isSending ? <Loader2 className="animate-spin" /> : <Send />}
+                         Send to Telegram Now
+                     </Button>
+                  </div>
+                  {sendError && (
+                      <Alert variant="destructive" className="mt-2">
+                        <AlertDescription>{sendError}</AlertDescription>
+                      </Alert>
+                  )}
+                </>
               )}
-          </CardFooter>
-        )}
-      </Card>
-    </div>
+            </AccordionContent>
+         </Card>
+      </AccordionItem>
+    </Accordion>
   );
 }
