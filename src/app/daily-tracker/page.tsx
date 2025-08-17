@@ -4,24 +4,30 @@
 import { DailyTrackerTabs } from "./DailyTrackerTabs";
 import { MissedTasksGate } from "./MissedTasksGate";
 import { useAuth } from "@/lib/auth";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import type { DailyTask } from "@/lib/types";
 import { getMissedTasks } from "@/services/daily-tasks";
 import { Skeleton } from "@/components/ui/skeleton";
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { format, subDays } from 'date-fns';
+import { FocusWalletHistory } from "./FocusWalletHistory";
 
 export default function DailyTrackerPage() {
     const { user } = useAuth();
     const [missedTasks, setMissedTasks] = useState<DailyTask[]>([]);
+    const [recentTasks, setRecentTasks] = useState<DailyTask[]>([]); // Will hold last 30 days of tasks
     const [loading, setLoading] = useState(true);
+    const [gateLoading, setGateLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const fetchMissedTasks = useCallback(async () => {
         if (!user) {
-            setLoading(false);
+            setGateLoading(false);
             return;
         }
         
-        setLoading(true);
+        setGateLoading(true);
         setError(null);
         
         try {
@@ -36,7 +42,7 @@ export default function DailyTrackerPage() {
                 setError(`An unexpected error occurred while fetching tasks. Code: ${error.code || 'N/A'}`);
             }
         } finally {
-            setLoading(false);
+            setGateLoading(false);
         }
     }, [user]);
 
@@ -44,13 +50,44 @@ export default function DailyTrackerPage() {
         fetchMissedTasks();
     }, [fetchMissedTasks]);
 
-    // This function will be called from the gate when all tasks are handled.
+    useEffect(() => {
+        if (!user) {
+            setLoading(false);
+            return;
+        }
+        setLoading(true);
+        
+        // Fetch tasks from the last 30 days for filtering
+        const thirtyDaysAgo = format(subDays(new Date(), 30), 'yyyy-MM-dd');
+        const q = query(
+            collection(db, "daily_tasks"), 
+            where("userId", "==", user.uid),
+            where("date", ">=", thirtyDaysAgo)
+        );
+        
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const fetchedTasks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyTask));
+            setRecentTasks(fetchedTasks);
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching recent tasks: ", error);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [user]);
+    
+    const todaysTasks = useMemo(() => {
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        return recentTasks.filter(task => task.date === todayStr);
+    }, [recentTasks]);
+
+
     const handleGateCleared = () => {
-        // Refetch to confirm all tasks are gone
         fetchMissedTasks();
     };
     
-    if (loading) {
+    if (gateLoading) {
         return (
              <div className="flex flex-col gap-8 h-full">
                 <Skeleton className="h-20 w-full" />
@@ -75,7 +112,18 @@ export default function DailyTrackerPage() {
             {missedTasks.length > 0 ? (
                 <MissedTasksGate initialTasks={missedTasks} onGateCleared={handleGateCleared} />
             ) : (
-                <DailyTrackerTabs />
+                <>
+                <div>
+                    <h1 className="font-headline text-3xl font-bold tracking-tight">
+                        Daily Tracker
+                    </h1>
+                    <p className="text-muted-foreground">
+                        Plan your day, track your progress, and stay productive.
+                    </p>
+                </div>
+                <FocusWalletHistory tasks={recentTasks} loading={loading} />
+                <DailyTrackerTabs tasks={todaysTasks} loading={loading} />
+                </>
             )}
         </div>
     );

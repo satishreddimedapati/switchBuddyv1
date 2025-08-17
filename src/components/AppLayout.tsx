@@ -26,6 +26,7 @@ import {
   PanelLeft,
   CalendarCheck,
   Loader2,
+  User,
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { useAuth } from '@/lib/auth';
@@ -41,6 +42,7 @@ const navItems = [
   { href: '/daily-tracker', icon: CalendarCheck, label: 'Daily Tracker' },
   { href: '/job-intelligence', icon: Search, label: 'Job Intelligence' },
   { href: '/interview-prep', icon: MessageSquareQuote, label: 'Interview Prep' },
+  { href: '/profile', icon: User, label: 'Profile & Rewards' },
 ];
 
 function AppHeader() {
