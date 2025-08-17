@@ -10,9 +10,12 @@ import { Coins, CheckCircle, Gift } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-export function RewardsStore() {
-    // In a real app, this would come from the user's profile/db
-    const [focusCoins, setFocusCoins] = useState(95); 
+interface RewardsStoreProps {
+    initialFocusCoins: number;
+}
+
+export function RewardsStore({ initialFocusCoins }: RewardsStoreProps) {
+    const [focusCoins, setFocusCoins] = useState(initialFocusCoins); 
     const [redeemedRewards, setRedeemedRewards] = useState<Reward[]>([]);
     const { toast } = useToast();
 

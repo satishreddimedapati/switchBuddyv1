@@ -5,6 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Award, Briefcase, Lock, Star } from "lucide-react";
 import { RewardsStore } from "./RewardsStore";
+import { useState, useEffect, useMemo } from "react";
+import { useAuth } from "@/lib/auth";
+import type { DailyTask } from "@/lib/types";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { calculateDayActivity, STARTING_BALANCE } from "./utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Mock data for a more sophisticated gamification system
 const userProfile = {
@@ -12,7 +19,6 @@ const userProfile = {
     levelName: "Interview Ace",
     xp: 750,
     xpToNextLevel: 1000,
-    // The coin balance will now be managed inside the RewardsStore
 };
 
 const achievements = [
@@ -26,6 +32,49 @@ const achievements = [
 
 
 export default function ProfilePage() {
+    const { user } = useAuth();
+    const [tasks, setTasks] = useState<DailyTask[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!user) {
+            setLoading(false);
+            return;
+        }
+        setLoading(true);
+        const q = query(collection(db, "daily_tasks"), where("userId", "==", user.uid));
+        
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const fetchedTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as DailyTask);
+            setTasks(fetchedTasks);
+            setLoading(false);
+        }, (error) => {
+            console.error("Failed to fetch tasks for wallet calculation:", error);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [user]);
+
+    const currentBalance = useMemo(() => {
+        const groupedByDate = tasks.reduce((acc, task) => {
+            const date = task.date;
+            if (!acc[date]) {
+                acc[date] = [];
+            }
+            acc[date].push(task);
+            return acc;
+        }, {} as Record<string, DailyTask[]>);
+
+        const totalNetChange = Object.values(groupedByDate)
+            .reduce((total, tasksForDay) => {
+                const dayActivity = calculateDayActivity(tasksForDay, tasks);
+                return total + dayActivity.netChange;
+            }, 0);
+            
+        return STARTING_BALANCE + totalNetChange;
+    }, [tasks]);
+
     const xpProgress = (userProfile.xp / userProfile.xpToNextLevel) * 100;
 
     return (
@@ -68,7 +117,14 @@ export default function ProfilePage() {
                 </CardContent>
             </Card>
             
-            <RewardsStore />
+            {loading ? (
+                <Card>
+                    <CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader>
+                    <CardContent><Skeleton className="h-48 w-full" /></CardContent>
+                </Card>
+            ) : (
+                <RewardsStore initialFocusCoins={currentBalance} />
+            )}
             
         </div>
     )
