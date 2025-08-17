@@ -43,8 +43,8 @@ export const calculateDayActivity = (tasksForDay: DailyTask[], allTasks: DailyTa
     const taskDebits = allMissedAndRescheduled.length;
     const rewardDebits = rewardsForDay.reduce((sum, reward) => sum + reward.cost, 0);
 
-    const completionBonus = totalTasksForDay > 0 && (credits / totalTasksForDay) >= 0.8 ? 5 : 0;
-    const missPenalty = isPastOrToday && totalTasksForDay > 0 && (debits / totalTasksForDay) >= 0.5 ? 5 : 0;
+    const completionBonus = totalTasksForDay > 0 && (taskCredits / totalTasksForDay) >= 0.8 ? 5 : 0;
+    const missPenalty = isPastOrToday && totalTasksForDay > 0 && (taskDebits / totalTasksForDay) >= 0.5 ? 5 : 0;
 
     const calculatedCredits = taskCredits + completionBonus;
     const calculatedDebits = taskDebits + missPenalty + rewardDebits;
