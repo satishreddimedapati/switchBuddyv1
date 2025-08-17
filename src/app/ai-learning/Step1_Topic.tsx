@@ -44,7 +44,7 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
         }
     }, [data.topic]);
     
-    const applySuggestion = () => {
+    const applyMainSuggestion = () => {
         if(suggestion) {
             onUpdate({
                 timePerDay: suggestion.suggestedTimePerDay,
@@ -55,7 +55,7 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
     }
 
     const dynamicSuggestion = useMemo(() => {
-        if (!suggestion) return { durationText: '', timeText: ''};
+        if (!suggestion) return { durationText: '', timeText: '', suggestedDays: 0, suggestedMinutes: 0 };
         
         const totalHours = suggestion.totalEffortHours;
         const timePerDayHours = data.timePerDay / 60;
@@ -67,10 +67,27 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
 
         // Calculate suggested time based on user's duration
         const suggestedHours = totalHours / durationDays;
+        const suggestedMinutes = Math.round(suggestedHours * 60);
         const timeText = `~${suggestedHours.toFixed(1)} hrs/day`;
 
-        return { durationText, timeText };
+        return { durationText, timeText, suggestedDays, suggestedMinutes };
     }, [data.timePerDay, data.duration, suggestion]);
+
+    const applyDurationSuggestion = () => {
+        if (dynamicSuggestion.suggestedDays > 0) {
+            onUpdate({ duration: dynamicSuggestion.suggestedDays });
+            toast({ title: "Duration Applied!", description: `Set to ${dynamicSuggestion.suggestedDays} days.` });
+        }
+    }
+    
+    const applyTimeSuggestion = () => {
+        if (dynamicSuggestion.suggestedMinutes > 0) {
+             // Snap to nearest 15 minutes
+            const snappedMinutes = Math.round(dynamicSuggestion.suggestedMinutes / 15) * 15;
+            onUpdate({ timePerDay: snappedMinutes });
+            toast({ title: "Time Applied!", description: `Set to ${snappedMinutes / 60} hours per day.` });
+        }
+    }
 
 
     return (
@@ -105,7 +122,7 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                             {suggestion.reasoning} We suggest studying for 
                             <span className="font-bold"> {suggestion.suggestedTimePerDay / 60} hours/day</span> for 
                             <span className="font-bold"> {suggestion.suggestedDurationDays} days</span>. 
-                            <Button variant="link" onClick={applySuggestion} className="p-0 h-auto ml-1">Apply this suggestion.</Button>
+                            <Button variant="link" onClick={applyMainSuggestion} className="p-0 h-auto ml-1">Apply this suggestion.</Button>
                         </AlertDescription>
                     </Alert>
                 )}
@@ -116,9 +133,9 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                         <div className="flex justify-between items-baseline">
                             <Label>Time Commitment Per Day</Label>
                              {suggestion && (
-                                <span className="text-xs text-muted-foreground">
-                                    (suggested duration: <span className="font-bold">{dynamicSuggestion.durationText}</span>)
-                                </span>
+                                <Button variant="link" size="sm" className="text-xs p-0 h-auto text-muted-foreground" onClick={applyDurationSuggestion}>
+                                   (Apply: {dynamicSuggestion.durationText})
+                                </Button>
                             )}
                         </div>
                          <Slider
@@ -134,9 +151,9 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                         <div className="flex justify-between items-baseline">
                             <Label>Total Duration</Label>
                             {suggestion && (
-                                <span className="text-xs text-muted-foreground">
-                                    (needs <span className="font-bold">{dynamicSuggestion.timeText}</span>)
-                                </span>
+                                <Button variant="link" size="sm" className="text-xs p-0 h-auto text-muted-foreground" onClick={applyTimeSuggestion}>
+                                    (Apply: {dynamicSuggestion.timeText})
+                                </Button>
                             )}
                         </div>
                          <Slider
