@@ -6,7 +6,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { RoadmapGenerationInputSchema, RoadmapGenerationOutputSchema, WeeklyPlan } from '@/lib/types';
+import { RoadmapGenerationInputSchema, RoadmapGenerationOutputSchema, WeeklyPlan, DailyTaskItemSchema } from '@/lib/types';
 import { z } from 'zod';
 import { addDays, format, getISOWeek } from 'date-fns';
 
@@ -80,8 +80,14 @@ const generateLearningRoadmapFlow = ai.defineFlow(
     currentDate = new Date(currentDate.valueOf() + currentDate.getTimezoneOffset() * 60 * 1000);
 
     const newWeeksMap = new Map<number, WeeklyPlan>();
+    
+    let assignedTaskCount = 0;
 
-    tasks.forEach((task) => {
+    for (const task of tasks) {
+        if (assignedTaskCount >= input.duration) {
+            break;
+        }
+
         // Find the next valid learning day
         if (!input.learnOnWeekends) {
             let dayOfWeek = currentDate.getDay();
@@ -110,7 +116,8 @@ const generateLearningRoadmapFlow = ai.defineFlow(
         
         // IMPORTANT: Increment the date AFTER assigning it to the task
         currentDate = addDays(currentDate, 1);
-    });
+        assignedTaskCount++;
+    }
 
     const finalRoadmap: RoadmapGenerationOutput = { weeks: Array.from(newWeeksMap.values()) };
     
