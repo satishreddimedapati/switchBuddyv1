@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db } from "@/lib/firebase";
@@ -36,9 +37,9 @@ export async function getFocusCoinBalance(userId: string): Promise<number> {
 
 export async function getUserRewards(userId: string): Promise<UserReward[]> {
     if (!userId) return [];
-    const rewardsCollection = collection(db, `users/${userId}/redeemed_rewards`);
-    const q = query(rewardsCollection, where("userId", "==", userId));
-    const snapshot = await getDocs(q);
+    // Correctly reference the subcollection
+    const rewardsCollection = collection(db, 'users', userId, 'redeemed_rewards');
+    const snapshot = await getDocs(rewardsCollection);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserReward));
 }
 
