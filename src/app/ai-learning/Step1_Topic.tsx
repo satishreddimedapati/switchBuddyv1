@@ -10,8 +10,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Loader2, Wand2 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
+import { useState, useTransition } from 'react';
+import { generateRoadmapSuggestions } from '@/ai/flows/generate-roadmap-suggestions';
+import { useToast } from '@/hooks/use-toast';
 
 interface Step1Props {
     data: RoadmapInputs;
@@ -19,6 +22,28 @@ interface Step1Props {
 }
 
 export function Step1_Topic({ data, onUpdate }: Step1Props) {
+    const { toast } = useToast();
+    const [isSuggesting, startSuggestionTransition] = useTransition();
+
+    const handleGetSuggestion = () => {
+        if (!data.topic) {
+            toast({ title: "Topic needed", description: "Please enter a topic first to get suggestions.", variant: "destructive" });
+            return;
+        }
+        startSuggestionTransition(async () => {
+            try {
+                const suggestion = await generateRoadmapSuggestions({ topic: data.topic });
+                onUpdate({
+                    timePerDay: suggestion.suggestedTimePerDay,
+                    duration: suggestion.suggestedDurationDays,
+                });
+                toast({ title: "Suggestions applied!", description: "The AI has suggested an optimal schedule." });
+            } catch (error) {
+                console.error("Failed to get suggestion", error);
+                toast({ title: "Error", description: "Could not retrieve AI suggestions.", variant: "destructive" });
+            }
+        });
+    }
 
     const totalSessions = data.duration;
 
@@ -37,6 +62,13 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                         value={data.topic}
                         onChange={e => onUpdate({ topic: e.target.value })}
                     />
+                </div>
+
+                <div className="flex justify-end">
+                    <Button variant="ghost" size="sm" onClick={handleGetSuggestion} disabled={isSuggesting || !data.topic}>
+                         {isSuggesting ? <Loader2 className="mr-2 animate-spin" /> : <Wand2 className="mr-2" />}
+                        Get AI Suggestion
+                    </Button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
