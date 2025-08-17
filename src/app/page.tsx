@@ -113,7 +113,7 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <Accordion type="multiple" defaultValue={['agenda', 'applications', 'prep']} className="w-full space-y-4">
+        <Accordion type="multiple" defaultValue={['agenda']} className="w-full space-y-4">
            {/* Today's Agenda */}
            <AccordionItem value="agenda">
                 <Card>
