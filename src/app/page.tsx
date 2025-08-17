@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
+  CardFooter,
 } from "@/components/ui/card";
 import { getJobApplications } from "@/services/job-applications";
 import { Award, Briefcase, CalendarCheck, CheckCircle, ListTodo, PlusCircle, Video } from "lucide-react";
@@ -16,13 +17,14 @@ import type { JobApplication, InterviewPlan, DailyTask } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getInterviewPlans } from "@/services/interview-plans";
 import { getTasksForDate } from "@/services/daily-tasks";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { updateTask } from "@/services/daily-tasks";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 function LoadingSkeleton() {
     return (
@@ -32,13 +34,18 @@ function LoadingSkeleton() {
                 <Skeleton className="h-4 w-1/2" />
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Skeleton className="h-24" />
-                <Skeleton className="h-24" />
-                <Skeleton className="h-24" />
+                <Skeleton className="h-28" />
+                <Skeleton className="h-28" />
+                <Skeleton className="h-28" />
             </div>
-            <div className="grid gap-6 lg:grid-cols-2">
-                <Skeleton className="h-64" />
-                <Skeleton className="h-64" />
+            <div className="grid gap-6 lg:grid-cols-5">
+                <div className="lg:col-span-3 space-y-6">
+                    <Skeleton className="h-48" />
+                    <Skeleton className="h-48" />
+                </div>
+                <div className="lg:col-span-2">
+                    <Skeleton className="h-64" />
+                </div>
             </div>
         </div>
     )
@@ -68,7 +75,7 @@ export default function DashboardPage() {
       ]);
       
       setJobApplications(jobs);
-      setInterviewPlans(plans.filter(p => (p.completedInterviews || 0) < p.totalInterviews));
+      setInterviewPlans(plans);
       setTodaysTasks(tasks.sort((a,b) => a.time.localeCompare(b.time)));
 
       setLoading(false);
@@ -95,6 +102,8 @@ export default function DashboardPage() {
 
   const tasksCompleted = useMemo(() => todaysTasks.filter(t => t.completed).length, [todaysTasks]);
   const tasksProgress = todaysTasks.length > 0 ? (tasksCompleted / todaysTasks.length) * 100 : 0;
+  
+  const activeInterviewPlans = useMemo(() => interviewPlans.filter(p => (p.completedInterviews || 0) < p.totalInterviews), [interviewPlans]);
 
   if (loading) {
       return <LoadingSkeleton />;
@@ -130,70 +139,43 @@ export default function DashboardPage() {
           })}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2 items-start">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Focus for Today</CardTitle>
-                    <CardDescription>{tasksCompleted} of {todaysTasks.length} tasks completed.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <Progress value={tasksProgress} />
-                    <div className="max-h-60 overflow-y-auto pr-2 space-y-3">
-                        {todaysTasks.length > 0 ? (
-                            todaysTasks.map(task => (
-                                <div key={task.id} className="flex items-center gap-3">
-                                    <Checkbox 
-                                        id={`task-${task.id}`}
-                                        checked={task.completed} 
-                                        onCheckedChange={(checked) => handleTaskToggle(task.id, Boolean(checked))}
-                                    />
-                                    <label 
-                                        htmlFor={`task-${task.id}`}
-                                        className={cn("flex-grow text-sm", task.completed && "line-through text-muted-foreground")}
-                                    >
-                                        <span className="font-medium">{task.title}</span>
-                                        <span className="text-muted-foreground ml-2">{format(new Date(`1970-01-01T${task.time}`), 'h:mm a')}</span>
-                                    </label>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="text-center py-6">
-                                <p className="text-muted-foreground">No tasks scheduled for today.</p>
-                                <Button variant="link" asChild><Link href="/daily-tracker"><PlusCircle className="mr-2"/>Schedule Tasks</Link></Button>
-                            </div>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
-
-            <div className="space-y-6">
-                 <Card>
+        <div className="grid gap-6 lg:grid-cols-5 items-start">
+            <div className="lg:col-span-3 space-y-6">
+                <Card>
                     <CardHeader>
-                        <CardTitle>Active Interview Plans</CardTitle>
-                         <CardDescription>Your ongoing mock interview practice plans.</CardDescription>
+                        <CardTitle>Today&apos;s Agenda</CardTitle>
+                        <CardDescription>{tasksCompleted} of {todaysTasks.length} tasks completed today.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                       {interviewPlans.length > 0 ? (
-                           interviewPlans.slice(0, 2).map(plan => (
-                               <div key={plan.id} className="flex justify-between items-center p-3 rounded-md bg-muted/50">
-                                   <div>
-                                       <p className="font-semibold">{plan.topic}</p>
-                                       <p className="text-sm text-muted-foreground">Completed: {plan.completedInterviews} / {plan.totalInterviews}</p>
-                                   </div>
-                                   <Button size="sm" asChild>
-                                       <Link href={`/interview-prep`}><Video className="mr-2"/>Start Next</Link>
-                                   </Button>
-                               </div>
-                           ))
-                       ) : (
-                           <div className="text-center py-4">
-                                <p className="text-muted-foreground">No active interview plans.</p>
-                                <Button variant="link" asChild><Link href="/interview-prep/new"><PlusCircle className="mr-2"/>Create a Plan</Link></Button>
-                            </div>
-                       )}
+                    <CardContent className="space-y-4">
+                        <Progress value={tasksProgress} />
+                        <div className="max-h-80 overflow-y-auto pr-2 space-y-3">
+                            {todaysTasks.length > 0 ? (
+                                todaysTasks.map(task => (
+                                    <div key={task.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors">
+                                        <Checkbox 
+                                            id={`task-${task.id}`}
+                                            checked={task.completed} 
+                                            onCheckedChange={(checked) => handleTaskToggle(task.id, Boolean(checked))}
+                                        />
+                                        <label 
+                                            htmlFor={`task-${task.id}`}
+                                            className={cn("flex-grow text-sm", task.completed && "line-through text-muted-foreground")}
+                                        >
+                                            <span className="font-medium">{task.title}</span>
+                                            <span className="text-muted-foreground ml-2">{format(parse(task.time, 'HH:mm', new Date()), 'h:mm a')}</span>
+                                        </label>
+                                        <Badge variant={task.type === 'interview' ? 'default' : 'secondary'} className="capitalize">{task.type}</Badge>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-8">
+                                    <p className="text-muted-foreground">No tasks scheduled for today.</p>
+                                    <Button variant="link" asChild><Link href="/daily-tracker"><PlusCircle className="mr-2"/>Schedule Your Day</Link></Button>
+                                </div>
+                            )}
+                        </div>
                     </CardContent>
                 </Card>
-
                  <Card>
                     <CardHeader>
                         <CardTitle>Recent Applications</CardTitle>
@@ -202,23 +184,67 @@ export default function DashboardPage() {
                     <CardContent className="space-y-2">
                         {jobApplications.length > 0 ? (
                             jobApplications.slice(0, 3).map(job => (
-                                <div key={job.id} className="flex justify-between items-center text-sm">
+                                <div key={job.id} className="flex justify-between items-center text-sm p-2 rounded-md hover:bg-muted/50 transition-colors">
                                     <div>
                                         <p className="font-medium">{job.title}</p>
                                         <p className="text-muted-foreground">{job.company}</p>
                                     </div>
-                                    <p className="font-semibold text-muted-foreground">{job.stage}</p>
+                                    <Badge variant="outline">{job.stage}</Badge>
                                 </div>
                             ))
                         ) : (
-                             <div className="text-center py-4">
+                             <div className="text-center py-8">
                                 <p className="text-muted-foreground">No jobs tracked yet.</p>
                                 <Button variant="link" asChild><Link href="/tracker"><PlusCircle className="mr-2"/>Add a Job</Link></Button>
                             </div>
                         )}
                     </CardContent>
+                    {jobApplications.length > 0 && (
+                        <CardFooter>
+                            <Button variant="secondary" className="w-full" asChild><Link href="/tracker">View All Applications</Link></Button>
+                        </CardFooter>
+                    )}
                 </Card>
             </div>
+             <Card className="lg:col-span-2">
+                <CardHeader>
+                    <CardTitle>Interview Prep Zone</CardTitle>
+                    <CardDescription>Your active practice plans.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {activeInterviewPlans.length > 0 ? (
+                       activeInterviewPlans.slice(0, 3).map(plan => (
+                           <div key={plan.id} className="p-4 rounded-md border bg-muted/30">
+                               <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="font-semibold">{plan.topic}</p>
+                                        <Badge variant="secondary" className="mt-1">{plan.difficulty}</Badge>
+                                    </div>
+                                    <Button size="sm" asChild>
+                                       <Link href={`/interview-prep`}><Video className="mr-2"/>Start</Link>
+                                   </Button>
+                               </div>
+                               <div className="mt-3 space-y-2">
+                                   <Progress value={(plan.completedInterviews / plan.totalInterviews) * 100} />
+                                   <p className="text-xs text-muted-foreground">Progress: {plan.completedInterviews} / {plan.totalInterviews} completed</p>
+                               </div>
+                           </div>
+                       ))
+                   ) : (
+                       <div className="text-center py-10">
+                            <p className="text-muted-foreground">No active interview plans.</p>
+                            <Button variant="link" asChild><Link href="/interview-prep/new"><PlusCircle className="mr-2"/>Create a New Plan</Link></Button>
+                        </div>
+                   )}
+                </CardContent>
+                {activeInterviewPlans.length > 0 && (
+                    <CardFooter>
+                        <Button className="w-full" asChild>
+                            <Link href="/interview-prep">Go to Prep Dashboard</Link>
+                        </Button>
+                    </CardFooter>
+                )}
+            </Card>
         </div>
       </div>
   );
