@@ -24,6 +24,12 @@ export type KanbanColumnData = {
   jobs: JobApplication[];
 };
 
+export const RescheduledTaskSchema = z.object({
+    originalDate: z.string(),
+    reason: z.string(),
+});
+export type RescheduledTask = z.infer<typeof RescheduledTaskSchema>;
+
 export const DailyTaskSchema = z.object({
   id: z.string(),
   time: z.string(), // e.g., "08:00"
@@ -33,6 +39,7 @@ export const DailyTaskSchema = z.object({
   date: z.string(), // e.g., "YYYY-MM-DD"
   completed: z.boolean(),
   userId: z.string(),
+  rescheduled: RescheduledTaskSchema.optional(),
 });
 
 export type DailyTask = z.infer<typeof DailyTaskSchema>;
