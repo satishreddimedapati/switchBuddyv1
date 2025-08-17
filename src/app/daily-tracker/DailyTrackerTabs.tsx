@@ -12,6 +12,15 @@ import { useAuth } from "@/lib/auth";
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { subDays, format } from 'date-fns';
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button";
+import { MoreHorizontal } from "lucide-react";
 
 
 interface DailyTrackerTabsProps {
@@ -19,9 +28,19 @@ interface DailyTrackerTabsProps {
     loading: boolean;
 }
 
+const sections = [
+    { value: 'daily', label: 'Daily Schedule' },
+    { value: 'weekly', label: 'Weekly Timetable' },
+    { value: 'ai-scheduler', label: 'AI Smart Scheduler' },
+    { value: 'missed-rescheduled', label: 'Missed/Rescheduled' },
+]
+
+
 export function DailyTrackerTabs({ tasks, loading }: DailyTrackerTabsProps) {
     const { user } = useAuth();
     const [pastTasks, setPastTasks] = useState<DailyTask[]>([]);
+    const isMobile = useIsMobile();
+    const [activeView, setActiveView] = useState('daily');
 
      useEffect(() => {
         if (!user) return;
@@ -43,13 +62,55 @@ export function DailyTrackerTabs({ tasks, loading }: DailyTrackerTabsProps) {
         return () => unsubscribe();
     }, [user]);
 
+  const renderContent = (view: string) => {
+    switch (view) {
+        case 'daily':
+            return <DailySchedule tasks={tasks} loading={loading}/>;
+        case 'weekly':
+            return <WeeklyTimetable />;
+        case 'ai-scheduler':
+            return <AiScheduler />;
+        case 'missed-rescheduled':
+            return <MissedAndRescheduledTasks tasks={pastTasks} />;
+        default:
+            return <DailySchedule tasks={tasks} loading={loading}/>;
+    }
+  }
+
+  if (isMobile) {
+      return (
+          <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-bold">{sections.find(s => s.value === activeView)?.label}</h2>
+                  <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                             <MoreHorizontal />
+                             <span className="sr-only">Select view</span>
+                          </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                          {sections.map(section => (
+                              <DropdownMenuItem key={section.value} onSelect={() => setActiveView(section.value)} disabled={activeView === section.value}>
+                                  {section.label}
+                              </DropdownMenuItem>
+                          ))}
+                      </DropdownMenuContent>
+                  </DropdownMenu>
+              </div>
+              <div className="mt-6">
+                {renderContent(activeView)}
+              </div>
+          </div>
+      )
+  }
+
   return (
     <Tabs defaultValue="daily" className="w-full">
       <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
-        <TabsTrigger value="daily">Daily</TabsTrigger>
-        <TabsTrigger value="weekly">Weekly</TabsTrigger>
-        <TabsTrigger value="ai-scheduler">AI Smart Scheduler</TabsTrigger>
-        <TabsTrigger value="missed-rescheduled">Missed/Rescheduled</TabsTrigger>
+        {sections.map(section => (
+          <TabsTrigger key={section.value} value={section.value}>{section.label}</TabsTrigger>
+        ))}
       </TabsList>
       <TabsContent value="daily" className="mt-6">
         <DailySchedule tasks={tasks} loading={loading}/>

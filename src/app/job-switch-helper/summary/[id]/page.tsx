@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -31,7 +32,7 @@ export default function InterviewSummaryPage() {
         if (sessionData && sessionData.userId === user.uid) {
             setSession(sessionData);
         } else {
-            router.push('/interview-prep'); // Redirect if not found or not owned
+            router.push('/job-switch-helper?tab=interview-prep'); // Redirect if not found or not owned
         }
         setLoading(false);
     }
@@ -117,7 +118,7 @@ export default function InterviewSummaryPage() {
                 <CardContent className="flex flex-col gap-2">
                      <Button disabled><Download className="mr-2" /> Download PDF</Button>
                     <Button variant="secondary" asChild>
-                        <Link href="/interview-prep">
+                        <Link href="/job-switch-helper?tab=interview-prep">
                             <Video className="mr-2" /> Back to Prep Dashboard
                         </Link>
                     </Button>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm, Controller } from 'react-hook-form';
@@ -10,12 +11,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
-import { addInterviewPlan } from '@/services/interview-plans';
-import { useRouter } from 'next/navigation';
+import { updateInterviewPlan, getInterviewPlan } from '@/services/interview-plans';
+import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Loader2, Video } from 'lucide-react';
-import { addInterviewSession } from '@/services/interview-sessions';
-import { generateInterviewQuestions } from '@/ai/flows/interview-practice';
+import { Loader2, Save } from 'lucide-react';
+import type { InterviewPlan } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const planSchema = z.object({
   topic: z.string().min(1, 'Topic is required.'),
@@ -27,83 +28,100 @@ const planSchema = z.object({
 
 type PlanFormValues = z.infer<typeof planSchema>;
 
-export default function NewInterviewPlanPage() {
+export default function EditInterviewPlanPage() {
     const { user } = useAuth();
     const { toast } = useToast();
     const router = useRouter();
+    const params = useParams();
+    const planId = params.id as string;
+    
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const form = useForm<PlanFormValues>({
         resolver: zodResolver(planSchema),
-        defaultValues: {
-            topic: '',
-            difficulty: 'Medium',
-            durationMinutes: 30,
-            numberOfQuestions: 5,
-            totalInterviews: 10,
-        },
     });
 
+    useEffect(() => {
+        if (!user || !planId) return;
+        setLoading(true);
+        getInterviewPlan(planId).then(plan => {
+            if (plan && plan.userId === user.uid) {
+                form.reset({
+                    topic: plan.topic,
+                    difficulty: plan.difficulty,
+                    durationMinutes: plan.durationMinutes,
+                    numberOfQuestions: plan.numberOfQuestions,
+                    totalInterviews: plan.totalInterviews,
+                });
+            } else {
+                toast({ title: "Error", description: "Plan not found or you don't have permission to edit it.", variant: "destructive" });
+                router.push('/job-switch-helper?tab=interview-prep');
+            }
+            setLoading(false);
+        });
+    }, [planId, user, form, toast, router]);
+
+
     const onSubmit = async (data: PlanFormValues) => {
-        if (!user || !user.uid) {
-            toast({ title: 'Error', description: 'You must be logged in to create a plan.', variant: 'destructive' });
+        if (!user || !user.uid || !planId) {
+            toast({ title: 'Error', description: 'You must be logged in to update a plan.', variant: 'destructive' });
             return;
         }
         setIsSubmitting(true);
         try {
-            // 1. Create the plan
-            const planId = await addInterviewPlan({ ...data, userId: user.uid, completedInterviews: 0 });
-            
-            toast({ title: 'Plan Created!', description: "Now generating your interview questions..." });
-            
-            // 2. Generate questions
-            const questionResult = await generateInterviewQuestions({
-                topic: data.topic,
-                difficulty: data.difficulty,
-                numberOfQuestions: data.numberOfQuestions,
-            });
-
-            if (!questionResult || questionResult.questions.length === 0) {
-                 toast({ title: 'Error', description: 'Could not generate interview questions. Please try again.', variant: 'destructive' });
-                 setIsSubmitting(false);
-                 return;
-            }
-            
-            // 3. Create the session with pre-generated questions
-            const newSession = {
-                userId: user.uid,
-                planId: planId,
-                interviewNumber: 1,
-                status: 'in-progress' as const,
-                questions: questionResult.questions.map((q, i) => ({ qNo: i + 1, question: q })),
-            };
-
-            const sessionId = await addInterviewSession(newSession);
-
-            toast({ title: 'Success', description: 'Your interview is ready!' });
-            router.push(`/interview-prep/session/${sessionId}`);
-
+            await updateInterviewPlan(planId, data, user.uid);
+            toast({ title: 'Success', description: 'Your interview plan has been updated.' });
+            router.push(`/job-switch-helper?tab=interview-prep`);
         } catch (error) {
             console.error(error);
-            toast({ title: 'Error', description: 'Failed to create interview plan. Check Firestore rules.', variant: 'destructive' });
+            toast({ title: 'Error', description: 'Failed to update interview plan.', variant: 'destructive' });
+        } finally {
             setIsSubmitting(false);
         }
     };
+
+    if (loading) {
+        return (
+             <div className="flex flex-col gap-8">
+                <div>
+                    <Skeleton className="h-10 w-1/2" />
+                    <Skeleton className="h-4 w-3/4 mt-2" />
+                </div>
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-6 w-1/4" />
+                        <Skeleton className="h-4 w-1/2 mt-2" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-6">
+                            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <Skeleton className="h-10 w-full" />
+                                <Skeleton className="h-10 w-full" />
+                                <Skeleton className="h-10 w-full" />
+                                <Skeleton className="h-10 w-full" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
 
     return (
         <div className="flex flex-col gap-8">
              <div>
                 <h1 className="font-headline text-3xl font-bold tracking-tight">
-                    Create New Interview Plan
+                    Edit Interview Plan
                 </h1>
                 <p className="text-muted-foreground">
-                    Define your practice goals to start your first mock interview.
+                    Adjust the details of your practice plan.
                 </p>
             </div>
             <Card>
                 <CardHeader>
                     <CardTitle>Plan Details</CardTitle>
-                    <CardDescription>Set up the parameters for your mock interview sessions.</CardDescription>
+                    <CardDescription>Update the parameters for your mock interview sessions.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -119,7 +137,7 @@ export default function NewInterviewPlanPage() {
                                     control={form.control}
                                     name="difficulty"
                                     render={({ field }) => (
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} value={field.value}>
                                             <SelectTrigger id="difficulty">
                                                 <SelectValue placeholder="Select a difficulty" />
                                             </SelectTrigger>
@@ -138,7 +156,7 @@ export default function NewInterviewPlanPage() {
                                     control={form.control}
                                     name="durationMinutes"
                                     render={({ field }) => (
-                                        <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value.toString()}>
+                                        <Select onValueChange={(value) => field.onChange(parseInt(value))} value={String(field.value)}>
                                             <SelectTrigger id="durationMinutes">
                                                 <SelectValue placeholder="Select a duration" />
                                             </SelectTrigger>
@@ -165,8 +183,8 @@ export default function NewInterviewPlanPage() {
 
                         <div className="flex justify-end">
                             <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? <Loader2 className="animate-spin" /> : <Video />}
-                                Start Plan
+                                {isSubmitting ? <Loader2 className="animate-spin" /> : <Save />}
+                                Save Changes
                             </Button>
                         </div>
                     </form>

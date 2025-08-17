@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,7 @@ export default function InterviewSessionPage() {
 
             } else {
                 toast({ title: 'Error', description: 'Interview session not found or you do not have permission to view it.', variant: 'destructive'});
-                router.push('/interview-prep');
+                router.push('/job-switch-helper?tab=interview-prep');
             }
             setLoading(false);
         }
@@ -125,7 +126,7 @@ export default function InterviewSessionPage() {
                 await updateInterviewPlan(plan.id!, { completedInterviews: (plan.completedInterviews || 0) + 1 }, user.uid);
                 
                 toast({ title: 'Evaluation Complete!', description: 'Redirecting to your summary page.'});
-                router.push(`/interview-prep/summary/${sessionId}`);
+                router.push(`/job-switch-helper/summary/${sessionId}`);
 
             } catch (error) {
                 console.error("Evaluation failed", error);
