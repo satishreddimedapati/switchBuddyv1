@@ -32,11 +32,11 @@ interface DayActivity {
     penalty: number;
 }
 
-const calculateDayActivity = (tasksForDay: DailyTask[]): Omit<DayActivity, 'date' | 'label'> => {
+const calculateDayActivity = (tasksForDay: DailyTask[], allTasks: DailyTask[]): Omit<DayActivity, 'date' | 'label'> => {
     const day = tasksForDay.length > 0 ? tasksForDay[0].date : '';
     
     // Find tasks originally scheduled for this day but were rescheduled
-    const rescheduledAwayFromThisDay = tasks.filter(t => t.rescheduled?.originalDate === day);
+    const rescheduledAwayFromThisDay = allTasks.filter(t => t.rescheduled?.originalDate === day);
     
     // Tasks currently on this day
     const tasksOnThisDay = tasksForDay;
@@ -130,11 +130,11 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
             .map(([date, tasksForDay]) => ({
                 date,
                 label: formatActivityDate(date),
-                ...calculateDayActivity(tasksForDay),
+                ...calculateDayActivity(tasksForDay, tasks),
             }))
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    }, [filteredTasks]);
+    }, [filteredTasks, tasks]);
 
     const currentBalance = useMemo(() => {
         const groupedByDate = tasks.reduce((acc, task) => {
@@ -148,7 +148,7 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
 
         const totalNetChange = Object.values(groupedByDate)
             .reduce((total, tasksForDay) => {
-                const dayActivity = calculateDayActivity(tasksForDay);
+                const dayActivity = calculateDayActivity(tasksForDay, tasks);
                 return total + dayActivity.netChange;
             }, 0);
             
@@ -277,5 +277,7 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
         </Accordion>
     )
 }
+
+    
 
     
