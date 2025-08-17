@@ -77,6 +77,7 @@ function WeekMilestone({ week }: { week: LearningRoadmap['roadmap']['weeks'][0] 
 }
 
 export function RoadmapTimeline({ roadmap }: RoadmapTimelineProps) {
+    const dotsToShow = roadmap.learnOnWeekends ? 7 : 5;
 
     return (
         <Card>
@@ -96,7 +97,7 @@ export function RoadmapTimeline({ roadmap }: RoadmapTimelineProps) {
                                     {weekIndex < roadmap.roadmap.weeks.length - 1 && (
                                         <div className="flex items-end flex-1 min-w-[300px] lg:min-w-[400px]">
                                             <div className="w-full h-1 bg-border relative flex items-end justify-between px-2">
-                                                {week.daily_tasks.slice(0, 5).map((task, dayIndex) => (
+                                                {week.daily_tasks.slice(0, dotsToShow).map((task, dayIndex) => (
                                                      <DailyCheckpoint key={dayIndex} task={task} />
                                                 ))}
                                             </div>
@@ -124,7 +125,7 @@ export function RoadmapTimeline({ roadmap }: RoadmapTimelineProps) {
                                     {/* Daily path */}
                                     <div className={cn("flex w-full items-end justify-center", weekIndex % 2 !== 0 && "flex-row-reverse")}>
                                         <div className="w-full h-1 bg-border relative flex items-end justify-evenly">
-                                            {week.daily_tasks.slice(0, 5).map((task, dayIndex) => (
+                                            {week.daily_tasks.slice(0, dotsToShow).map((task, dayIndex) => (
                                                 <DailyCheckpoint key={dayIndex} task={task} />
                                             ))}
                                         </div>
