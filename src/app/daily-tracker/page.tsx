@@ -6,17 +6,49 @@ import { MissedTasksGate } from "./MissedTasksGate";
 import { useAuth } from "@/lib/auth";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { DailyTask } from "@/lib/types";
-import { getMissedTasks } from "@/services/daily-tasks";
+import { getMissedTasks, getFocusCoinBalance } from "@/services/daily-tasks";
 import { Skeleton } from "@/components/ui/skeleton";
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { format, subDays } from 'date-fns';
 import { FocusWalletHistory } from "./FocusWalletHistory";
+import { Button } from "@/components/ui/button";
+import { Coins } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { getUserRewards } from "@/services/user-rewards";
+import type { UserReward } from "@/lib/types";
+
+function FocusWalletFAB({ balance, tasks, rewards, loading }: { balance: number, tasks: DailyTask[], rewards: UserReward[], loading: boolean }) {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg flex-col gap-1" variant="primary">
+                    <Coins className="h-6 w-6" />
+                    <span className="font-bold text-lg">{loading ? '...' : balance}</span>
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
+                <DialogHeader>
+                    <DialogTitle>Focus Wallet History</DialogTitle>
+                </DialogHeader>
+                <div className="flex-grow overflow-hidden">
+                    <FocusWalletHistory tasks={tasks} rewards={rewards} loading={loading} />
+                </div>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 
 export default function DailyTrackerPage() {
     const { user } = useAuth();
     const [missedTasks, setMissedTasks] = useState<DailyTask[]>([]);
     const [recentTasks, setRecentTasks] = useState<DailyTask[]>([]); // Will hold last 30 days of tasks
+    const [rewards, setRewards] = useState<UserReward[]>([]);
+    const [balance, setBalance] = useState(0);
+
     const [loading, setLoading] = useState(true);
     const [gateLoading, setGateLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -57,15 +89,18 @@ export default function DailyTrackerPage() {
         }
         setLoading(true);
         
-        // Fetch tasks from the last 30 days for filtering
         const thirtyDaysAgo = format(subDays(new Date(), 30), 'yyyy-MM-dd');
-        const q = query(
+        const tasksQuery = query(
             collection(db, "daily_tasks"), 
             where("userId", "==", user.uid),
             where("date", ">=", thirtyDaysAgo)
         );
+        const rewardsQuery = query(
+            collection(db, "redeemed_rewards"), 
+            where("userId", "==", user.uid)
+        );
         
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const unsubscribeTasks = onSnapshot(tasksQuery, (querySnapshot) => {
             const fetchedTasks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyTask));
             setRecentTasks(fetchedTasks);
             setLoading(false);
@@ -74,8 +109,24 @@ export default function DailyTrackerPage() {
             setLoading(false);
         });
 
-        return () => unsubscribe();
+        const unsubscribeRewards = onSnapshot(rewardsQuery, (querySnapshot) => {
+            const fetchedRewards = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserReward));
+            setRewards(fetchedRewards);
+        }, (error) => {
+            console.error("Error fetching rewards: ", error);
+        });
+
+        return () => {
+            unsubscribeTasks();
+            unsubscribeRewards();
+        };
     }, [user]);
+
+     useEffect(() => {
+        if (user) {
+            getFocusCoinBalance(user.uid).then(setBalance);
+        }
+    }, [recentTasks, rewards, user]);
     
     const todaysTasks = useMemo(() => {
         const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -121,8 +172,8 @@ export default function DailyTrackerPage() {
                         Plan your day, track your progress, and stay productive.
                     </p>
                 </div>
-                <FocusWalletHistory tasks={recentTasks} loading={loading} />
                 <DailyTrackerTabs tasks={todaysTasks} loading={loading} />
+                <FocusWalletFAB balance={balance} tasks={recentTasks} rewards={rewards} loading={loading} />
                 </>
             )}
         </div>
