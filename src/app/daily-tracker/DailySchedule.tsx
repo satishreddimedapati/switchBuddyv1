@@ -96,7 +96,7 @@ export function DailySchedule() {
           <Skeleton className="h-24 w-full" />
         </div>
       ) : (
-        <Accordion type="multiple" defaultValue={['Morning', 'Afternoon', 'Evening']} className="w-full space-y-4">
+        <Accordion type="multiple" className="w-full space-y-4">
             {Object.entries({ Morning: morning, Afternoon: afternoon, Evening: evening }).map(([period, periodTasks]) => 
                 periodTasks.length > 0 && (
                     <Card key={period}>
