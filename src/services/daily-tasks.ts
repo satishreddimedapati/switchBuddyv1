@@ -23,11 +23,35 @@ export async function getTasksForDate(date: string, userId: string): Promise<Dai
   }
 }
 
+export async function getMissedTasks(userId: string, yesterday: string): Promise<DailyTask[]> {
+    if (!userId) return [];
+
+    try {
+        // This is a more specific query to get tasks that are incomplete and not rescheduled from before today.
+        const q = query(
+            dailyTasksCollection,
+            where("userId", "==", userId),
+            where("date", "<=", yesterday),
+            where("completed", "==", false),
+        );
+        const querySnapshot = await getDocs(q);
+        // We still filter for rescheduled here because Firestore doesn't support a "not-exists" query combined with other filters.
+        const tasks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyTask));
+        return tasks.filter(task => !task.rescheduled);
+
+    } catch (error) {
+        console.error("Error fetching missed tasks:", error);
+        // This will likely fail with an index error first. The user needs to create the index.
+        throw error;
+    }
+}
+
+
 export async function getTasksForWeek(startDate: string, endDate: string, userId: string): Promise<DailyTask[]> {
   if (!userId) return [];
 
   try {
-    const q = query(dailyTasksCollection, where("date", ">=", startDate), where("date", "<=", endDate), where("userId", "==", userId));
+    const q = query(dailyTasksCollection, where("userId", "==", userId), where("date", ">=", startDate), where("date", "<=", endDate));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
