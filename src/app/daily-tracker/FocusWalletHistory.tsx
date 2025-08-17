@@ -125,12 +125,12 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
                 label: formatActivityDate(date),
                 ...calculateDayActivity(tasksForDay),
             }))
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     }, [filteredTasks]);
 
     const currentBalance = useMemo(() => {
-         const groupedByDate = tasks.reduce((acc, task) => {
+        const groupedByDate = tasks.reduce((acc, task) => {
             const date = task.date;
             if (!acc[date]) {
                 acc[date] = [];
@@ -141,8 +141,13 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
 
         const totalNetChange = Object.values(groupedByDate)
             .reduce((total, tasksForDay) => {
-                const { netChange } = calculateDayActivity(tasksForDay);
-                return total + netChange;
+                // Ensure we only calculate net change for past/today's tasks for balance
+                const taskDate = startOfDay(new Date(tasksForDay[0].date));
+                if (isBefore(taskDate, new Date()) || isToday(taskDate)) {
+                    const { netChange } = calculateDayActivity(tasksForDay);
+                    return total + netChange;
+                }
+                return total;
             }, 0);
             
         return STARTING_BALANCE + totalNetChange;
@@ -186,7 +191,7 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
                         <p className="text-muted-foreground">No activity for the selected period.</p>
                     </div>
                 ) : (
-                    <Accordion type="single" defaultValue={activityByDay[0]?.date} collapsible className="w-full space-y-2">
+                    <Accordion type="single" defaultValue={activityByDay[activityByDay.length -1]?.date} collapsible className="w-full space-y-2">
                         {activityByDay.map(day => (
                             <AccordionItem key={day.date} value={day.date} className="border-b-0">
                                 <Card className="bg-muted/50">
@@ -226,6 +231,7 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
                                                             <Badge variant="outline" className="font-mono text-green-600">+{day.bonus}</Badge>
                                                         </div>
                                                     )}
+                                                     {day.completedTasksList.length === 0 && day.bonus === 0 && <p className="text-xs text-muted-foreground">No credits earned this day.</p>}
                                                 </AccordionContent>
                                             </AccordionItem>
                                             {day.debits > 0 && (
