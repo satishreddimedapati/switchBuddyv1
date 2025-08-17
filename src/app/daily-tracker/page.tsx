@@ -4,19 +4,19 @@
 import { DailyTrackerTabs } from "./DailyTrackerTabs";
 import { MissedTasksGate } from "./MissedTasksGate";
 import { useAuth } from "@/lib/auth";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import type { DailyTask } from "@/lib/types";
 import { getMissedTasks } from "@/services/daily-tasks";
 import { Skeleton } from "@/components/ui/skeleton";
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { format } from 'date-fns';
-import { FocusWallet } from "./FocusWallet";
+import { format, subDays } from 'date-fns';
+import { FocusWalletHistory } from "./FocusWalletHistory";
 
 export default function DailyTrackerPage() {
     const { user } = useAuth();
     const [missedTasks, setMissedTasks] = useState<DailyTask[]>([]);
-    const [todaysTasks, setTodaysTasks] = useState<DailyTask[]>([]);
+    const [recentTasks, setRecentTasks] = useState<DailyTask[]>([]); // Will hold last 7 days of tasks
     const [loading, setLoading] = useState(true);
     const [gateLoading, setGateLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -56,20 +56,32 @@ export default function DailyTrackerPage() {
             return;
         }
         setLoading(true);
-        const today = format(new Date(), 'yyyy-MM-dd');
-        const q = query(collection(db, "daily_tasks"), where("date", "==", today), where("userId", "==", user.uid));
+        
+        // Fetch tasks from the last 7 days
+        const sevenDaysAgo = format(subDays(new Date(), 7), 'yyyy-MM-dd');
+        const q = query(
+            collection(db, "daily_tasks"), 
+            where("userId", "==", user.uid),
+            where("date", ">=", sevenDaysAgo)
+        );
         
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const fetchedTasks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyTask));
-            setTodaysTasks(fetchedTasks);
+            setRecentTasks(fetchedTasks);
             setLoading(false);
         }, (error) => {
-            console.error("Error fetching today's tasks: ", error);
+            console.error("Error fetching recent tasks: ", error);
             setLoading(false);
         });
 
         return () => unsubscribe();
     }, [user]);
+    
+    const todaysTasks = useMemo(() => {
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        return recentTasks.filter(task => task.date === todayStr);
+    }, [recentTasks]);
+
 
     const handleGateCleared = () => {
         fetchMissedTasks();
@@ -109,9 +121,7 @@ export default function DailyTrackerPage() {
                         Plan your day, track your progress, and stay productive.
                     </p>
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                   <FocusWallet tasks={todaysTasks} />
-                </div>
+                <FocusWalletHistory tasks={recentTasks} loading={loading} />
                 <DailyTrackerTabs tasks={todaysTasks} loading={loading} />
                 </>
             )}
