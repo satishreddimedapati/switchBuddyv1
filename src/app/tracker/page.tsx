@@ -1,3 +1,4 @@
+
 "use client"
 
 import { AddJobApplicationForm } from "@/components/tracker/AddJobApplicationForm";
@@ -7,11 +8,14 @@ import { useAuth } from "@/lib/auth";
 import { useEffect, useState, useCallback } from "react";
 import type { JobApplication } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileJobTracker } from "@/components/tracker/MobileJobTracker";
 
 export default function TrackerPage() {
   const { user } = useAuth();
   const [jobApplications, setJobApplications] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
 
   const fetchJobs = useCallback(async () => {
     if (user) {
@@ -35,6 +39,10 @@ export default function TrackerPage() {
     fetchJobs();
   }, [fetchJobs]);
 
+  const handleJobUpdate = () => {
+    fetchJobs();
+  }
+
   return (
       <div className="flex flex-col h-full">
          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -57,7 +65,11 @@ export default function TrackerPage() {
                 <Skeleton className="h-[500px] w-full sm:w-72 hidden lg:block" />
              </div>
           ) : (
-            <KanbanBoard initialData={jobApplications} onBoardChange={setJobApplications} />
+            isMobile ? (
+              <MobileJobTracker initialData={jobApplications} onJobUpdated={handleJobUpdate} />
+            ) : (
+              <KanbanBoard initialData={jobApplications} onBoardChange={setJobApplications} />
+            )
           )}
         </div>
       </div>
