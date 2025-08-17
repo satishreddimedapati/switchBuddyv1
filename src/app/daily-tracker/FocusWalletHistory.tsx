@@ -4,7 +4,7 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import type { DailyTask, UserReward } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowDown, ArrowUp, Coins, CheckCircle, XCircle, Gift } from 'lucide-react';
+import { ArrowDown, ArrowUp, Coins, CheckCircle, XCircle, Gift, ShoppingBag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -13,6 +13,8 @@ import { format, isToday, isYesterday, startOfDay, endOfDay, startOfWeek, endOfW
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/lib/auth';
 import { getUserRewards } from '@/services/user-rewards';
+import { Button } from '@/components/ui/button';
+import { PurchasedRewardsSummary } from './PurchasedRewardsSummary';
 
 
 const STARTING_BALANCE = 0;
@@ -82,6 +84,7 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
     const { user } = useAuth();
     const [filter, setFilter] = useState('this-week');
     const [userRewards, setUserRewards] = useState<UserReward[]>([]);
+    const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
      const fetchRewards = useCallback(async () => {
         if (!user) return;
@@ -205,7 +208,7 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
                         </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-6 pb-6">
-                        <div className="pb-4">
+                        <div className="pb-4 flex flex-wrap gap-2 items-center">
                              <Select value={filter} onValueChange={setFilter}>
                                 <SelectTrigger className="w-full sm:w-[180px]">
                                     <SelectValue placeholder="Select a range" />
@@ -216,6 +219,19 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
                                     <SelectItem value="this-month">This Month</SelectItem>
                                 </SelectContent>
                             </Select>
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsSummaryOpen(true)}
+                                disabled={filteredData.rewards.length === 0}
+                            >
+                                <ShoppingBag className="mr-2 h-4 w-4" />
+                                View Purchases ({filteredData.rewards.length})
+                            </Button>
+                             <PurchasedRewardsSummary 
+                                isOpen={isSummaryOpen} 
+                                onOpenChange={setIsSummaryOpen}
+                                rewards={filteredData.rewards} 
+                            />
                         </div>
                        
                         {activityByDay.length === 0 ? (
@@ -311,3 +327,5 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
         </Accordion>
     )
 }
+
+    
