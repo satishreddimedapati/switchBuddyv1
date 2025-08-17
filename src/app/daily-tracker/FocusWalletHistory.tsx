@@ -128,7 +128,6 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
     }, [filteredTasks]);
 
     const currentBalance = useMemo(() => {
-        // Group all tasks by date to calculate total balance, not just filtered ones.
         const groupedByDate = tasks.reduce((acc, task) => {
             const date = task.date;
             if (!acc[date]) {
@@ -138,7 +137,6 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
             return acc;
         }, {} as Record<string, DailyTask[]>);
 
-        // Calculate net change for each day and sum it up.
         const totalNetChange = Object.values(groupedByDate)
             .reduce((total, tasksForDay) => {
                 const { netChange } = calculateDayActivity(tasksForDay);
@@ -161,105 +159,114 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                    <div>
-                        <CardTitle className="flex items-center gap-2"><Coins /> Focus Wallet History</CardTitle>
-                        <CardDescription>Your productivity log. Current Balance: <span className="font-bold">{currentBalance} 🧘</span></CardDescription>
-                    </div>
-                    <Select value={filter} onValueChange={setFilter}>
-                        <SelectTrigger className="w-full sm:w-[180px]">
-                            <SelectValue placeholder="Select a range" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="today">Today</SelectItem>
-                            <SelectItem value="this-week">This Week</SelectItem>
-                            <SelectItem value="this-month">This Month</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </CardHeader>
-            <CardContent>
-                {activityByDay.length === 0 ? (
-                    <div className="text-center py-10 border rounded-lg">
-                        <p className="text-muted-foreground">No activity for the selected period.</p>
-                    </div>
-                ) : (
-                    <Accordion type="single" defaultValue={activityByDay[activityByDay.length -1]?.date} collapsible className="w-full space-y-2">
-                        {activityByDay.map(day => (
-                            <AccordionItem key={day.date} value={day.date} className="border-b-0">
-                                <Card className="bg-muted/50">
-                                    <AccordionTrigger className="p-4 hover:no-underline">
-                                        <div className="w-full flex justify-between items-center text-sm sm:text-base">
-                                            <p className="font-semibold">{day.label}</p>
-                                            <div className="flex items-center gap-4">
-                                                <Badge variant="outline" className="font-mono bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">+{day.credits}</Badge>
-                                                <Badge variant="outline" className="font-mono bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300">-{day.debits}</Badge>
-                                                <Badge className={cn(
-                                                    day.netChange > 0 && "bg-green-600",
-                                                    day.netChange < 0 && "bg-red-600",
-                                                )}>
-                                                    Net: {day.netChange > 0 ? `+${day.netChange}` : day.netChange}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent className="px-4 pb-4">
-                                    <Accordion type="multiple" className="w-full space-y-2">
-                                            <AccordionItem value="credits">
-                                                <AccordionTrigger className="p-3 bg-background rounded-md text-base">
-                                                    <span className="flex items-center gap-2 font-semibold text-green-600"><ArrowUp /> Credits Earned (+{day.credits})</span>
-                                                </AccordionTrigger>
-                                                <AccordionContent className="p-4 border rounded-b-md space-y-2 text-sm">
-                                                    {day.completedTasksList.map(task => (
-                                                        <div key={task.id} className="flex items-center gap-2 text-xs">
-                                                            <CheckCircle className="h-3 w-3 text-green-500" />
-                                                            <span className="flex-grow truncate">{task.title}</span>
-                                                            <Badge variant="outline" className="font-mono text-green-600">+1</Badge>
-                                                        </div>
-                                                    ))}
-                                                    {day.bonus > 0 && (
-                                                        <div className="flex items-center gap-2 text-xs font-medium pt-1 mt-1 border-t">
-                                                            <CheckCircle className="h-3 w-3 text-green-500" />
-                                                            <span className="flex-grow">Completion Bonus (&gt;80%)</span>
-                                                            <Badge variant="outline" className="font-mono text-green-600">+{day.bonus}</Badge>
-                                                        </div>
+        <Accordion type="single" collapsible className="w-full" defaultValue="focus-wallet">
+            <AccordionItem value="focus-wallet" className="border-b-0">
+                <Card>
+                    <AccordionTrigger className="p-6 hover:no-underline">
+                        <div className="flex w-full justify-between items-center">
+                            <div className="text-left">
+                                <CardTitle className="flex items-center gap-2"><Coins /> Focus Wallet</CardTitle>
+                                <CardDescription>Current Balance: <span className="font-bold">{currentBalance} 🧘</span></CardDescription>
+                            </div>
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-6">
+                        <div className="pb-4">
+                             <Select value={filter} onValueChange={setFilter}>
+                                <SelectTrigger className="w-full sm:w-[180px]">
+                                    <SelectValue placeholder="Select a range" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="today">Today</SelectItem>
+                                    <SelectItem value="this-week">This Week</SelectItem>
+                                    <SelectItem value="this-month">This Month</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                       
+                        {activityByDay.length === 0 ? (
+                            <div className="text-center py-10 border rounded-lg">
+                                <p className="text-muted-foreground">No activity for the selected period.</p>
+                            </div>
+                        ) : (
+                            <Accordion type="single" defaultValue={activityByDay[activityByDay.length -1]?.date} collapsible className="w-full space-y-2">
+                                {activityByDay.map(day => (
+                                    <AccordionItem key={day.date} value={day.date} className="border-b-0">
+                                        <Card className="bg-muted/50">
+                                            <AccordionTrigger className="p-4 hover:no-underline">
+                                                <div className="w-full flex justify-between items-center text-sm sm:text-base">
+                                                    <p className="font-semibold">{day.label}</p>
+                                                    <div className="flex items-center gap-4">
+                                                        <Badge variant="outline" className="font-mono bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">+{day.credits}</Badge>
+                                                        <Badge variant="outline" className="font-mono bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300">-{day.debits}</Badge>
+                                                        <Badge className={cn(
+                                                            day.netChange > 0 && "bg-green-600",
+                                                            day.netChange < 0 && "bg-red-600",
+                                                        )}>
+                                                            Net: {day.netChange > 0 ? `+${day.netChange}` : day.netChange}
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                            </AccordionTrigger>
+                                            <AccordionContent className="px-4 pb-4">
+                                            <Accordion type="multiple" className="w-full space-y-2">
+                                                    <AccordionItem value="credits">
+                                                        <AccordionTrigger className="p-3 bg-background rounded-md text-base">
+                                                            <span className="flex items-center gap-2 font-semibold text-green-600"><ArrowUp /> Credits Earned (+{day.credits})</span>
+                                                        </AccordionTrigger>
+                                                        <AccordionContent className="p-4 border rounded-b-md space-y-2 text-sm">
+                                                            {day.completedTasksList.map(task => (
+                                                                <div key={task.id} className="flex items-center gap-2 text-xs">
+                                                                    <CheckCircle className="h-3 w-3 text-green-500" />
+                                                                    <span className="flex-grow truncate">{task.title}</span>
+                                                                    <Badge variant="outline" className="font-mono text-green-600">+1</Badge>
+                                                                </div>
+                                                            ))}
+                                                            {day.bonus > 0 && (
+                                                                <div className="flex items-center gap-2 text-xs font-medium pt-1 mt-1 border-t">
+                                                                    <CheckCircle className="h-3 w-3 text-green-500" />
+                                                                    <span className="flex-grow">Completion Bonus (&gt;80%)</span>
+                                                                    <Badge variant="outline" className="font-mono text-green-600">+{day.bonus}</Badge>
+                                                                </div>
+                                                            )}
+                                                            {day.completedTasksList.length === 0 && day.bonus === 0 && <p className="text-xs text-muted-foreground">No credits earned this day.</p>}
+                                                        </AccordionContent>
+                                                    </AccordionItem>
+                                                    {day.debits > 0 && (
+                                                        <AccordionItem value="debits">
+                                                            <AccordionTrigger className="p-3 bg-background rounded-md text-base">
+                                                                <span className="flex items-center gap-2 font-semibold text-red-600"><ArrowDown /> Debits Incurred (-{day.debits})</span>
+                                                            </AccordionTrigger>
+                                                            <AccordionContent className="p-4 border rounded-b-md space-y-2 text-sm">
+                                                                {day.missedTasksList.map(task => (
+                                                                    <div key={task.id} className="flex items-center gap-2 text-xs">
+                                                                        <XCircle className="h-3 w-3 text-red-500" />
+                                                                        <span className="flex-grow truncate">{task.title}</span>
+                                                                        <Badge variant="outline" className="font-mono text-red-600">-1</Badge>
+                                                                    </div>
+                                                                ))}
+                                                                {day.penalty > 0 && (
+                                                                    <div className="flex items-center gap-2 text-xs font-medium pt-1 mt-1 border-t">
+                                                                        <XCircle className="h-3 w-3 text-red-500" />
+                                                                        <span className="flex-grow">Miss Penalty (&gt;50%)</span>
+                                                                        <Badge variant="outline" className="font-mono text-red-600">-{day.penalty}</Badge>
+                                                                    </div>
+                                                                )}
+                                                            </AccordionContent>
+                                                        </AccordionItem>
                                                     )}
-                                                     {day.completedTasksList.length === 0 && day.bonus === 0 && <p className="text-xs text-muted-foreground">No credits earned this day.</p>}
-                                                </AccordionContent>
-                                            </AccordionItem>
-                                            {day.debits > 0 && (
-                                                <AccordionItem value="debits">
-                                                    <AccordionTrigger className="p-3 bg-background rounded-md text-base">
-                                                        <span className="flex items-center gap-2 font-semibold text-red-600"><ArrowDown /> Debits Incurred (-{day.debits})</span>
-                                                    </AccordionTrigger>
-                                                    <AccordionContent className="p-4 border rounded-b-md space-y-2 text-sm">
-                                                        {day.missedTasksList.map(task => (
-                                                            <div key={task.id} className="flex items-center gap-2 text-xs">
-                                                                <XCircle className="h-3 w-3 text-red-500" />
-                                                                <span className="flex-grow truncate">{task.title}</span>
-                                                                <Badge variant="outline" className="font-mono text-red-600">-1</Badge>
-                                                            </div>
-                                                        ))}
-                                                        {day.penalty > 0 && (
-                                                            <div className="flex items-center gap-2 text-xs font-medium pt-1 mt-1 border-t">
-                                                                <XCircle className="h-3 w-3 text-red-500" />
-                                                                <span className="flex-grow">Miss Penalty (&gt;50%)</span>
-                                                                <Badge variant="outline" className="font-mono text-red-600">-{day.penalty}</Badge>
-                                                            </div>
-                                                        )}
-                                                    </AccordionContent>
-                                                </AccordionItem>
-                                            )}
-                                    </Accordion>
-                                    </AccordionContent>
-                                </Card>
-                            </AccordionItem>
-                        ))}
-                    </Accordion>
-                )}
-            </CardContent>
-        </Card>
+                                            </Accordion>
+                                            </AccordionContent>
+                                        </Card>
+                                    </AccordionItem>
+                                ))}
+                            </Accordion>
+                        )}
+                    </AccordionContent>
+                </Card>
+            </AccordionItem>
+        </Accordion>
     )
 }
+
+      
