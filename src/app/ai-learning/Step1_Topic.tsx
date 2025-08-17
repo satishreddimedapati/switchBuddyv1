@@ -63,11 +63,11 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
 
         // Calculate suggested duration based on user's time commitment
         const suggestedDays = Math.round(totalHours / timePerDayHours);
-        const durationText = `With ${timePerDayHours.toFixed(1)} hrs/day, this might take ~${suggestedDays} days.`;
+        const durationText = `~${suggestedDays} days`;
 
         // Calculate suggested time based on user's duration
         const suggestedHours = totalHours / durationDays;
-        const timeText = `To finish in ${durationDays} days, you'd need ~${suggestedHours.toFixed(1)} hrs/day.`;
+        const timeText = `~${suggestedHours.toFixed(1)} hrs/day`;
 
         return { durationText, timeText };
     }, [data.timePerDay, data.duration, suggestion]);
@@ -112,8 +112,15 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
 
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div className="space-y-4">
-                        <Label>Time Commitment Per Day</Label>
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-baseline">
+                            <Label>Time Commitment Per Day</Label>
+                             {suggestion && (
+                                <span className="text-xs text-muted-foreground">
+                                    (suggested duration: <span className="font-bold">{dynamicSuggestion.durationText}</span>)
+                                </span>
+                            )}
+                        </div>
                          <Slider
                             value={[data.timePerDay]}
                             onValueChange={value => onUpdate({ timePerDay: value[0] })}
@@ -123,8 +130,15 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                         />
                         <div className="text-center font-medium">{data.timePerDay / 60} hours</div>
                     </div>
-                    <div className="space-y-4">
-                        <Label>Total Duration</Label>
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-baseline">
+                            <Label>Total Duration</Label>
+                            {suggestion && (
+                                <span className="text-xs text-muted-foreground">
+                                    (needs <span className="font-bold">{dynamicSuggestion.timeText}</span>)
+                                </span>
+                            )}
+                        </div>
                          <Slider
                             value={[data.duration]}
                             onValueChange={value => onUpdate({ duration: value[0] })}
@@ -134,7 +148,7 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                         />
                         <div className="text-center font-medium">{data.duration} {data.duration > 1 ? 'days' : 'day'}</div>
                     </div>
-                     <div className="space-y-4">
+                     <div className="space-y-2">
                         <Label>Start Date</Label>
                         <Popover>
                             <PopoverTrigger asChild>
@@ -160,12 +174,6 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                         </Popover>
                     </div>
                 </div>
-                 {suggestion && (
-                    <div className="text-center text-sm text-muted-foreground p-3 bg-muted/50 rounded-md space-y-1">
-                        <p>{dynamicSuggestion.durationText}</p>
-                        <p>{dynamicSuggestion.timeText}</p>
-                    </div>
-                 )}
             </CardContent>
         </Card>
     );
