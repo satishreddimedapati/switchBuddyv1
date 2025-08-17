@@ -38,7 +38,7 @@ interface DayActivity {
 }
 
 const calculateDayActivity = (tasksForDay: DailyTask[], allTasks: DailyTask[], rewardsForDay: UserReward[]): Omit<DayActivity, 'date' | 'label'> => {
-    const day = tasksForDay.length > 0 ? tasksForDay[0].date : (rewardsForDay.length > 0 ? format(parseISO(rewardsForDay[0].redeemedAt), 'yyyy-MM-dd') : '');
+    const day = tasksForDay.length > 0 ? tasksForDay[0].date : (rewardsForDay.length > 0 && rewardsForDay[0].redeemedAt ? format(parseISO(rewardsForDay[0].redeemedAt), 'yyyy-MM-dd') : '');
     
     const rescheduledAwayFromThisDay = allTasks.filter(t => t.rescheduled?.originalDate === day);
     const tasksOnThisDay = tasksForDay;
@@ -61,13 +61,13 @@ const calculateDayActivity = (tasksForDay: DailyTask[], allTasks: DailyTask[], r
     const missPenalty = isPastOrToday && totalTasksForDay > 0 && (taskDebits / totalTasksForDay) >= 0.5 ? 5 : 0;
 
     const calculatedCredits = taskCredits + completionBonus;
-    const calculatedDebits = taskDebits + missPenalty;
+    const calculatedDebits = taskDebits + missPenalty + rewardDebits;
 
-    const net = calculatedCredits - calculatedDebits - rewardDebits;
+    const net = calculatedCredits - calculatedDebits;
 
     return {
         credits: calculatedCredits,
-        debits: calculatedDebits + rewardDebits,
+        debits: calculatedDebits,
         netChange: net,
         completedTasksList: completedOnThisDay,
         missedTasksList: allMissedAndRescheduled,
@@ -118,9 +118,9 @@ export function FocusWalletHistory({ tasks, rewards, loading }: FocusWalletHisto
         });
 
         const filteredRewards = rewards.filter(reward => {
-            if (typeof reward.redeemedAt !== 'string') return false; // Guard against non-string values
+            if (typeof reward.redeemedAt !== 'string' || !reward.redeemedAt) return false;
             const rewardDate = parseISO(reward.redeemedAt);
-            if (!isValid(rewardDate)) return false; // Guard against invalid dates
+            if (!isValid(rewardDate)) return false; 
             return rewardDate >= startDate && rewardDate <= endDate;
         });
 
@@ -140,7 +140,7 @@ export function FocusWalletHistory({ tasks, rewards, loading }: FocusWalletHisto
         });
 
         filteredData.rewards.forEach(reward => {
-             if (typeof reward.redeemedAt !== 'string') return;
+             if (typeof reward.redeemedAt !== 'string' || !reward.redeemedAt) return;
             const date = format(parseISO(reward.redeemedAt), 'yyyy-MM-dd');
              if (!groupedData[date]) {
                 groupedData[date] = { tasks: [], rewards: [] };
@@ -224,63 +224,57 @@ export function FocusWalletHistory({ tasks, rewards, loading }: FocusWalletHisto
                                                 </div>
                                             </div>
                                         </AccordionTrigger>
-                                        <AccordionContent className="px-4 pb-4">
-                                        <Accordion type="multiple" defaultValue={['credits']} className="w-full space-y-2">
-                                                {day.credits > 0 && (
-                                                    <AccordionItem value="credits">
-                                                        <AccordionTrigger className="p-3 bg-background rounded-md text-base">
-                                                            <span className="flex items-center gap-2 font-semibold text-green-600"><ArrowUp /> Credits Earned (+{day.credits})</span>
-                                                        </AccordionTrigger>
-                                                        <AccordionContent className="p-4 border rounded-b-md space-y-2 text-sm">
-                                                            {day.completedTasksList.map(task => (
-                                                                <div key={task.id} className="flex items-center gap-2 text-xs">
-                                                                    <CheckCircle className="h-3 w-3 text-green-500" />
-                                                                    <span className="flex-grow truncate">{task.title}</span>
-                                                                    <Badge variant="outline" className="font-mono text-green-600">+1</Badge>
-                                                                </div>
-                                                            ))}
-                                                            {day.bonus > 0 && (
-                                                                <div className="flex items-center gap-2 text-xs font-medium pt-1 mt-1 border-t">
-                                                                    <CheckCircle className="h-3 w-3 text-green-500" />
-                                                                    <span className="flex-grow">Completion Bonus (>80%)</span>
-                                                                    <Badge variant="outline" className="font-mono text-green-600">+{day.bonus}</Badge>
-                                                                </div>
-                                                            )}
-                                                        </AccordionContent>
-                                                    </AccordionItem>
-                                                )}
-                                                
-                                                {day.debits > 0 && (
-                                                    <AccordionItem value="debits">
-                                                        <AccordionTrigger className="p-3 bg-background rounded-md text-base">
-                                                            <span className="flex items-center gap-2 font-semibold text-red-600"><ArrowDown /> Debits Incurred (-{day.debits})</span>
-                                                        </AccordionTrigger>
-                                                        <AccordionContent className="p-4 border rounded-b-md space-y-2 text-sm">
-                                                            {day.missedTasksList.map(task => (
-                                                                <div key={task.id} className="flex items-center gap-2 text-xs">
-                                                                    <XCircle className="h-3 w-3 text-red-500" />
-                                                                    <span className="flex-grow truncate">{task.title}</span>
-                                                                    <Badge variant="outline" className="font-mono text-red-600">-1</Badge>
-                                                                </div>
-                                                            ))}
-                                                            {day.penalty > 0 && (
-                                                                <div className="flex items-center gap-2 text-xs font-medium pt-1 mt-1 border-t">
-                                                                    <XCircle className="h-3 w-3 text-red-500" />
-                                                                    <span className="flex-grow">Miss Penalty (>50%)</span>
-                                                                    <Badge variant="outline" className="font-mono text-red-600">-{day.penalty}</Badge>
-                                                                </div>
-                                                            )}
-                                                            {day.redeemedRewardsList.map(reward => (
-                                                                <div key={reward.id} className="flex items-center gap-2 text-xs pt-1 mt-1 border-t">
-                                                                    <Gift className="h-3 w-3 text-red-500" />
-                                                                    <span className="flex-grow truncate">Redeemed: {reward.name}</span>
-                                                                    <Badge variant="outline" className="font-mono text-red-600">-{reward.cost}</Badge>
-                                                                </div>
-                                                            ))}
-                                                        </AccordionContent>
-                                                    </AccordionItem>
-                                                )}
-                                        </Accordion>
+                                        <AccordionContent className="px-4 pb-4 space-y-4">
+                                            {day.credits > 0 && (
+                                                <div className='p-3 bg-background rounded-md'>
+                                                    <h4 className="flex items-center gap-2 font-semibold text-green-600 mb-2"><ArrowUp /> Credits Earned (+{day.credits})</h4>
+                                                    <div className="p-4 border rounded-md space-y-2 text-sm bg-muted/50">
+                                                        {day.completedTasksList.map(task => (
+                                                            <div key={task.id} className="flex items-center gap-2 text-xs">
+                                                                <CheckCircle className="h-3 w-3 text-green-500" />
+                                                                <span className="flex-grow truncate">{task.title}</span>
+                                                                <Badge variant="outline" className="font-mono text-green-600">+1</Badge>
+                                                            </div>
+                                                        ))}
+                                                        {day.bonus > 0 && (
+                                                            <div className="flex items-center gap-2 text-xs font-medium pt-1 mt-1 border-t">
+                                                                <CheckCircle className="h-3 w-3 text-green-500" />
+                                                                <span className="flex-grow">Completion Bonus (&gt;80%)</span>
+                                                                <Badge variant="outline" className="font-mono text-green-600">+{day.bonus}</Badge>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            {day.debits > 0 && (
+                                                <div className='p-3 bg-background rounded-md'>
+                                                     <h4 className="flex items-center gap-2 font-semibold text-red-600 mb-2"><ArrowDown /> Debits Incurred (-{day.debits})</h4>
+                                                    <div className="p-4 border rounded-md space-y-2 text-sm bg-muted/50">
+                                                        {day.missedTasksList.map(task => (
+                                                            <div key={task.id} className="flex items-center gap-2 text-xs">
+                                                                <XCircle className="h-3 w-3 text-red-500" />
+                                                                <span className="flex-grow truncate">{task.title}</span>
+                                                                <Badge variant="outline" className="font-mono text-red-600">-1</Badge>
+                                                            </div>
+                                                        ))}
+                                                        {day.penalty > 0 && (
+                                                            <div className="flex items-center gap-2 text-xs font-medium pt-1 mt-1 border-t">
+                                                                <XCircle className="h-3 w-3 text-red-500" />
+                                                                <span className="flex-grow">Miss Penalty (&gt;50%)</span>
+                                                                <Badge variant="outline" className="font-mono text-red-600">-{day.penalty}</Badge>
+                                                            </div>
+                                                        )}
+                                                        {day.redeemedRewardsList.map(reward => (
+                                                            <div key={reward.id} className="flex items-center gap-2 text-xs pt-1 mt-1 border-t">
+                                                                <Gift className="h-3 w-3 text-red-500" />
+                                                                <span className="flex-grow truncate">Redeemed: {reward.name}</span>
+                                                                <Badge variant="outline" className="font-mono text-red-600">-{reward.cost}</Badge>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </AccordionContent>
                                     </Card>
                                 </AccordionItem>
@@ -291,5 +285,7 @@ export function FocusWalletHistory({ tasks, rewards, loading }: FocusWalletHisto
             </ScrollArea>
         </div>
     )
+
+    
 
     
