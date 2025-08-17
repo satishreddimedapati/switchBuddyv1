@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
-import { ChevronDown } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 
 
 interface DailyTrackerTabsProps {
@@ -80,21 +80,24 @@ export function DailyTrackerTabs({ tasks, loading }: DailyTrackerTabsProps) {
   if (isMobile) {
       return (
           <div className="space-y-4">
-              <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="w-full justify-between">
-                          {sections.find(s => s.value === activeView)?.label}
-                          <ChevronDown />
-                      </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
-                      {sections.map(section => (
-                          <DropdownMenuItem key={section.value} onSelect={() => setActiveView(section.value)}>
-                              {section.label}
-                          </DropdownMenuItem>
-                      ))}
-                  </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-bold">{sections.find(s => s.value === activeView)?.label}</h2>
+                  <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                             <MoreHorizontal />
+                             <span className="sr-only">Select view</span>
+                          </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                          {sections.map(section => (
+                              <DropdownMenuItem key={section.value} onSelect={() => setActiveView(section.value)} disabled={activeView === section.value}>
+                                  {section.label}
+                              </DropdownMenuItem>
+                          ))}
+                      </DropdownMenuContent>
+                  </DropdownMenu>
+              </div>
               <div className="mt-6">
                 {renderContent(activeView)}
               </div>
