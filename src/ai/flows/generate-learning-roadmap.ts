@@ -8,6 +8,7 @@
 import { ai } from '@/ai/genkit';
 import { RoadmapGenerationInputSchema, RoadmapGenerationOutputSchema } from '@/lib/types';
 import { z } from 'zod';
+import { addDays, format } from 'date-fns';
 
 export type RoadmapGenerationInput = z.infer<typeof RoadmapGenerationInputSchema>;
 export type RoadmapGenerationOutput = z.infer<typeof RoadmapGenerationOutputSchema>;
@@ -27,6 +28,7 @@ User Inputs:
 - Time Commitment: {{{timePerDay}}} minutes per day
 - Total Duration: {{{duration}}} days
 - Start Date: {{{startDate}}}
+- Learn on Weekends: {{{learnOnWeekends}}}
 - Goals: {{#each goals}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
 - Experience Level: {{{experienceLevel}}}
 - Tech Focus: {{#each techFocus}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
@@ -35,15 +37,14 @@ User Inputs:
 Based on these inputs, create a structured roadmap. The roadmap should be broken down into weeks. Each week should have a clear theme. Each day within the week should have a specific topic, a suggested resource type (e.g., 'Video', 'Article', 'Interactive Tutorial'), a small challenge or exercise, and a calculated date.
 
 Rules:
-1. The total number of days in the plan must match the user's selected 'duration'.
-2. Group the daily tasks into weeks (7 days per week). The last week might have fewer than 7 days.
-3. The daily tasks should be realistic for the user's specified time commitment.
+1. The total number of daily tasks must match the user's selected 'duration'.
+2. If 'learnOnWeekends' is false, the calculated dates for tasks must skip Saturdays and Sundays.
+3. Group the daily tasks into weeks.
 4. The content and complexity must be appropriate for the user's experience level.
 5. The resource types and challenges should align with the user's preferred learning style.
 6. If the learning style is Video, suggest a conceptual YouTube link. If it's reading, suggest a blog or documentation link.
-7. The goals should influence the focus of the roadmap. A 'Job Switch' goal should prioritize practical, interview-centric topics. A 'Startup Project' goal should include project-building milestones.
-8. For each daily_task, calculate and include a 'date' field in "YYYY-MM-DD" format. The first task should have the provided 'startDate', and each subsequent task should be one day after the previous one.
-9. The 'day' field should be the day of the week, e.g., 'Monday'.
+7. For each daily_task, calculate and include a 'date' field in "YYYY-MM-DD" format. The date calculation must start from the provided 'startDate' and respect the 'learnOnWeekends' preference.
+8. The 'day' field should be the day of the week, e.g., 'Monday'.
 
 Generate the output as a valid JSON object matching the defined schema.
 `,
@@ -57,6 +58,24 @@ const generateLearningRoadmapFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await prompt(input);
+    
+    // Post-process dates to ensure they are correct according to weekend preference
+    if (output && output.weeks) {
+        let currentDate = new Date(input.startDate);
+        output.weeks.forEach(week => {
+            week.daily_tasks.forEach(task => {
+                 // Find the next valid learning day
+                if (!input.learnOnWeekends) {
+                    while (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
+                        currentDate = addDays(currentDate, 1);
+                    }
+                }
+                task.date = format(currentDate, 'yyyy-MM-dd');
+                currentDate = addDays(currentDate, 1);
+            });
+        });
+    }
+
     return output!;
   }
 );

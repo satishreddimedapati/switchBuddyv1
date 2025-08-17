@@ -57,10 +57,11 @@ export async function addLearningRoadmap(roadmapData: Omit<LearningRoadmap, 'id'
     }
     
     // Convert Date object to Timestamp for Firestore
-    const { startDate, ...restOfData } = roadmapData;
+    const { startDate, endDate, ...restOfData } = roadmapData;
     const dataToStore = {
         ...restOfData,
         startDate: new Date(startDate), // Ensure it's a Date object for Timestamp conversion
+        endDate: new Date(endDate),
         createdAt: serverTimestamp(),
     };
 

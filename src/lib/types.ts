@@ -520,6 +520,8 @@ export const LearningRoadmapSchema = z.object({
   timePerDay: z.number(), // in minutes
   duration: z.number(), // in days
   startDate: z.string(), // ISO String
+  endDate: z.string(), // ISO String
+  learnOnWeekends: z.boolean(),
   goals: z.array(z.string()),
   experienceLevel: z.string(),
   techFocus: z.array(z.string()),
@@ -530,13 +532,16 @@ export const LearningRoadmapSchema = z.object({
 export type LearningRoadmap = z.infer<typeof LearningRoadmapSchema>;
 
 export function toSerializableLearningRoadmap(docData: any): LearningRoadmap {
-    const { createdAt, startDate, ...rest } = docData;
+    const { createdAt, startDate, endDate, ...rest } = docData;
     const serializable: any = {
         ...rest,
         createdAt: (createdAt as Timestamp)?.toDate().toISOString(),
     };
     if (startDate) {
         serializable.startDate = (startDate.toDate ? (startDate as Timestamp).toDate() : new Date(startDate)).toISOString();
+    }
+    if (endDate) {
+        serializable.endDate = (endDate.toDate ? (endDate as Timestamp).toDate() : new Date(endDate)).toISOString();
     }
     return serializable as LearningRoadmap;
 }
@@ -547,11 +552,10 @@ export const RoadmapGenerationInputSchema = z.object({
     timePerDay: z.number(),
     duration: z.number(),
     startDate: z.string().describe("The start date for the roadmap in YYYY-MM-DD format."),
+    learnOnWeekends: z.boolean(),
     goals: z.array(z.string()),
     experienceLevel: z.string(),
     techFocus: z.array(z.string()),
     learningStyle: z.string(),
 });
 export type RoadmapGenerationInput = z.infer<typeof RoadmapGenerationInputSchema>;
-
-    

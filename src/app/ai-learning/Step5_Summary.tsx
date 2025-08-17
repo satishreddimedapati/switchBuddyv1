@@ -45,9 +45,10 @@ export function Step5_Summary({ data, onRoadmapCreated }: Step5Props) {
             }
 
             await addLearningRoadmap({
-                userId: user.uid,
                 ...data,
+                userId: user.uid,
                 startDate: data.startDate.toISOString(), // Store as ISO string
+                endDate: data.endDate.toISOString(), // Store as ISO string
                 roadmap: aiResult,
             });
 
@@ -79,7 +80,8 @@ export function Step5_Summary({ data, onRoadmapCreated }: Step5Props) {
                     <SummaryItem label="Tech Focus" value={<div className="flex flex-wrap gap-1">{data.techFocus.map(t => <Badge key={t} variant="secondary">{t}</Badge>)}</div>} />
                     <SummaryItem label="Learning Style" value={data.learningStyle} />
                     <SummaryItem label="Commitment" value={`${data.timePerDay / 60} hrs/day for ${data.duration} days`} />
-                    <SummaryItem label="Start Date" value={format(data.startDate, 'PPP')} />
+                    <SummaryItem label="Schedule" value={`${format(data.startDate, 'PPP')} to ${format(data.endDate, 'PPP')}`} />
+                    <SummaryItem label="Weekends" value={<Badge variant={data.learnOnWeekends ? "default" : "secondary"}>{data.learnOnWeekends ? "Yes" : "No"}</Badge>} />
                 </div>
                  {error && (
                     <Alert variant="destructive">

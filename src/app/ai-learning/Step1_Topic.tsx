@@ -9,23 +9,44 @@ import type { RoadmapInputs } from './RoadmapGenerator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { CalendarIcon, Loader2, Wand2 } from 'lucide-react';
+import { format, addDays, differenceInDays, isSameDay } from 'date-fns';
+import { CalendarIcon, Loader2, Wand2, AlertTriangle } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
-import { useState, useTransition, useEffect, useMemo } from 'react';
+import { useState, useTransition, useEffect, useMemo, useCallback } from 'react';
 import { generateRoadmapSuggestions, RoadmapSuggestionOutput } from '@/ai/flows/generate-roadmap-suggestions';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Switch } from '@/components/ui/switch';
 
 interface Step1Props {
     data: RoadmapInputs;
     onUpdate: (updates: Partial<RoadmapInputs>) => void;
 }
 
+const calculateEndDate = (startDate: Date, duration: number, includeWeekends: boolean): Date => {
+    let currentDate = new Date(startDate);
+    let daysAdded = 0;
+    while (daysAdded < duration - 1) {
+        currentDate = addDays(currentDate, 1);
+        if (includeWeekends || (currentDate.getDay() !== 0 && currentDate.getDay() !== 6)) {
+            daysAdded++;
+        }
+    }
+    return currentDate;
+};
+
+
 export function Step1_Topic({ data, onUpdate }: Step1Props) {
     const { toast } = useToast();
     const [isSuggesting, startSuggestionTransition] = useTransition();
     const [suggestion, setSuggestion] = useState<RoadmapSuggestionOutput | null>(null);
+
+    const expectedEndDate = useMemo(() => {
+        return calculateEndDate(data.startDate, data.duration, data.learnOnWeekends);
+    }, [data.startDate, data.duration, data.learnOnWeekends]);
+    
+    const endDateMismatch = !isSameDay(data.endDate, expectedEndDate);
+
 
     useEffect(() => {
         if (data.topic.length > 2) {
@@ -34,15 +55,20 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                     try {
                         const res = await generateRoadmapSuggestions({ topic: data.topic });
                         setSuggestion(res);
-                        // Do not auto-apply, let the user decide.
                     } catch (error) {
                         console.error("Failed to get suggestion", error);
                     }
                 });
-            }, 1000); // Debounce for 1 second
+            }, 1000);
             return () => clearTimeout(timer);
         }
     }, [data.topic]);
+    
+    // Auto-update end date when dependencies change
+    useEffect(() => {
+        onUpdate({ endDate: expectedEndDate });
+    }, [data.startDate, data.duration, data.learnOnWeekends]);
+
     
     const applyMainSuggestion = () => {
         if(suggestion) {
@@ -61,11 +87,9 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
         const timePerDayHours = data.timePerDay / 60;
         const durationDays = data.duration;
 
-        // Calculate suggested duration based on user's time commitment
         const suggestedDays = Math.round(totalHours / timePerDayHours);
         const durationText = `~${suggestedDays} days`;
 
-        // Calculate suggested time based on user's duration
         const suggestedHours = totalHours / durationDays;
         const suggestedMinutes = Math.round(suggestedHours * 60);
         const timeText = `~${suggestedHours.toFixed(1)} hrs/day`;
@@ -82,7 +106,6 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
     
     const applyTimeSuggestion = () => {
         if (dynamicSuggestion.suggestedMinutes > 0) {
-             // Snap to nearest 15 minutes
             const snappedMinutes = Math.round(dynamicSuggestion.suggestedMinutes / 15) * 15;
             onUpdate({ timePerDay: snappedMinutes });
             toast({ title: "Time Applied!", description: `Set to ${snappedMinutes / 60} hours per day.` });
@@ -128,7 +151,7 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                 )}
 
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-2">
                         <div className="flex justify-between items-baseline">
                             <Label>Time Commitment Per Day</Label>
@@ -165,6 +188,9 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                         />
                         <div className="text-center font-medium">{data.duration} {data.duration > 1 ? 'days' : 'day'}</div>
                     </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                      <div className="space-y-2">
                         <Label>Start Date</Label>
                         <Popover>
@@ -190,7 +216,52 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                             </PopoverContent>
                         </Popover>
                     </div>
+                     <div className="space-y-2">
+                        <Label>End Date</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal",
+                                        !data.endDate && "text-muted-foreground",
+                                        endDateMismatch && "border-amber-500"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {data.endDate ? format(data.endDate, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={data.endDate}
+                                    onSelect={(date) => onUpdate({ endDate: date || new Date()})}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                    <div className="flex items-center space-x-2 pb-2">
+                        <Switch
+                            id="learn-on-weekends"
+                            checked={data.learnOnWeekends}
+                            onCheckedChange={(checked) => onUpdate({ learnOnWeekends: checked })}
+                        />
+                        <Label htmlFor="learn-on-weekends" className="cursor-pointer">Learn on Weekends?</Label>
+                    </div>
                 </div>
+
+                {endDateMismatch && (
+                    <Alert variant="destructive" className="bg-amber-50 border-amber-300 text-amber-800">
+                        <AlertTriangle className="h-4 w-4 !text-amber-600" />
+                        <AlertTitle>End Date Mismatch</AlertTitle>
+                        <AlertDescription>
+                            Your selected duration doesn&apos;t match the end date. The calculated end date is {format(expectedEndDate, "PPP")}.
+                            <Button variant="link" onClick={() => onUpdate({ endDate: expectedEndDate })} className="p-0 h-auto ml-1 text-amber-800 hover:text-amber-900">Reset to calculated date.</Button>
+                        </AlertDescription>
+                    </Alert>
+                )}
             </CardContent>
         </Card>
     );
