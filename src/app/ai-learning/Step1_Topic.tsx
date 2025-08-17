@@ -133,8 +133,8 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                         <div className="flex justify-between items-baseline">
                             <Label>Time Commitment Per Day</Label>
                              {suggestion && (
-                                <Button variant="link" size="sm" className="text-xs p-0 h-auto text-muted-foreground" onClick={applyDurationSuggestion}>
-                                   (Apply: {dynamicSuggestion.durationText})
+                                <Button variant="link" size="sm" className="text-xs p-0 h-auto text-muted-foreground" onClick={applyTimeSuggestion}>
+                                   (Apply: {dynamicSuggestion.timeText})
                                 </Button>
                             )}
                         </div>
@@ -151,8 +151,8 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                         <div className="flex justify-between items-baseline">
                             <Label>Total Duration</Label>
                             {suggestion && (
-                                <Button variant="link" size="sm" className="text-xs p-0 h-auto text-muted-foreground" onClick={applyTimeSuggestion}>
-                                    (Apply: {dynamicSuggestion.timeText})
+                                <Button variant="link" size="sm" className="text-xs p-0 h-auto text-muted-foreground" onClick={applyDurationSuggestion}>
+                                    (Apply: {dynamicSuggestion.durationText})
                                 </Button>
                             )}
                         </div>

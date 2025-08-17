@@ -536,7 +536,7 @@ export function toSerializableLearningRoadmap(docData: any): LearningRoadmap {
         createdAt: (createdAt as Timestamp)?.toDate().toISOString(),
     };
     if (startDate) {
-        serializable.startDate = (startDate as Timestamp).toDate().toISOString();
+        serializable.startDate = (startDate instanceof Timestamp ? startDate.toDate() : new Date(startDate)).toISOString();
     }
     return serializable as LearningRoadmap;
 }
