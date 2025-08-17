@@ -5,6 +5,12 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   SidebarProvider,
   Sidebar,
   SidebarHeader,
@@ -25,6 +31,7 @@ import {
   CalendarCheck,
   Loader2,
   User,
+  Settings,
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { useAuth } from '@/lib/auth';
@@ -41,16 +48,36 @@ const navItems = [
   { href: '/profile', icon: User, label: 'Profile & Rewards' },
 ];
 
+const mobileNavItems = [
+    { href: '/daily-tracker', icon: CalendarCheck, label: 'Daily Tracker' },
+    { href: '/job-switch-helper', icon: Briefcase, label: 'JobSwitch Helper' },
+    { href: '/profile', icon: User, label: 'Profile & Rewards' },
+];
+
 function AppHeader() {
     const { isMobile } = useSidebar();
     if (!isMobile) return null;
 
     return (
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
-            <SidebarTrigger className="md:hidden">
-              <PanelLeft className="h-5 w-5" />
-              <span className="sr-only">Toggle navigation menu</span>
-            </SidebarTrigger>
+             <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="md:hidden">
+                        <Settings className="h-5 w-5" />
+                        <span className="sr-only">Toggle navigation menu</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                    {mobileNavItems.map(item => (
+                        <DropdownMenuItem key={item.href} asChild>
+                             <Link href={item.href}>
+                                <item.icon className="mr-2 h-4 w-4" />
+                                <span>{item.label}</span>
+                            </Link>
+                        </DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+            </DropdownMenu>
             <div className="w-full flex-1">
               <ViewModeToggle />
             </div>
