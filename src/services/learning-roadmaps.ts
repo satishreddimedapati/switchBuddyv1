@@ -1,10 +1,11 @@
 
+
 'use server';
 
 import { db } from "@/lib/firebase";
 import type { LearningRoadmap } from "@/lib/types";
 import { toSerializableLearningRoadmap } from "@/lib/types";
-import { collection, getDocs, doc, addDoc, query, where, serverTimestamp, orderBy, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, doc, addDoc, query, where, serverTimestamp, orderBy, getDoc, updateDoc, deleteDoc, Timestamp } from "firebase/firestore";
 
 const roadmapsCollection = collection(db, "learning_roadmaps");
 
@@ -58,6 +59,8 @@ export async function addLearningRoadmap(roadmapData: Omit<LearningRoadmap, 'id'
     
     const dataToStore = {
         ...roadmapData,
+        startDate: Timestamp.fromDate(new Date(roadmapData.startDate)),
+        endDate: Timestamp.fromDate(new Date(roadmapData.endDate)),
         createdAt: serverTimestamp(),
     };
 
@@ -74,8 +77,16 @@ export async function updateLearningRoadmap(roadmapId: string, updates: Partial<
     if (!roadmapDoc.exists() || roadmapDoc.data().userId !== userId) {
         throw new Error("Permission denied or roadmap not found.");
     }
+    
+    const finalUpdates: any = { ...updates };
+    if (updates.startDate && typeof updates.startDate === 'string') {
+        finalUpdates.startDate = Timestamp.fromDate(new Date(updates.startDate));
+    }
+    if (updates.endDate && typeof updates.endDate === 'string') {
+        finalUpdates.endDate = Timestamp.fromDate(new Date(updates.endDate));
+    }
 
-    await updateDoc(roadmapRef, updates);
+    await updateDoc(roadmapRef, finalUpdates);
 }
 
 export async function deleteLearningRoadmap(roadmapId: string, userId: string) {

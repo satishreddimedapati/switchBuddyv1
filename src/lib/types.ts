@@ -551,12 +551,19 @@ export const LearningRoadmapSchema = z.object({
 export type LearningRoadmap = z.infer<typeof LearningRoadmapSchema>;
 
 export function toSerializableLearningRoadmap(docData: any): LearningRoadmap {
-    const { createdAt, ...rest } = docData;
+    const { createdAt, startDate, endDate, ...rest } = docData;
     const serializable: any = { ...rest };
-    if (createdAt && createdAt.toDate) {
+
+    if (createdAt?.toDate) {
       serializable.createdAt = (createdAt as Timestamp).toDate().toISOString();
     }
-    // No need to check for startDate or endDate here as they are stored as strings
+    if (startDate?.toDate) {
+      serializable.startDate = (startDate as Timestamp).toDate().toISOString();
+    }
+    if (endDate?.toDate) {
+      serializable.endDate = (endDate as Timestamp).toDate().toISOString();
+    }
+    
     return serializable as LearningRoadmap;
 }
 
