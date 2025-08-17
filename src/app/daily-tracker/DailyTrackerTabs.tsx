@@ -1,31 +1,40 @@
+
 'use client';
 
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
 import {DailySchedule} from './DailySchedule';
 import {WeeklyTimetable} from './WeeklyTimetable';
 import {AiScheduler} from './AiScheduler';
-import { RescheduledTasks } from './RescheduledTasks';
+import { MissedAndRescheduledTasks } from './MissedAndRescheduledTasks';
 import type { DailyTask } from '@/lib/types';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { subDays, format } from 'date-fns';
 
 export function DailyTrackerTabs() {
   const { user } = useAuth();
-  const [rescheduledTasks, setRescheduledTasks] = useState<DailyTask[]>([]);
+  const [pastTasks, setPastTasks] = useState<DailyTask[]>([]);
 
   useEffect(() => {
     if (!user) return;
+    
+    // Fetch tasks from the last 7 days that are either rescheduled or were missed
+    const sevenDaysAgo = format(subDays(new Date(), 7), 'yyyy-MM-dd');
+
     const q = query(
       collection(db, 'daily_tasks'),
       where('userId', '==', user.uid),
-      where('rescheduled', '!=', null)
+      where('date', '>=', sevenDaysAgo)
     );
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
-        const tasks = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as DailyTask);
-        setRescheduledTasks(tasks);
+        const allPastWeekTasks = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as DailyTask);
+        const relevantTasks = allPastWeekTasks.filter(task => task.rescheduled || (!task.completed && task.date < format(new Date(), 'yyyy-MM-dd')));
+        setPastTasks(relevantTasks);
     });
+
     return () => unsubscribe();
   }, [user]);
 
@@ -49,7 +58,7 @@ export function DailyTrackerTabs() {
           <TabsTrigger value="daily">Daily</TabsTrigger>
           <TabsTrigger value="weekly">Weekly</TabsTrigger>
           <TabsTrigger value="ai-scheduler">AI Smart Scheduler</TabsTrigger>
-          <TabsTrigger value="rescheduled">Rescheduled</TabsTrigger>
+          <TabsTrigger value="missed-rescheduled">Missed/Rescheduled</TabsTrigger>
         </TabsList>
         <TabsContent value="daily" className="flex-grow mt-4">
           <DailySchedule />
@@ -60,8 +69,8 @@ export function DailyTrackerTabs() {
         <TabsContent value="ai-scheduler" className="flex-grow mt-4">
           <AiScheduler />
         </TabsContent>
-         <TabsContent value="rescheduled" className="flex-grow mt-4">
-          <RescheduledTasks tasks={rescheduledTasks} />
+         <TabsContent value="missed-rescheduled" className="flex-grow mt-4">
+          <MissedAndRescheduledTasks tasks={pastTasks} />
         </TabsContent>
       </Tabs>
     </>

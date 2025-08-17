@@ -12,19 +12,31 @@ interface MissedAndRescheduledTasksProps {
 }
 
 export function MissedAndRescheduledTasks({ tasks }: MissedAndRescheduledTasksProps) {
-    const sortedTasks = [...tasks].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const sortedTasks = [...tasks].sort((a,b) => {
+        const dateA = new Date(a.rescheduled?.originalDate || a.date);
+        const dateB = new Date(b.rescheduled?.originalDate || b.date);
+        return dateB.getTime() - dateA.getTime();
+    });
 
     if (tasks.length === 0) {
         return (
-            <div className="text-center py-10 border rounded-lg">
-                <p className="text-muted-foreground">No missed or rescheduled tasks in the last 7 days.</p>
-            </div>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Missed & Rescheduled Tasks</CardTitle>
+                    <CardDescription>A history of all tasks you have missed or rescheduled in the past week.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="text-center py-10 border rounded-lg">
+                        <p className="text-muted-foreground">No missed or rescheduled tasks in the last 7 days.</p>
+                    </div>
+                </CardContent>
+            </Card>
         )
     }
 
     const getStatus = (task: DailyTask) => {
         if (task.rescheduled) {
-            return <Badge variant="outline">Rescheduled</Badge>;
+            return <Badge variant={task.completed ? "default" : "outline"} className={task.completed ? "bg-green-600" : ""}>{task.completed ? "Completed" : "Rescheduled"}</Badge>;
         }
         if (!task.completed) {
             return <Badge variant="destructive">Missed</Badge>;
@@ -35,7 +47,7 @@ export function MissedAndRescheduledTasks({ tasks }: MissedAndRescheduledTasksPr
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Missed & Rescheduled Log</CardTitle>
+                <CardTitle>Missed & Rescheduled Tasks</CardTitle>
                 <CardDescription>A history of all tasks you have missed or rescheduled in the past week.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -47,7 +59,7 @@ export function MissedAndRescheduledTasks({ tasks }: MissedAndRescheduledTasksPr
                                     <p className="font-semibold">{task.title}</p>
                                     <p className="text-sm text-muted-foreground">
                                         {task.rescheduled 
-                                            ? `Originally for ${format(new Date(task.rescheduled.originalDate), 'MMM d')}, moved to ${format(new Date(task.date), 'MMM d')}`
+                                            ? <>Originally for <span className='line-through'>{format(new Date(task.rescheduled.originalDate), 'MMM d')}</span>, moved to {format(new Date(task.date), 'MMM d')}</>
                                             : `Scheduled for ${format(new Date(task.date), 'MMM d')}`
                                         }
                                     </p>
@@ -62,7 +74,7 @@ export function MissedAndRescheduledTasks({ tasks }: MissedAndRescheduledTasksPr
                               {!task.rescheduled && !task.completed && (
                                  <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded-md flex items-center gap-2 text-amber-700 dark:text-amber-300">
                                     <AlertTriangle className="h-4 w-4" />
-                                    <p className="text-xs font-semibold">This task needs to be actioned from the gate.</p>
+                                    <p className="text-xs font-semibold">This task needs to be actioned from the accountability gate.</p>
                                  </div>
                               )}
                         </div>

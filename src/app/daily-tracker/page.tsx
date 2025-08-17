@@ -44,9 +44,9 @@ export default function DailyTrackerPage() {
         fetchMissedTasks();
     }, [fetchMissedTasks]);
 
+    // This function will be called from the gate when all tasks are handled.
     const handleGateCleared = () => {
-        // Refetch to confirm all tasks are handled
-        fetchMissedTasks();
+        setMissedTasks([]);
     };
     
     if (loading) {

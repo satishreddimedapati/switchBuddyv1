@@ -10,7 +10,7 @@ import { format, addDays } from 'date-fns';
 import { updateTask } from '@/services/daily-tasks';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
-import { AlertTriangle, CalendarCheck, CalendarClock, Loader2 } from 'lucide-react';
+import { AlertTriangle, CalendarClock, Loader2 } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 interface MissedTaskItemProps {
