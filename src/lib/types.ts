@@ -292,8 +292,8 @@ export const GenerateInterviewPlanOutputSchema = z.object({
     topic: z.string().describe("The suggested topic for the interview plan."),
     difficulty: z.enum(['Easy', 'Medium', 'Hard']).describe("The suggested difficulty for the plan."),
     questions: z.string().describe("A newline-separated string of suggested interview questions."),
-    durationMinutes: z.coerce.number().int().min(1).optional(),
-    totalInterviews: z.coerce.number().int().min(1).optional(),
+    durationMinutes: z.coerce.number().int().optional(),
+    totalInterviews: z.coerce.number().int().optional(),
 });
 export type GenerateInterviewPlanOutput = z.infer<typeof GenerateInterviewPlanOutputSchema>;
 
@@ -536,7 +536,7 @@ export function toSerializableLearningRoadmap(docData: any): LearningRoadmap {
         createdAt: (createdAt as Timestamp)?.toDate().toISOString(),
     };
     if (startDate) {
-        serializable.startDate = (startDate instanceof Timestamp ? startDate.toDate() : new Date(startDate)).toISOString();
+        serializable.startDate = (startDate.toDate ? (startDate as Timestamp).toDate() : new Date(startDate)).toISOString();
     }
     return serializable as LearningRoadmap;
 }
@@ -553,3 +553,5 @@ export const RoadmapGenerationInputSchema = z.object({
     learningStyle: z.string(),
 });
 export type RoadmapGenerationInput = z.infer<typeof RoadmapGenerationInputSchema>;
+
+    
