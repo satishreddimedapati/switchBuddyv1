@@ -21,13 +21,11 @@ interface TopicHistoryDisplayProps {
 
 function HistoryCard({ item }: { item: TopicHistory }) {
     return (
-        <Card className="h-full min-h-80">
-            <CardContent className="flex flex-col items-center justify-center p-6 h-full text-center">
-                <div className="text-5xl mb-4">{item.emoji}</div>
-                <h3 className="text-xl font-bold">{item.title}</h3>
-                <p className="text-muted-foreground mt-2">{item.fact}</p>
-            </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center text-center p-6 h-full min-h-80 bg-muted/50 rounded-lg">
+            <div className="text-5xl mb-4">{item.emoji}</div>
+            <h3 className="text-xl font-bold">{item.title}</h3>
+            <p className="text-muted-foreground mt-2">{item.fact}</p>
+        </div>
     );
 }
 
@@ -44,19 +42,23 @@ export function TopicHistoryDisplay({ history, topic }: TopicHistoryDisplayProps
                     <p className="text-sm text-muted-foreground">Fetching interesting facts...</p>
                 </div>
             ) : (
-                <Carousel className="w-full" opts={{ loop: true }}>
-                    <CarouselContent className="-ml-1">
-                        {history.map((item, index) => (
-                            <CarouselItem key={index} className="pl-1 basis-full md:basis-1/2 lg:basis-1/3">
-                                <div className="p-1">
-                                    <HistoryCard item={item} />
-                                </div>
-                            </CarouselItem>
-                        ))}
-                    </CarouselContent>
-                    <CarouselPrevious className="hidden sm:flex" />
-                    <CarouselNext className="hidden sm:flex" />
-                </Carousel>
+                <Card>
+                    <CardContent className="p-4 sm:p-6">
+                        <Carousel className="w-full" opts={{ loop: true }}>
+                            <CarouselContent className="-ml-4">
+                                {history.map((item, index) => (
+                                    <CarouselItem key={index} className="pl-4 basis-full md:basis-1/2 lg:basis-1/3">
+                                        <div className="p-1">
+                                            <HistoryCard item={item} />
+                                        </div>
+                                    </CarouselItem>
+                                ))}
+                            </CarouselContent>
+                            <CarouselPrevious className="hidden sm:flex" />
+                            <CarouselNext className="hidden sm:flex" />
+                        </Carousel>
+                    </CardContent>
+                </Card>
             )}
 
             <div className="pt-8 flex flex-col items-center justify-center gap-4">
