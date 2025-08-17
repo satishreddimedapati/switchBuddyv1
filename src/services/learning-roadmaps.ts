@@ -4,30 +4,30 @@
 import { db } from "@/lib/firebase";
 import type { LearningRoadmap } from "@/lib/types";
 import { toSerializableLearningRoadmap } from "@/lib/types";
-import { collection, getDocs, doc, addDoc, query, where, serverTimestamp, limit } from "firebase/firestore";
+import { collection, getDocs, doc, addDoc, query, where, serverTimestamp, orderBy } from "firebase/firestore";
 
 const roadmapsCollection = collection(db, "learning_roadmaps");
 
-export async function getLearningRoadmapForUser(userId: string): Promise<LearningRoadmap | null> {
-    if (!userId) return null;
+export async function getLearningRoadmapsForUser(userId: string): Promise<LearningRoadmap[]> {
+    if (!userId) return [];
 
     try {
-        const q = query(roadmapsCollection, where("userId", "==", userId), limit(1));
+        const q = query(roadmapsCollection, where("userId", "==", userId), orderBy("createdAt", "desc"));
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
-            return null;
+            return [];
         }
         
-        const doc = querySnapshot.docs[0];
-        const data = doc.data();
-        const serializableData = toSerializableLearningRoadmap(data);
-        
-        return { id: doc.id, ...serializableData } as LearningRoadmap;
+        return querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            const serializableData = toSerializableLearningRoadmap(data);
+            return { id: doc.id, ...serializableData } as LearningRoadmap;
+        });
 
     } catch (error) {
-        console.error("Error fetching learning roadmap:", error);
-        return null;
+        console.error("Error fetching learning roadmaps:", error);
+        return [];
     }
 }
 
