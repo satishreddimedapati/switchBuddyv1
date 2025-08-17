@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RoadmapGenerator } from './RoadmapGenerator';
+import { RoadmapDisplay } from './RoadmapDisplay';
 
 function LoadingState() {
     return (
@@ -20,51 +21,38 @@ function LoadingState() {
     )
 }
 
-function RoadmapPreview({ roadmap }: { roadmap: LearningRoadmap }) {
-    // This is a placeholder for the roadmap preview.
-    // In a real implementation, you would render the roadmap data here.
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Your Learning Roadmap: {roadmap.topic}</CardTitle>
-                <CardDescription>Here's a preview of your personalized plan. Keep up the great work!</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <p className="text-muted-foreground">Roadmap preview will be implemented here.</p>
-            </CardContent>
-        </Card>
-    )
-}
-
 export default function AiLearningPage() {
     const { user } = useAuth();
     const [roadmap, setRoadmap] = useState<LearningRoadmap | null>(null);
     const [loading, setLoading] = useState(true);
     const [isBuilding, setIsBuilding] = useState(false);
 
-    useEffect(() => {
+    const fetchRoadmap = async () => {
         if (!user) {
             setLoading(false);
             return;
         };
+        setLoading(true);
+        const userRoadmap = await getLearningRoadmapForUser(user.uid);
+        setRoadmap(userRoadmap);
+        setLoading(false);
+    }
 
-        const fetchRoadmap = async () => {
-            setLoading(true);
-            const userRoadmap = await getLearningRoadmapForUser(user.uid);
-            setRoadmap(userRoadmap);
-            setLoading(false);
-        }
-
+    useEffect(() => {
         fetchRoadmap();
-
     }, [user]);
+
+    const handleRoadmapCreated = () => {
+        setIsBuilding(false);
+        fetchRoadmap(); // Refetch the roadmap after creation
+    }
 
     if (loading) {
         return <LoadingState />
     }
     
     if (isBuilding) {
-        return <RoadmapGenerator onRoadmapCreated={() => setIsBuilding(false)} />;
+        return <RoadmapGenerator onRoadmapCreated={handleRoadmapCreated} />;
     }
 
     return (
@@ -79,7 +67,7 @@ export default function AiLearningPage() {
             </div>
             
             {roadmap ? (
-                <RoadmapPreview roadmap={roadmap} />
+                <RoadmapDisplay roadmap={roadmap} />
             ) : (
                 <Card className="text-center p-8 flex flex-col items-center gap-4">
                     <CardTitle>Create Your Personalized Learning Plan</CardTitle>

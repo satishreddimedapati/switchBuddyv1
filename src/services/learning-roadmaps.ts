@@ -3,6 +3,7 @@
 
 import { db } from "@/lib/firebase";
 import type { LearningRoadmap } from "@/lib/types";
+import { toSerializableLearningRoadmap } from "@/lib/types";
 import { collection, getDocs, doc, addDoc, query, where, serverTimestamp, limit } from "firebase/firestore";
 
 const roadmapsCollection = collection(db, "learning_roadmaps");
@@ -19,9 +20,10 @@ export async function getLearningRoadmapForUser(userId: string): Promise<Learnin
         }
         
         const doc = querySnapshot.docs[0];
-        // Note: We are not using a toSerializable helper here for simplicity,
-        // but in a larger app, you would handle Timestamps properly.
-        return { id: doc.id, ...doc.data() } as LearningRoadmap;
+        const data = doc.data();
+        const serializableData = toSerializableLearningRoadmap(data);
+        
+        return { id: doc.id, ...serializableData } as LearningRoadmap;
 
     } catch (error) {
         console.error("Error fetching learning roadmap:", error);

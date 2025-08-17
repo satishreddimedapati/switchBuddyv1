@@ -487,6 +487,31 @@ export function toSerializableUserReward(docData: any): UserReward {
 }
 
 // AI Learning Schemas
+
+// This would be the detailed, structured roadmap from the AI
+const DailyTaskItemSchema = z.object({
+    day: z.string(),
+    topic: z.string(),
+    resource_type: z.string(),
+    resource_link: z.string().optional(),
+    challenge: z.string().optional(),
+    completed: z.boolean().default(false).optional(),
+});
+export type DailyTaskItem = z.infer<typeof DailyTaskItemSchema>;
+
+const WeeklyPlanSchema = z.object({
+    week: z.number(),
+    theme: z.string(),
+    daily_tasks: z.array(DailyTaskItemSchema),
+});
+export type WeeklyPlan = z.infer<typeof WeeklyPlanSchema>;
+
+export const RoadmapGenerationOutputSchema = z.object({
+    weeks: z.array(WeeklyPlanSchema),
+});
+export type RoadmapGenerationOutput = z.infer<typeof RoadmapGenerationOutputSchema>;
+
+
 export const LearningRoadmapSchema = z.object({
   id: z.string().optional(),
   userId: z.string(),
@@ -497,10 +522,19 @@ export const LearningRoadmapSchema = z.object({
   experienceLevel: z.string(),
   techFocus: z.array(z.string()),
   learningStyle: z.string(),
-  roadmap: z.any(), // This will be a structured object from the AI
+  roadmap: RoadmapGenerationOutputSchema,
   createdAt: z.any(),
 });
 export type LearningRoadmap = z.infer<typeof LearningRoadmapSchema>;
+
+export function toSerializableLearningRoadmap(docData: any): LearningRoadmap {
+    const { createdAt, ...rest } = docData;
+    return {
+        ...rest,
+        createdAt: (createdAt as Timestamp).toDate().toISOString(),
+    } as LearningRoadmap;
+}
+
 
 export const RoadmapGenerationInputSchema = z.object({
     topic: z.string(),
@@ -512,19 +546,3 @@ export const RoadmapGenerationInputSchema = z.object({
     learningStyle: z.string(),
 });
 export type RoadmapGenerationInput = z.infer<typeof RoadmapGenerationInputSchema>;
-
-// This would be the detailed, structured roadmap from the AI
-export const RoadmapGenerationOutputSchema = z.object({
-    weeks: z.array(z.object({
-        week: z.number(),
-        theme: z.string(),
-        daily_tasks: z.array(z.object({
-            day: z.string(),
-            topic: z.string(),
-            resource_type: z.string(),
-            resource_link: z.string().optional(),
-            challenge: z.string().optional(),
-        }))
-    }))
-});
-export type RoadmapGenerationOutput = z.infer<typeof RoadmapGenerationOutputSchema>;
