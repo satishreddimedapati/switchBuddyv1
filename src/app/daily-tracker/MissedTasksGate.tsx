@@ -101,11 +101,6 @@ export function MissedTasksGate({ initialTasks, onGateCleared }: MissedTasksGate
         }
     };
 
-    if (initialTasks.length === 0) {
-        onGateCleared();
-        return null; // Should be handled by parent, but as a fallback.
-    }
-
     return (
         <div className="space-y-6">
             <Card className="border-destructive">
