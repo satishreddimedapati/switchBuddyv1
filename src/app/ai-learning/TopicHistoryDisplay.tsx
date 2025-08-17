@@ -21,7 +21,7 @@ interface TopicHistoryDisplayProps {
 
 function HistoryCard({ item }: { item: TopicHistory }) {
     return (
-        <Card className="h-full">
+        <Card className="h-full min-h-80">
             <CardContent className="flex flex-col items-center justify-center p-6 h-full text-center">
                 <div className="text-5xl mb-4">{item.emoji}</div>
                 <h3 className="text-xl font-bold">{item.title}</h3>
@@ -48,7 +48,7 @@ export function TopicHistoryDisplay({ history, topic }: TopicHistoryDisplayProps
                     <CarouselContent className="-ml-1">
                         {history.map((item, index) => (
                             <CarouselItem key={index} className="pl-1 basis-full md:basis-1/2 lg:basis-1/3">
-                                <div className="p-1 h-80">
+                                <div className="p-1">
                                     <HistoryCard item={item} />
                                 </div>
                             </CarouselItem>
