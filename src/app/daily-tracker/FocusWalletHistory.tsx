@@ -91,7 +91,7 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
                 break;
             case 'this-week':
                 startDate = startOfWeek(now, { weekStartsOn: 1 });
-                endDate = endOfDay(now);
+                endDate = endOfWeek(now, { weekStartsOn: 1 });
                 break;
             case 'this-month':
                 startDate = startOfMonth(now);
@@ -99,7 +99,7 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
                 break;
             default: // Default to this week
                  startDate = startOfWeek(now, { weekStartsOn: 1 });
-                 endDate = endOfDay(now);
+                 endDate = endOfWeek(now, { weekStartsOn: 1 });
         }
 
         return tasks.filter(task => {
