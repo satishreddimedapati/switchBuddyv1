@@ -52,7 +52,8 @@ export function MissedAndRescheduledTasks({ tasks }: MissedAndRescheduledTasksPr
 
     const getStatus = (task: DailyTask) => {
         if (task.rescheduled) {
-            return <Badge variant={task.completed ? "default" : "outline"} className={task.completed ? "bg-green-600" : ""}>{task.completed ? "Completed" : "Rescheduled"}</Badge>;
+             const rescheduledDate = format(new Date(task.date), 'MMM d');
+            return <Badge variant={task.completed ? "default" : "outline"} className={task.completed ? "bg-green-600" : ""}>{task.completed ? "Completed" : `Rescheduled to ${rescheduledDate}`}</Badge>;
         }
         if (!task.completed) {
             return <Badge variant="destructive">Missed</Badge>;
@@ -81,12 +82,11 @@ export function MissedAndRescheduledTasks({ tasks }: MissedAndRescheduledTasksPr
                                                 <div className="flex justify-between items-start">
                                                     <div>
                                                         <p className="font-semibold">{task.title}</p>
-                                                        <p className="text-sm text-muted-foreground">
-                                                            {task.rescheduled 
-                                                                ? <>Originally for <span className='line-through'>{format(new Date(task.rescheduled.originalDate), 'MMM d')}</span>, moved to {format(new Date(task.date), 'MMM d')}</>
-                                                                : `Scheduled for ${format(new Date(task.date), 'MMM d')}`
-                                                            }
-                                                        </p>
+                                                        {task.rescheduled && (
+                                                             <p className="text-sm text-muted-foreground">
+                                                                Originally for <span className='line-through'>{format(new Date(task.rescheduled.originalDate), 'MMM d')}</span>
+                                                            </p>
+                                                        )}
                                                     </div>
                                                     {getStatus(task)}
                                                 </div>
