@@ -78,32 +78,33 @@ const generateLearningRoadmapFlow = ai.defineFlow(
 
     const newWeeksMap = new Map<number, WeeklyPlan>();
 
-    tasks.forEach((task, index) => {
-      // Find the next valid learning day
-      if (!input.learnOnWeekends) {
-          while (currentDate.getDay() === 0 || currentDate.getDay() === 6) { // 0 is Sunday, 6 is Saturday
-              currentDate = addDays(currentDate, 1);
-          }
-      }
+    tasks.forEach((task) => {
+        // Find the next valid learning day
+        if (!input.learnOnWeekends) {
+            while (currentDate.getDay() === 0 || currentDate.getDay() === 6) { // 0 is Sunday, 6 is Saturday
+                currentDate = addDays(currentDate, 1);
+            }
+        }
 
-      task.date = format(currentDate, 'yyyy-MM-dd');
-      task.day = format(currentDate, 'EEEE');
+        task.date = format(currentDate, 'yyyy-MM-dd');
+        task.day = format(currentDate, 'EEEE');
 
-      const weekNumber = getISOWeek(currentDate);
-      
-      if (!newWeeksMap.has(weekNumber)) {
-          // Find the original week theme if it exists
-          const originalWeek = output.weeks.find(w => w.daily_tasks.some(dt => dt.topic === task.topic));
-          newWeeksMap.set(weekNumber, {
-              week: newWeeksMap.size + 1, // Simple week counter
-              theme: originalWeek?.theme || `Week ${newWeeksMap.size + 1} Learning`,
-              daily_tasks: [],
-          });
-      }
-      
-      newWeeksMap.get(weekNumber)!.daily_tasks.push(task);
-      
-      currentDate = addDays(currentDate, 1);
+        const weekNumber = getISOWeek(currentDate);
+        
+        if (!newWeeksMap.has(weekNumber)) {
+            // Find the original week theme if it exists
+            const originalWeek = output.weeks.find(w => w.daily_tasks.some(dt => dt.topic === task.topic));
+            newWeeksMap.set(weekNumber, {
+                week: newWeeksMap.size + 1, // Simple week counter
+                theme: originalWeek?.theme || `Week ${newWeeksMap.size + 1} Learning`,
+                daily_tasks: [],
+            });
+        }
+        
+        newWeeksMap.get(weekNumber)!.daily_tasks.push(task);
+        
+        // IMPORTANT: Increment the date AFTER assigning it to the task
+        currentDate = addDays(currentDate, 1);
     });
 
     const finalRoadmap: RoadmapGenerationOutput = { weeks: Array.from(newWeeksMap.values()) };
