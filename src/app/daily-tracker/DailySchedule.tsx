@@ -1,3 +1,4 @@
+
 'use client'
 
 import { DailyTask } from "@/lib/types";
@@ -14,6 +15,7 @@ import { useAuth } from "@/lib/auth";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { format } from "date-fns";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 export function DailySchedule() {
   const { user } = useAuth();
@@ -94,17 +96,23 @@ export function DailySchedule() {
           <Skeleton className="h-24 w-full" />
         </div>
       ) : (
-        <div className="space-y-8">
+        <Accordion type="multiple" defaultValue={['Morning', 'Afternoon', 'Evening']} className="w-full space-y-4">
             {Object.entries({ Morning: morning, Afternoon: afternoon, Evening: evening }).map(([period, periodTasks]) => 
                 periodTasks.length > 0 && (
-                    <div key={period}>
-                        <h3 className="text-lg font-semibold mb-4 border-b pb-2">{period}</h3>
-                        <div className="space-y-4">
-                            {periodTasks.map(task => (
-                                <TaskItem key={task.id} task={task} onEdit={handleEdit} />
-                            ))}
-                        </div>
-                    </div>
+                    <Card key={period}>
+                        <AccordionItem value={period} className="border-b-0">
+                            <AccordionTrigger className="p-6 hover:no-underline">
+                                <h3 className="text-lg font-semibold">{period} ({periodTasks.length})</h3>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-6">
+                                <div className="space-y-4">
+                                    {periodTasks.map(task => (
+                                        <TaskItem key={task.id} task={task} onEdit={handleEdit} />
+                                    ))}
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Card>
                 )
             )}
 
@@ -114,7 +122,7 @@ export function DailySchedule() {
                     <Button variant="link" onClick={handleAddNew}>Schedule your first task</Button>
                 </div>
             )}
-        </div>
+        </Accordion>
       )}
 
       <ScheduleTaskForm
