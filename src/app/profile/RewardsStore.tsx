@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/auth";
 import { getUserRewards, redeemReward, claimReward, getFocusCoinBalance } from "@/services/user-rewards";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 
 export function RewardsStore() {
     const { user } = useAuth();
@@ -174,7 +175,10 @@ export function RewardsStore() {
                                         <div className="flex-grow">
                                             <h4 className={cn("font-semibold", reward.status === 'claimed' && "text-muted-foreground")}>{reward.icon} {reward.name}</h4>
                                             <p className="text-sm">{reward.description}</p>
-                                            <Badge variant="outline" className="mt-2">Cost: {reward.cost} 🧘</Badge>
+                                            <div className="flex flex-wrap items-center gap-2 mt-2">
+                                                <Badge variant="outline">Cost: {reward.cost} 🧘</Badge>
+                                                <Badge variant="outline">Redeemed: {format(new Date(reward.redeemedAt), "MMM d, yyyy")}</Badge>
+                                            </div>
                                         </div>
                                         {reward.status === 'unclaimed' ? (
                                             <Button variant="secondary" onClick={() => handleClaim(reward.id)} disabled={isInteracting} className="w-full sm:w-auto">
@@ -182,7 +186,14 @@ export function RewardsStore() {
                                                 <CheckCircle className="mr-2" /> Mark as Claimed
                                             </Button>
                                         ) : (
-                                            <Badge variant="outline">Claimed</Badge>
+                                            <div className="text-center sm:text-right">
+                                                <Badge variant="outline">Claimed</Badge>
+                                                {reward.claimedAt && (
+                                                    <p className="text-xs text-muted-foreground mt-1">
+                                                        on {format(new Date(reward.claimedAt), "MMM d, yyyy")}
+                                                    </p>
+                                                )}
+                                            </div>
                                         )}
                                     </Card>
                                 ))}
