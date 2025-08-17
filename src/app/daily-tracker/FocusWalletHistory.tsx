@@ -17,6 +17,12 @@ import { Button } from '@/components/ui/button';
 import { PurchasedRewardsSummary } from './PurchasedRewardsSummary';
 
 
+interface FocusWalletHistoryProps {
+    tasks: DailyTask[];
+    loading: boolean;
+}
+
+
 const STARTING_BALANCE = 0;
 
 interface DayActivity {
@@ -199,12 +205,10 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
         <Accordion type="single" collapsible className="w-full" defaultValue="focus-wallet">
             <AccordionItem value="focus-wallet" className="border-b-0">
                 <Card>
-                    <AccordionTrigger className="p-6 hover:no-underline">
+                    <AccordionTrigger className="p-4 hover:no-underline">
                         <div className="flex w-full justify-between items-center">
-                            <div className="text-left">
-                                <CardTitle className="flex items-center gap-2"><Coins /> Focus Wallet</CardTitle>
-                                <CardDescription>Current Balance: <span className="font-bold">{currentBalance} 🧘</span></CardDescription>
-                            </div>
+                             <h3 className="text-lg font-semibold flex items-center gap-2"><Coins /> Focus Wallet</h3>
+                             <Badge variant="secondary" className="text-base">{currentBalance} 🧘</Badge>
                         </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-6 pb-6">
@@ -327,5 +331,3 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
         </Accordion>
     )
 }
-
-    
