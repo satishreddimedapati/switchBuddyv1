@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -12,19 +13,19 @@ import { useEffect, useState, useMemo } from "react";
 import { getInterviewSessions } from "@/services/interview-sessions";
 import { format } from "date-fns";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { InterviewPlanCard } from "./InterviewPlanCard";
+import { InterviewPlanCard } from "@/app/interview-prep/InterviewPlanCard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRouter } from "next/navigation";
 
 function NoActivePlan() {
+    const router = useRouter();
     return (
         <div className="text-center p-8 border-dashed border-2 rounded-lg flex flex-col items-center gap-4">
             <h3 className="text-xl font-semibold">No Interview Plans Found</h3>
             <p className="text-muted-foreground">Create a new plan to start your mock interviews.</p>
-            <Button asChild>
-                <Link href="/interview-prep/new">
-                    <PlusCircle />
-                    Create New Plan
-                </Link>
+            <Button onClick={() => router.push('/job-switch-helper/new')}>
+                <PlusCircle />
+                Create New Plan
             </Button>
         </div>
     )
@@ -40,8 +41,9 @@ function LoadingState() {
 }
 
 
-export default function InterviewPrepPage() {
+export function InterviewPrep() {
     const { user } = useAuth();
+    const router = useRouter();
     const [plans, setPlans] = useState<InterviewPlan[]>([]);
     const [pastSessions, setPastSessions] = useState<InterviewSession[]>([]);
     const [loading, setLoading] = useState(true);
@@ -92,21 +94,11 @@ export default function InterviewPrepPage() {
     }, [plans]);
 
     return (
-        <div className="flex flex-col gap-8">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                 <div>
-                    <h1 className="font-headline text-3xl font-bold tracking-tight">
-                        Mock Interviews
-                    </h1>
-                    <p className="text-muted-foreground">
-                        Practice makes perfect. Simulate real interviews and get AI-powered feedback.
-                    </p>
-                </div>
-                <Button asChild className="w-full sm:w-auto">
-                    <Link href="/interview-prep/new">
-                        <PlusCircle />
-                        Create New Plan
-                    </Link>
+        <div className="flex flex-col gap-8 pt-6">
+            <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4">
+                <Button onClick={() => router.push('/job-switch-helper/new')}>
+                    <PlusCircle />
+                    Create New Plan
                 </Button>
             </div>
             
@@ -163,7 +155,7 @@ export default function InterviewPrepPage() {
                                         <TableCell className="text-right space-x-2">
                                             <Button variant="outline" size="sm" disabled={interview.status !== 'completed'}><FileText className="mr-2 h-4 w-4" /> PDF</Button>
                                             <Button variant="outline" size="sm" asChild>
-                                               <Link href={`/interview-prep/summary/${interview.id}`}>
+                                               <Link href={`/job-switch-helper/summary/${interview.id}`}>
                                                     <Video className="mr-2 h-4 w-4" /> Review
                                                 </Link>
                                             </Button>

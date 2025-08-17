@@ -53,7 +53,7 @@ export function InterviewPlanCard({ plan }: InterviewPlanCardProps) {
                 const sessionId = await addInterviewSession(newSession);
 
                 toast({ title: 'Success!', description: 'Your interview is ready.' });
-                router.push(`/interview-prep/session/${sessionId}`);
+                router.push(`/job-switch-helper/session/${sessionId}`);
             } catch (error) {
                 console.error("Failed to start new session:", error);
                 toast({
@@ -74,7 +74,7 @@ export function InterviewPlanCard({ plan }: InterviewPlanCardProps) {
                         <CardDescription>Difficulty: {plan.difficulty} | Duration: {plan.durationMinutes} min</CardDescription>
                     </div>
                     <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/interview-prep/edit/${plan.id}`}>
+                        <Link href={`/job-switch-helper/edit/${plan.id}`}>
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
                         </Link>

@@ -13,13 +13,13 @@ import { Briefcase, Building, Cpu, FileText, Linkedin, Loader2, MapPin, Search, 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { MarketIntelligence } from "./MarketIntelligence";
+import { MarketIntelligence } from "@/app/job-intelligence/MarketIntelligence";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { InterviewPlanForm } from "./InterviewPlanForm";
+import { InterviewPlanForm } from "@/app/job-intelligence/InterviewPlanForm";
 
 
-export default function JobIntelligencePage() {
+export function JobIntelligence() {
     const [searchTerm, setSearchTerm] = useState('');
     const [activeFilters, setActiveFilters] = useState<{label: string; type: 'time' | 'location'; value: string; paramName: 'f_TPR' | 'location'}[]>([]);
     const { toast } = useToast();
@@ -92,16 +92,7 @@ export default function JobIntelligencePage() {
     };
 
     return (
-      <div className="flex flex-col gap-8">
-        <div>
-          <h1 className="font-headline text-3xl font-bold tracking-tight">
-            Job Intelligence
-          </h1>
-          <p className="text-muted-foreground">
-            Analyze job roles, benchmark salaries, and find the perfect fit.
-          </p>
-        </div>
-
+      <div className="flex flex-col gap-8 pt-6">
         <Accordion type="multiple" defaultValue={["role-fit"]} className="w-full space-y-4">
             <AccordionItem value="job-search">
                 <Card>
@@ -386,7 +377,7 @@ export default function JobIntelligencePage() {
                                                                     {analysisState.salaryBenchmark.commentary}
                                                                 </AlertDescription>
                                                             </Alert>
-                                                        </CardContent>
+                                                         </CardContent>
                                                     </AccordionContent>
                                                 </Card>
                                             </AccordionItem>

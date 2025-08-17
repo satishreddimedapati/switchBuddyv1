@@ -19,9 +19,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   Home,
-  Columns3,
-  Search,
-  MessageSquareQuote,
+  Briefcase,
   LogOut,
   PanelLeft,
   CalendarCheck,
@@ -38,10 +36,8 @@ import { ViewModeToggle } from './ViewModeToggle';
 
 const navItems = [
   { href: '/', icon: Home, label: 'Dashboard' },
-  { href: '/tracker', icon: Columns3, label: 'Job Tracker' },
   { href: '/daily-tracker', icon: CalendarCheck, label: 'Daily Tracker' },
-  { href: '/job-intelligence', icon: Search, label: 'Job Intelligence' },
-  { href: '/interview-prep', icon: MessageSquareQuote, label: 'Interview Prep' },
+  { href: '/job-switch-helper', icon: Briefcase, label: 'JobSwitch Helper' },
   { href: '/profile', icon: User, label: 'Profile & Rewards' },
 ];
 

@@ -56,7 +56,7 @@ export function InterviewPlanForm({ planData }: InterviewPlanFormProps) {
             };
             await addInterviewPlan(planToSave);
             toast({ title: "Success!", description: "Interview plan created. Redirecting to Interview Prep..." });
-            router.push('/interview-prep');
+            router.push('/job-switch-helper?tab=interview-prep');
         } catch (error) {
             console.error("Failed to create plan", error);
             toast({ title: "Error", description: "Could not create the interview plan.", variant: "destructive" });
