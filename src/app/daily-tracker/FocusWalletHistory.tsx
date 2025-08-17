@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { format, isToday, isYesterday, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isBefore } from 'date-fns';
+import { format, isToday, isYesterday, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isBefore, parseISO } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
@@ -32,23 +32,32 @@ interface DayActivity {
     penalty: number;
 }
 
-const calculateDayActivity = (tasksForDay: DailyTask[]): Omit<DayActivity, 'date' | 'label'> => {
-    if (tasksForDay.length === 0) {
-        return { credits: 0, debits: 0, netChange: 0, completedTasksList: [], missedTasksList: [], bonus: 0, penalty: 0 };
-    }
-    const totalTasks = tasksForDay.length;
-    const completed = tasksForDay.filter(t => t.completed);
+const calculateDayActivity = (tasksForDay: DailyTask[], allTasks: DailyTask[]): Omit<DayActivity, 'date' | 'label'> => {
+    const day = tasksForDay.length > 0 ? tasksForDay[0].date : '';
     
-    const taskDate = startOfDay(new Date(tasksForDay[0].date));
+    // Find tasks originally scheduled for this day but were rescheduled
+    const rescheduledAwayFromThisDay = allTasks.filter(t => t.rescheduled?.originalDate === day);
+    
+    // Tasks currently on this day
+    const tasksOnThisDay = tasksForDay;
+
+    // Filter out tasks that were rescheduled away from this day but might still appear if the date filter is wide
+    const completedOnThisDay = tasksOnThisDay.filter(t => t.completed);
+
+    const taskDate = startOfDay(parseISO(day));
     const isPastOrToday = isBefore(taskDate, new Date()) || isToday(taskDate);
+    
+    // Missed tasks are tasks ON this day that are not complete, OR tasks that were moved AWAY from this day
+    const missedOnThisDay = isPastOrToday ? tasksOnThisDay.filter(t => !t.completed) : [];
+    
+    const allMissedAndRescheduled = [...missedOnThisDay, ...rescheduledAwayFromThisDay];
+    const totalTasksForDay = completedOnThisDay.length + allMissedAndRescheduled.length;
 
-    const missed = isPastOrToday ? tasksForDay.filter(t => !t.completed) : [];
+    const credits = completedOnThisDay.length;
+    const debits = allMissedAndRescheduled.length;
 
-    const credits = completed.length;
-    const debits = missed.length;
-
-    const completionBonus = totalTasks > 0 && (completed.length / totalTasks) >= 0.8 ? 5 : 0;
-    const missPenalty = isPastOrToday && totalTasks > 0 && (missed.length / totalTasks) >= 0.5 ? 5 : 0;
+    const completionBonus = totalTasksForDay > 0 && (credits / totalTasksForDay) >= 0.8 ? 5 : 0;
+    const missPenalty = isPastOrToday && totalTasksForDay > 0 && (debits / totalTasksForDay) >= 0.5 ? 5 : 0;
 
     const calculatedCredits = credits + completionBonus;
     const calculatedDebits = debits + missPenalty;
@@ -59,15 +68,15 @@ const calculateDayActivity = (tasksForDay: DailyTask[]): Omit<DayActivity, 'date
         credits: calculatedCredits,
         debits: calculatedDebits,
         netChange: net,
-        completedTasksList: completed,
-        missedTasksList: missed,
+        completedTasksList: completedOnThisDay,
+        missedTasksList: allMissedAndRescheduled,
         bonus: completionBonus,
         penalty: missPenalty,
     };
 };
 
 function formatActivityDate(dateString: string): string {
-    const date = new Date(dateString);
+    const date = parseISO(dateString);
     if (isToday(date)) return "Today";
     if (isYesterday(date)) return "Yesterday";
     return format(date, 'EEEE, MMM d');
@@ -101,7 +110,7 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
         }
 
         return tasks.filter(task => {
-            const taskDate = new Date(task.date);
+            const taskDate = parseISO(task.date);
             return taskDate >= startDate && taskDate <= endDate;
         });
 
@@ -121,15 +130,15 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
             .map(([date, tasksForDay]) => ({
                 date,
                 label: formatActivityDate(date),
-                ...calculateDayActivity(tasksForDay),
+                ...calculateDayActivity(tasksForDay, tasks),
             }))
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    }, [filteredTasks]);
+    }, [filteredTasks, tasks]);
 
     const currentBalance = useMemo(() => {
         const groupedByDate = tasks.reduce((acc, task) => {
-            const date = task.date;
+            const date = task.rescheduled?.originalDate || task.date;
             if (!acc[date]) {
                 acc[date] = [];
             }
@@ -139,8 +148,8 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
 
         const totalNetChange = Object.values(groupedByDate)
             .reduce((total, tasksForDay) => {
-                const { netChange } = calculateDayActivity(tasksForDay);
-                return total + netChange;
+                 const dayActivity = calculateDayActivity(tasksForDay, tasks);
+                return total + dayActivity.netChange;
             }, 0);
             
         return STARTING_BALANCE + totalNetChange;
@@ -268,5 +277,3 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
         </Accordion>
     )
 }
-
-      
