@@ -47,7 +47,7 @@ export function TopicHistoryDisplay({ history, topic }: TopicHistoryDisplayProps
                 <Carousel className="w-full" opts={{ loop: true }}>
                     <CarouselContent className="-ml-1">
                         {history.map((item, index) => (
-                            <CarouselItem key={index} className="pl-1 md:basis-1/2 lg:basis-1/3">
+                            <CarouselItem key={index} className="pl-1 basis-full md:basis-1/2 lg:basis-1/3">
                                 <div className="p-1 h-80">
                                     <HistoryCard item={item} />
                                 </div>
