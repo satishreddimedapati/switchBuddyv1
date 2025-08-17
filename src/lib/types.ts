@@ -490,7 +490,8 @@ export function toSerializableUserReward(docData: any): UserReward {
 
 // This would be the detailed, structured roadmap from the AI
 const DailyTaskItemSchema = z.object({
-    day: z.string(),
+    day: z.string().describe("The day of the week, e.g., 'Monday'."),
+    date: z.string().optional().describe("The specific date for the task in YYYY-MM-DD format."),
     topic: z.string(),
     resource_type: z.string(),
     resource_link: z.string().optional(),
@@ -540,6 +541,7 @@ export const RoadmapGenerationInputSchema = z.object({
     topic: z.string(),
     timePerDay: z.number(),
     duration: z.number(),
+    startDate: z.string().describe("The start date for the roadmap in YYYY-MM-DD format."),
     goals: z.array(z.string()),
     experienceLevel: z.string(),
     techFocus: z.array(z.string()),

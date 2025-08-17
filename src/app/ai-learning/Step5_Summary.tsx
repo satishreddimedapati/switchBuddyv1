@@ -12,6 +12,7 @@ import { generateLearningRoadmap } from '@/ai/flows/generate-learning-roadmap';
 import { addLearningRoadmap } from '@/services/learning-roadmaps';
 import { Loader2, Rocket } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { format } from 'date-fns';
 
 interface Step5Props {
     data: RoadmapInputs;
@@ -34,7 +35,10 @@ export function Step5_Summary({ data, onRoadmapCreated }: Step5Props) {
         setError(null);
 
         try {
-            const aiResult = await generateLearningRoadmap(data);
+            const aiResult = await generateLearningRoadmap({
+                ...data,
+                startDate: format(data.startDate, 'yyyy-MM-dd'),
+            });
             
             if (!aiResult || !aiResult.weeks) {
                  throw new Error("The AI failed to generate a valid roadmap structure.");
@@ -72,6 +76,7 @@ export function Step5_Summary({ data, onRoadmapCreated }: Step5Props) {
                     <SummaryItem label="Tech Focus" value={<div className="flex flex-wrap gap-1">{data.techFocus.map(t => <Badge key={t} variant="secondary">{t}</Badge>)}</div>} />
                     <SummaryItem label="Learning Style" value={data.learningStyle} />
                     <SummaryItem label="Commitment" value={`${data.timePerDay / 60} hrs/day for ${data.duration} months`} />
+                    <SummaryItem label="Start Date" value={format(data.startDate, 'PPP')} />
                 </div>
                  {error && (
                     <Alert variant="destructive">

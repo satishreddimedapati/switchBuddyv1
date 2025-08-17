@@ -6,6 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import type { RoadmapInputs } from './RoadmapGenerator';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
 
 interface Step1Props {
     data: RoadmapInputs;
@@ -33,7 +39,7 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                     />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div className="space-y-4">
                         <Label>Time Commitment Per Day</Label>
                          <Slider
@@ -55,6 +61,31 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                             step={1}
                         />
                         <div className="text-center font-medium">{data.duration} {data.duration > 1 ? 'months' : 'month'}</div>
+                    </div>
+                     <div className="space-y-4">
+                        <Label>Start Date</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal",
+                                        !data.startDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {data.startDate ? format(data.startDate, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={data.startDate}
+                                    onSelect={(date) => onUpdate({ startDate: date || new Date()})}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
                     </div>
                 </div>
 

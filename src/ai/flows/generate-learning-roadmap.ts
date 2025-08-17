@@ -26,12 +26,13 @@ User Inputs:
 - Main Topic/Track: {{{topic}}}
 - Time Commitment: {{{timePerDay}}} minutes per day
 - Total Duration: {{{duration}}} months
+- Start Date: {{{startDate}}}
 - Goals: {{#each goals}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
 - Experience Level: {{{experienceLevel}}}
 - Tech Focus: {{#each techFocus}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
 - Preferred Learning Style: {{{learningStyle}}}
 
-Based on these inputs, create a structured roadmap. The roadmap should be broken down into weeks. Each week should have a clear theme. Each day within the week should have a specific topic, a suggested resource type (e.g., 'Video', 'Article', 'Interactive Tutorial'), and a small challenge or exercise.
+Based on these inputs, create a structured roadmap. The roadmap should be broken down into weeks. Each week should have a clear theme. Each day within the week should have a specific topic, a suggested resource type (e.g., 'Video', 'Article', 'Interactive Tutorial'), a small challenge or exercise, and a calculated date.
 
 Rules:
 1. The total number of weeks should match the user's selected duration (e.g., a 3-month duration means 12 weeks).
@@ -40,6 +41,8 @@ Rules:
 4. The resource types and challenges should align with the user's preferred learning style.
 5. If the learning style is Video, suggest a conceptual YouTube link. If it's reading, suggest a blog or documentation link.
 6. The goals should influence the focus of the roadmap. A 'Job Switch' goal should prioritize practical, interview-centric topics. A 'Startup Project' goal should include project-building milestones.
+7. For each daily_task, calculate and include a 'date' field in "YYYY-MM-DD" format. The first task should have the provided 'startDate', and each subsequent task should be one day after the previous one.
+8. The 'day' field should be the day of the week, e.g., 'Monday'.
 
 Generate the output as a valid JSON object matching the defined schema.
 `,

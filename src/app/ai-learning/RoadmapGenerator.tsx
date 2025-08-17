@@ -10,11 +10,13 @@ import { Step4_LearningStyle } from './Step4_LearningStyle';
 import { Step5_Summary } from './Step5_Summary';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { format } from 'date-fns';
 
 export interface RoadmapInputs {
     topic: string;
     timePerDay: number;
     duration: number;
+    startDate: Date;
     goals: string[];
     experienceLevel: string;
     techFocus: string[];
@@ -25,6 +27,7 @@ const initialInputs: RoadmapInputs = {
     topic: '',
     timePerDay: 90, // 1.5 hours in minutes
     duration: 3, // 3 months
+    startDate: new Date(),
     goals: [],
     experienceLevel: 'Beginner',
     techFocus: [],
@@ -82,4 +85,3 @@ export function RoadmapGenerator({ onRoadmapCreated }: RoadmapGeneratorProps) {
         </div>
     );
 }
-
