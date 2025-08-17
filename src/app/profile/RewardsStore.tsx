@@ -1,33 +1,60 @@
-
 'use client';
 
-import { useState } from "react";
-import { REWARD_CATEGORIES, Reward, RewardCategory } from "@/lib/rewards";
+import { useState, useEffect, useCallback } from "react";
+import { REWARD_CATEGORIES, Reward, UserReward } from "@/lib/rewards";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Coins, CheckCircle, Gift, Trophy } from "lucide-react";
+import { Coins, CheckCircle, Gift, Trophy, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/lib/auth";
+import { getUserRewards, redeemReward, claimReward, getFocusCoinBalance } from "@/services/user-rewards";
+import { Skeleton } from "@/components/ui/skeleton";
 
-interface RewardsStoreProps {
-    initialFocusCoins: number;
-}
-
-export function RewardsStore({ initialFocusCoins }: RewardsStoreProps) {
-    const [focusCoins, setFocusCoins] = useState(initialFocusCoins); 
-    const [redeemedRewards, setRedeemedRewards] = useState<Reward[]>([]);
+export function RewardsStore() {
+    const { user } = useAuth();
     const { toast } = useToast();
+    const [loading, setLoading] = useState(true);
+    const [focusCoins, setFocusCoins] = useState(0);
+    const [userRewards, setUserRewards] = useState<UserReward[]>([]);
 
-    const handleRedeem = (reward: Reward) => {
+    const fetchUserData = useCallback(async () => {
+        if (!user) return;
+        setLoading(true);
+        try {
+            const [balance, rewards] = await Promise.all([
+                getFocusCoinBalance(user.uid),
+                getUserRewards(user.uid),
+            ]);
+            setFocusCoins(balance);
+            setUserRewards(rewards);
+        } catch (error) {
+            console.error("Failed to fetch user data:", error);
+            toast({ title: "Error", description: "Could not load your rewards data.", variant: "destructive" });
+        } finally {
+            setLoading(false);
+        }
+    }, [user, toast]);
+
+    useEffect(() => {
+        fetchUserData();
+    }, [fetchUserData]);
+
+    const handleRedeem = async (reward: Reward) => {
+        if (!user) return;
         if (focusCoins >= reward.cost) {
-            setFocusCoins(prev => prev - reward.cost);
-            setRedeemedRewards(prev => [...prev, reward]);
-            toast({
-                title: "Reward Unlocked!",
-                description: `You've redeemed "${reward.name}".`,
-            });
+            try {
+                await redeemReward(user.uid, reward);
+                toast({
+                    title: "Reward Unlocked!",
+                    description: `You've redeemed "${reward.name}".`,
+                });
+                await fetchUserData(); // Refresh data
+            } catch (error) {
+                 toast({ title: "Error", description: "Failed to redeem reward.", variant: "destructive" });
+            }
         } else {
             toast({
                 title: "Not enough coins",
@@ -37,15 +64,36 @@ export function RewardsStore({ initialFocusCoins }: RewardsStoreProps) {
         }
     };
 
-    const handleClaim = (rewardId: number) => {
-        setRedeemedRewards(prev => prev.filter(r => r.id !== rewardId));
-        toast({
-            title: "Reward Claimed!",
-            description: "Enjoy your well-deserved break.",
-        });
-    }
+    const handleClaim = async (userRewardId: string) => {
+        if (!user) return;
+        try {
+            await claimReward(user.uid, userRewardId);
+             toast({
+                title: "Reward Claimed!",
+                description: "Enjoy your well-deserved break.",
+            });
+            await fetchUserData(); // Refresh data
+        } catch (error) {
+             toast({ title: "Error", description: "Failed to claim reward.", variant: "destructive" });
+        }
+    };
 
-    const isRedeemed = (rewardId: number) => redeemedRewards.some(r => r.id === rewardId);
+    const isRedeemed = (rewardId: number) => userRewards.some(r => r.rewardId === rewardId && r.status === 'unclaimed');
+    const unclaimedRewards = userRewards.filter(r => r.status === 'unclaimed');
+
+    if (loading) {
+        return (
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-48 w-full" />
+                </CardContent>
+            </Card>
+        )
+    }
 
     return (
         <div className="space-y-6">
@@ -81,7 +129,7 @@ export function RewardsStore({ initialFocusCoins }: RewardsStoreProps) {
                                                         size="sm" 
                                                         className="mt-4 w-full"
                                                         onClick={() => handleRedeem(reward)}
-                                                        disabled={isRedeemed(reward.id)}
+                                                        disabled={isRedeemed(reward.id) || focusCoins < reward.cost}
                                                     >
                                                         {isRedeemed(reward.id) ? (
                                                             <><CheckCircle className="mr-2"/> Unlocked</>
@@ -104,9 +152,9 @@ export function RewardsStore({ initialFocusCoins }: RewardsStoreProps) {
                         <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
                             <Trophy /> My Unclaimed Rewards
                         </h3>
-                        {redeemedRewards.length > 0 ? (
+                        {unclaimedRewards.length > 0 ? (
                             <div className="space-y-2">
-                                {redeemedRewards.map(reward => (
+                                {unclaimedRewards.map(reward => (
                                     <Card key={reward.id} className="p-4 flex items-center justify-between">
                                         <div>
                                             <h4 className="font-semibold">{reward.icon} {reward.name}</h4>
@@ -124,7 +172,6 @@ export function RewardsStore({ initialFocusCoins }: RewardsStoreProps) {
                             </div>
                         )}
                     </div>
-
                 </CardContent>
             </Card>
         </div>
