@@ -12,11 +12,19 @@ interface Step2Props {
 }
 
 const goals = [
-    { id: 'job-switch', title: 'Job Switch', icon: Briefcase, description: 'Prepare for a new role and crack the interviews.' },
-    { id: 'career-growth', title: 'Career Growth', icon: TrendingUp, description: 'Get that promotion or raise you deserve.' },
-    { id: 'startup-project', title: 'Build a Startup Project', icon: Rocket, description: 'Go from idea to deployed product.' },
-    { id: 'upskill', title: 'Upskill / Curiosity', icon: Brain, description: 'Learn something new just for the fun of it.' },
+    { id: 'job-switch', title: 'Job Switch', description: 'Prepare for a new role and crack the interviews.' },
+    { id: 'career-growth', title: 'Career Growth', description: 'Get that promotion or raise you deserve.' },
+    { id: 'startup-project', title: 'Build a Startup Project', description: 'Go from idea to deployed product.' },
+    { id: 'upskill', title: 'Upskill / Curiosity', description: 'Learn something new just for the fun of it.' },
 ];
+
+const goalIcons: { [key: string]: React.ElementType } = {
+    'job-switch': Briefcase,
+    'career-growth': TrendingUp,
+    'startup-project': Rocket,
+    'upskill': Brain,
+};
+
 
 export function Step2_Goals({ data, onUpdate }: Step2Props) {
 
@@ -37,6 +45,7 @@ export function Step2_Goals({ data, onUpdate }: Step2Props) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {goals.map(goal => {
                         const isSelected = data.goals.includes(goal.id);
+                        const Icon = goalIcons[goal.id];
                         return (
                             <Card 
                                 key={goal.id}
@@ -47,7 +56,7 @@ export function Step2_Goals({ data, onUpdate }: Step2Props) {
                                 )}
                             >
                                 <div className="flex items-center gap-4">
-                                    <goal.icon className="h-8 w-8 text-primary" />
+                                    <Icon className="h-8 w-8 text-primary" />
                                     <div>
                                         <h3 className="font-semibold">{goal.title}</h3>
                                         <p className="text-xs text-muted-foreground">{goal.description}</p>
@@ -61,4 +70,3 @@ export function Step2_Goals({ data, onUpdate }: Step2Props) {
         </Card>
     );
 }
-

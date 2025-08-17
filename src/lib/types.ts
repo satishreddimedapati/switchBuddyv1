@@ -531,11 +531,14 @@ export type LearningRoadmap = z.infer<typeof LearningRoadmapSchema>;
 
 export function toSerializableLearningRoadmap(docData: any): LearningRoadmap {
     const { createdAt, startDate, ...rest } = docData;
-    return {
+    const serializable: any = {
         ...rest,
-        createdAt: (createdAt as Timestamp).toDate().toISOString(),
-        startDate: (startDate as Timestamp).toDate().toISOString(),
-    } as LearningRoadmap;
+        createdAt: (createdAt as Timestamp)?.toDate().toISOString(),
+    };
+    if (startDate) {
+        serializable.startDate = (startDate as Timestamp).toDate().toISOString();
+    }
+    return serializable as LearningRoadmap;
 }
 
 
@@ -550,5 +553,3 @@ export const RoadmapGenerationInputSchema = z.object({
     learningStyle: z.string(),
 });
 export type RoadmapGenerationInput = z.infer<typeof RoadmapGenerationInputSchema>;
-
-    

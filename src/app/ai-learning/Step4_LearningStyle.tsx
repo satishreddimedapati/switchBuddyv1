@@ -54,4 +54,3 @@ export function Step4_LearningStyle({ data, onUpdate }: Step4Props) {
         </Card>
     );
 }
-

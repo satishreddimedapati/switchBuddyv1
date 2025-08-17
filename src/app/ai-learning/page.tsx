@@ -59,7 +59,11 @@ export default function AiLearningPage() {
     }
 
     useEffect(() => {
-        fetchRoadmaps();
+        if(user) {
+          fetchRoadmaps();
+        } else {
+            setLoading(false);
+        }
     }, [user]);
 
     const handleRoadmapCreated = () => {

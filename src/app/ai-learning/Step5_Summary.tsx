@@ -47,6 +47,7 @@ export function Step5_Summary({ data, onRoadmapCreated }: Step5Props) {
             await addLearningRoadmap({
                 userId: user.uid,
                 ...data,
+                startDate: data.startDate.toISOString(), // Store as ISO string
                 roadmap: aiResult,
             });
 
@@ -55,7 +56,9 @@ export function Step5_Summary({ data, onRoadmapCreated }: Step5Props) {
 
         } catch (err) {
             console.error(err);
-            setError(err instanceof Error ? err.message : "An unknown error occurred during roadmap generation.");
+            const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+            setError(errorMessage);
+            toast({ title: "Error", description: errorMessage, variant: "destructive" });
         } finally {
             setIsGenerating(false);
         }

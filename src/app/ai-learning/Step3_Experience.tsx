@@ -70,4 +70,3 @@ export function Step3_Experience({ data, onUpdate }: Step3Props) {
         </Card>
     );
 }
-
