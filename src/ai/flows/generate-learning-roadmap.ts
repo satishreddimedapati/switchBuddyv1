@@ -64,13 +64,16 @@ const generateLearningRoadmapFlow = ai.defineFlow(
         throw new Error("The AI failed to generate a valid roadmap structure.");
     }
 
-    // Flatten all tasks into a single array and truncate to the exact duration
+    // Flatten all tasks into a single array
     const allTasks = output.weeks.flatMap(week => week.daily_tasks);
-    const tasks = allTasks.slice(0, input.duration);
-
-    if (tasks.length !== input.duration) {
-      throw new Error(`AI generation error: Could not generate the required number of tasks. Expected ${input.duration}, but got ${tasks.length} after processing. Please try again.`);
+    
+    // Check if the AI generated at least enough tasks
+    if (allTasks.length < input.duration) {
+      throw new Error(`AI generation error: Could not generate the required number of tasks. Expected ${input.duration}, but got ${allTasks.length}. Please try again.`);
     }
+
+    // Truncate to the exact duration
+    const tasks = allTasks.slice(0, input.duration);
 
     let currentDate = new Date(input.startDate);
     // Adjust for timezone offset to prevent date shifting
