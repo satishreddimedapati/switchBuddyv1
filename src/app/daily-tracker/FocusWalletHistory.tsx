@@ -46,11 +46,14 @@ const calculateDayActivity = (tasksForDay: DailyTask[]): Omit<DayActivity, 'date
 
     const missed = isPastOrToday ? tasksForDay.filter(t => !t.completed) : [];
 
+    const credits = completed.length;
+    const debits = missed.length;
+
     const completionBonus = totalTasks > 0 && (completed.length / totalTasks) >= 0.8 ? 5 : 0;
     const missPenalty = isPastOrToday && totalTasks > 0 && (missed.length / totalTasks) >= 0.5 ? 5 : 0;
 
-    const calculatedCredits = completed.length + completionBonus;
-    const calculatedDebits = missed.length + missPenalty;
+    const calculatedCredits = credits + completionBonus;
+    const calculatedDebits = debits + missPenalty;
 
     const net = calculatedCredits - calculatedDebits;
 
