@@ -12,13 +12,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Loader2, Trash2 } from 'lucide-react';
+import { CalendarIcon, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { addTask, updateTask, deleteTask } from '@/services/daily-tasks';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useAuth } from '@/lib/auth';
+import { generateTaskDescription } from '@/ai/flows/generate-task-description';
 
 const timeSlots = Array.from({ length: 17 }, (_, i) => `${(i + 6).toString().padStart(2, '0')}:00`);
 
@@ -43,12 +44,17 @@ export function ScheduleTaskForm({ isOpen, onOpenChange, task, prefillData }: Sc
   const { toast } = useToast();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingDesc, startGeneratingDescTransition] = useTransition();
+
 
   const {
     register,
     handleSubmit,
     control,
     reset,
+    watch,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
@@ -90,6 +96,26 @@ export function ScheduleTaskForm({ isOpen, onOpenChange, task, prefillData }: Sc
         }
     }
   }, [task, prefillData, reset, isOpen]);
+
+  const handleGenerateDescription = () => {
+    const title = getValues('title');
+    if (!title) {
+        toast({ title: 'Title is required', description: 'Please enter a title before generating a description.', variant: 'destructive'});
+        return;
+    };
+
+    startGeneratingDescTransition(async () => {
+        try {
+            const result = await generateTaskDescription({ title });
+            if (result.description) {
+                setValue('description', result.description);
+            }
+        } catch (error) {
+            console.error("Failed to generate description", error);
+            toast({ title: 'Error', description: 'Could not generate a description.', variant: 'destructive'});
+        }
+    })
+  }
 
   const onSubmit = async (data: TaskFormValues) => {
     if (!user) {
@@ -150,12 +176,18 @@ export function ScheduleTaskForm({ isOpen, onOpenChange, task, prefillData }: Sc
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4">
           <div>
             <Label htmlFor="title">Title</Label>
-            <Input id="title" {...register('title')} />
+            <Input id="title" {...register('title')} onBlur={handleGenerateDescription}/>
             {errors.title && <p className="text-destructive text-sm mt-1">{errors.title.message}</p>}
           </div>
 
-          <div>
-            <Label htmlFor="description">Description</Label>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="description">Description</Label>
+              <Button type="button" variant="ghost" size="sm" onClick={handleGenerateDescription} disabled={isGeneratingDesc}>
+                {isGeneratingDesc ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                 <span className="ml-2">Generate</span>
+              </Button>
+            </div>
             <Textarea id="description" {...register('description')} />
           </div>
 
