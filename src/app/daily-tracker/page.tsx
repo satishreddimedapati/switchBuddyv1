@@ -6,7 +6,8 @@ import { DailyTrackerTabs } from "./DailyTrackerTabs";
 import { MissedTasksGate } from "./MissedTasksGate";
 import { useAuth } from "@/lib/auth";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import type { DailyTask } from "@/lib/types";
+import type { DailyTask, UserReward } from "@/lib/types";
+import { toSerializableUserReward } from "@/lib/types";
 import { getMissedTasks } from "@/services/daily-tasks";
 import { Skeleton } from "@/components/ui/skeleton";
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
@@ -17,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Coins } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getUserRewards } from "@/services/user-rewards";
-import type { UserReward } from "@/lib/types";
 import { getFocusCoinBalance } from "@/services/user-rewards";
 
 function FocusWalletFAB({ balance, tasks, rewards, loading }: { balance: number, tasks: DailyTask[], rewards: UserReward[], loading: boolean }) {
@@ -185,5 +185,3 @@ export default function DailyTrackerPage() {
         </div>
     );
 }
-
-    
