@@ -54,8 +54,8 @@ const calculateDayActivity = (tasksForDay: DailyTask[], allTasks: DailyTask[], r
     const totalTasksForDay = completedOnThisDay.length + allMissedAndRescheduled.length;
 
     const taskCredits = completedOnThisDay.length;
-    const taskDebits = allMissedAndRescheduled.length;
     const rewardDebits = rewardsForDay.reduce((sum, reward) => sum + reward.cost, 0);
+    const taskDebits = allMissedAndRescheduled.length;
 
     const completionBonus = totalTasksForDay > 0 && (taskCredits / totalTasksForDay) >= 0.8 ? 5 : 0;
     const missPenalty = isPastOrToday && totalTasksForDay > 0 && (taskDebits / totalTasksForDay) >= 0.5 ? 5 : 0;
@@ -209,10 +209,11 @@ export function FocusWalletHistory({ tasks, rewards, loading }: FocusWalletHisto
                                         <AccordionTrigger className="p-4 hover:no-underline">
                                             <div className="w-full flex justify-between items-center text-sm sm:text-base">
                                                 <p className="font-semibold">{day.label}</p>
-                                                <div className="flex items-center gap-4">
+                                                <div className="flex items-center gap-2 sm:gap-4">
                                                     <Badge variant="outline" className="font-mono bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">+{day.credits}</Badge>
                                                     <Badge variant="outline" className="font-mono bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300">-{day.debits}</Badge>
                                                     <Badge className={cn(
+                                                        "hidden sm:inline-flex",
                                                         day.netChange > 0 && "bg-green-600",
                                                         day.netChange < 0 && "bg-red-600",
                                                     )}>
@@ -227,16 +228,20 @@ export function FocusWalletHistory({ tasks, rewards, loading }: FocusWalletHisto
                                                     <h4 className="flex items-center gap-2 font-semibold text-green-600 mb-2"><ArrowUp /> Credits Earned (+{day.credits})</h4>
                                                     <div className="space-y-2 text-sm">
                                                         {day.completedTasksList.map(task => (
-                                                            <div key={task.id} className="flex flex-wrap items-center gap-2 text-xs p-2 rounded-md bg-muted/50">
-                                                                <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
-                                                                <span className="flex-grow truncate">{task.title}</span>
+                                                            <div key={task.id} className="flex items-start justify-between gap-2 text-xs p-2 rounded-md bg-muted/50">
+                                                                <div className='flex items-start gap-2'>
+                                                                    <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0 mt-0.5" />
+                                                                    <span className="flex-1">{task.title}</span>
+                                                                </div>
                                                                 <Badge variant="outline" className="font-mono text-green-600">+1</Badge>
                                                             </div>
                                                         ))}
                                                         {day.bonus > 0 && (
-                                                            <div className="flex flex-wrap items-center gap-2 text-xs font-medium p-2 rounded-md bg-muted/50">
-                                                                <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
-                                                                <span className="flex-grow">Completion Bonus (&gt;80%)</span>
+                                                            <div className="flex items-center justify-between gap-2 text-xs font-medium p-2 rounded-md bg-muted/50">
+                                                                 <div className='flex items-start gap-2'>
+                                                                    <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0 mt-0.5" />
+                                                                    <span className="flex-1">Completion Bonus (&gt;80%)</span>
+                                                                </div>
                                                                 <Badge variant="outline" className="font-mono text-green-600">+{day.bonus}</Badge>
                                                             </div>
                                                         )}
@@ -249,23 +254,29 @@ export function FocusWalletHistory({ tasks, rewards, loading }: FocusWalletHisto
                                                      <h4 className="flex items-center gap-2 font-semibold text-red-600 mb-2"><ArrowDown /> Debits Incurred (-{day.debits})</h4>
                                                     <div className="space-y-2 text-sm">
                                                         {day.missedTasksList.map(task => (
-                                                            <div key={task.id} className="flex flex-wrap items-center gap-2 text-xs p-2 rounded-md bg-muted/50">
-                                                                <XCircle className="h-3 w-3 text-red-500 flex-shrink-0" />
-                                                                <span className="flex-grow truncate">{task.title}</span>
+                                                            <div key={task.id} className="flex items-start justify-between gap-2 text-xs p-2 rounded-md bg-muted/50">
+                                                                <div className='flex items-start gap-2'>
+                                                                    <XCircle className="h-3 w-3 text-red-500 flex-shrink-0 mt-0.5" />
+                                                                    <span className="flex-1">{task.title}</span>
+                                                                </div>
                                                                 <Badge variant="outline" className="font-mono text-red-600">-1</Badge>
                                                             </div>
                                                         ))}
                                                         {day.penalty > 0 && (
-                                                            <div className="flex flex-wrap items-center gap-2 text-xs font-medium p-2 rounded-md bg-muted/50">
-                                                                <XCircle className="h-3 w-3 text-red-500 flex-shrink-0" />
-                                                                <span className="flex-grow">Miss Penalty (&gt;50%)</span>
+                                                            <div className="flex items-center justify-between gap-2 text-xs font-medium p-2 rounded-md bg-muted/50">
+                                                                <div className='flex items-start gap-2'>
+                                                                    <XCircle className="h-3 w-3 text-red-500 flex-shrink-0 mt-0.5" />
+                                                                    <span className="flex-1">Miss Penalty (&gt;50%)</span>
+                                                                </div>
                                                                 <Badge variant="outline" className="font-mono text-red-600">-{day.penalty}</Badge>
                                                             </div>
                                                         )}
                                                         {day.redeemedRewardsList.map(reward => (
-                                                            <div key={reward.id} className="flex flex-wrap items-center gap-2 text-xs p-2 rounded-md bg-muted/50">
-                                                                <Gift className="h-3 w-3 text-red-500 flex-shrink-0" />
-                                                                <span className="flex-grow truncate">Redeemed: {reward.name}</span>
+                                                            <div key={reward.id} className="flex items-start justify-between gap-2 text-xs p-2 rounded-md bg-muted/50">
+                                                                 <div className='flex items-start gap-2'>
+                                                                    <Gift className="h-3 w-3 text-red-500 flex-shrink-0 mt-0.5" />
+                                                                    <span className="flex-1">Redeemed: {reward.name}</span>
+                                                                </div>
                                                                 <Badge variant="outline" className="font-mono text-red-600">-{reward.cost}</Badge>
                                                             </div>
                                                         ))}
