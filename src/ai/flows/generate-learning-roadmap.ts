@@ -42,7 +42,7 @@ Rules:
 3.  Group the daily tasks into weeks.
 4.  The content and complexity must be appropriate for the user's experience level.
 5.  The resource types and challenges should align with the user's preferred learning style.
-6.  If the learning style is Video, suggest a conceptual YouTube link. If it's reading, suggest a blog or documentation link.
+6.  For each daily_task, find a high-quality, relevant resource link (e.g., YouTube, official docs, a popular blog) and include it in the 'resource_link' field.
 7.  For each daily_task, calculate and include a 'date' field in "YYYY-MM-DD" format. The date calculation must start from the provided 'startDate' and respect the 'learnOnWeekends' preference.
 8.  The 'day' field should be the day of the week, e.g., 'Monday'.
 9.  Be creative and motivating in your topic descriptions and challenges! Make learning fun.
