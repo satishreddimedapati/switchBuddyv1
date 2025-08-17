@@ -16,6 +16,7 @@ import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { format } from "date-fns";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { FocusWallet } from "./FocusWallet";
 
 export function DailySchedule() {
   const { user } = useAuth();
@@ -77,17 +78,20 @@ export function DailySchedule() {
         <Button onClick={handleAddNew} className="w-full sm:w-auto"><PlusCircle /> Schedule Task</Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg font-medium">Today's Progress</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-             <p className="text-sm text-muted-foreground">{`You completed ${completedTasks} out of ${totalTasks} tasks today.`}</p>
-             <Progress value={progress} />
-          </div>
-        </CardContent>
-      </Card>
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <FocusWallet tasks={tasks} />
+            <Card className="lg:col-span-2">
+                <CardHeader>
+                <CardTitle className="text-lg font-medium">Today's Progress</CardTitle>
+                </CardHeader>
+                <CardContent>
+                <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">{`You completed ${completedTasks} out of ${totalTasks} tasks today.`}</p>
+                    <Progress value={progress} />
+                </div>
+                </CardContent>
+            </Card>
+       </div>
       
       {loading ? (
         <div className="space-y-4">
