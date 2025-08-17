@@ -519,6 +519,7 @@ export const LearningRoadmapSchema = z.object({
   topic: z.string(),
   timePerDay: z.number(), // in minutes
   duration: z.number(), // in days
+  startDate: z.string(), // ISO String
   goals: z.array(z.string()),
   experienceLevel: z.string(),
   techFocus: z.array(z.string()),
@@ -529,10 +530,11 @@ export const LearningRoadmapSchema = z.object({
 export type LearningRoadmap = z.infer<typeof LearningRoadmapSchema>;
 
 export function toSerializableLearningRoadmap(docData: any): LearningRoadmap {
-    const { createdAt, ...rest } = docData;
+    const { createdAt, startDate, ...rest } = docData;
     return {
         ...rest,
         createdAt: (createdAt as Timestamp).toDate().toISOString(),
+        startDate: (startDate as Timestamp).toDate().toISOString(),
     } as LearningRoadmap;
 }
 
@@ -548,3 +550,5 @@ export const RoadmapGenerationInputSchema = z.object({
     learningStyle: z.string(),
 });
 export type RoadmapGenerationInput = z.infer<typeof RoadmapGenerationInputSchema>;
+
+    
