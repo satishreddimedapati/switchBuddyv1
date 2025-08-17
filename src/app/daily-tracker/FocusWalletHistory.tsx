@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { format, isToday, isYesterday, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { format, isToday, isYesterday, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isBefore } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
@@ -36,10 +36,15 @@ interface DayActivity {
 const calculateDayActivity = (tasksForDay: DailyTask[]): Omit<DayActivity, 'date' | 'label'> => {
     const totalTasks = tasksForDay.length;
     const completed = tasksForDay.filter(t => t.completed);
-    const missed = tasksForDay.filter(t => !t.completed);
+    
+    // Only count debits for tasks on or before today
+    const taskDate = new Date(tasksForDay[0].date);
+    const isPastOrToday = isBefore(taskDate, new Date()) || isToday(taskDate);
+
+    const missed = isPastOrToday ? tasksForDay.filter(t => !t.completed) : [];
 
     const completionBonus = totalTasks > 0 && (completed.length / totalTasks) >= 0.8 ? 5 : 0;
-    const missPenalty = totalTasks > 0 && (missed.length / totalTasks) >= 0.5 ? 5 : 0;
+    const missPenalty = isPastOrToday && totalTasks > 0 && (missed.length / totalTasks) >= 0.5 ? 5 : 0;
 
     const calculatedCredits = completed.length + completionBonus;
     const calculatedDebits = missed.length + missPenalty;
@@ -193,27 +198,29 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
                                                     )}
                                                 </AccordionContent>
                                             </AccordionItem>
-                                            <AccordionItem value="debits">
-                                                <AccordionTrigger className="p-3 bg-background rounded-md text-base">
-                                                    <span className="flex items-center gap-2 font-semibold text-red-600"><ArrowDown /> Debits Incurred (-{day.debits})</span>
-                                                </AccordionTrigger>
-                                                <AccordionContent className="p-4 border rounded-b-md space-y-2 text-sm">
-                                                    {day.missedTasksList.map(task => (
-                                                        <div key={task.id} className="flex items-center gap-2 text-xs">
-                                                            <XCircle className="h-3 w-3 text-red-500" />
-                                                            <span className="flex-grow truncate">{task.title}</span>
-                                                            <Badge variant="outline" className="font-mono text-red-600">-1</Badge>
-                                                        </div>
-                                                    ))}
-                                                    {day.penalty > 0 && (
-                                                        <div className="flex items-center gap-2 text-xs font-medium pt-1 mt-1 border-t">
-                                                            <XCircle className="h-3 w-3 text-red-500" />
-                                                            <span className="flex-grow">Miss Penalty (&gt;50%)</span>
-                                                            <Badge variant="outline" className="font-mono text-red-600">-{day.penalty}</Badge>
-                                                        </div>
-                                                    )}
-                                                </AccordionContent>
-                                            </AccordionItem>
+                                            {day.debits > 0 && (
+                                                <AccordionItem value="debits">
+                                                    <AccordionTrigger className="p-3 bg-background rounded-md text-base">
+                                                        <span className="flex items-center gap-2 font-semibold text-red-600"><ArrowDown /> Debits Incurred (-{day.debits})</span>
+                                                    </AccordionTrigger>
+                                                    <AccordionContent className="p-4 border rounded-b-md space-y-2 text-sm">
+                                                        {day.missedTasksList.map(task => (
+                                                            <div key={task.id} className="flex items-center gap-2 text-xs">
+                                                                <XCircle className="h-3 w-3 text-red-500" />
+                                                                <span className="flex-grow truncate">{task.title}</span>
+                                                                <Badge variant="outline" className="font-mono text-red-600">-1</Badge>
+                                                            </div>
+                                                        ))}
+                                                        {day.penalty > 0 && (
+                                                            <div className="flex items-center gap-2 text-xs font-medium pt-1 mt-1 border-t">
+                                                                <XCircle className="h-3 w-3 text-red-500" />
+                                                                <span className="flex-grow">Miss Penalty (&gt;50%)</span>
+                                                                <Badge variant="outline" className="font-mono text-red-600">-{day.penalty}</Badge>
+                                                            </div>
+                                                        )}
+                                                    </AccordionContent>
+                                                </AccordionItem>
+                                            )}
                                     </Accordion>
                                     </AccordionContent>
                                 </Card>
