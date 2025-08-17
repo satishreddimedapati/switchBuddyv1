@@ -512,7 +512,7 @@ const DailyTaskItemSchema = z.object({
     date: z.string().optional().describe("The specific date for the task in YYYY-MM-DD format."),
     topic: z.string(),
     resource_type: z.string(),
-    resource_link: z.string().url().optional(),
+    resource_link: z.string().optional(),
     challenge: z.string().optional(),
     completed: z.boolean().default(false).optional(),
 });
@@ -557,10 +557,10 @@ export function toSerializableLearningRoadmap(docData: any): LearningRoadmap {
     if (createdAt?.toDate) {
       serializable.createdAt = (createdAt as Timestamp).toDate().toISOString();
     }
-    if (startDate?.toDate) {
+    if (startDate) {
       serializable.startDate = (startDate as Timestamp).toDate().toISOString();
     }
-    if (endDate?.toDate) {
+    if (endDate) {
       serializable.endDate = (endDate as Timestamp).toDate().toISOString();
     }
     
