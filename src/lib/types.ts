@@ -485,3 +485,46 @@ export function toSerializableUserReward(docData: any): UserReward {
 
     return serializable as UserReward;
 }
+
+// AI Learning Schemas
+export const LearningRoadmapSchema = z.object({
+  id: z.string().optional(),
+  userId: z.string(),
+  topic: z.string(),
+  timePerDay: z.number(), // in minutes
+  duration: z.number(), // in months
+  goals: z.array(z.string()),
+  experienceLevel: z.string(),
+  techFocus: z.array(z.string()),
+  learningStyle: z.string(),
+  roadmap: z.any(), // This will be a structured object from the AI
+  createdAt: z.any(),
+});
+export type LearningRoadmap = z.infer<typeof LearningRoadmapSchema>;
+
+export const RoadmapGenerationInputSchema = z.object({
+    topic: z.string(),
+    timePerDay: z.number(),
+    duration: z.number(),
+    goals: z.array(z.string()),
+    experienceLevel: z.string(),
+    techFocus: z.array(z.string()),
+    learningStyle: z.string(),
+});
+export type RoadmapGenerationInput = z.infer<typeof RoadmapGenerationInputSchema>;
+
+// This would be the detailed, structured roadmap from the AI
+export const RoadmapGenerationOutputSchema = z.object({
+    weeks: z.array(z.object({
+        week: z.number(),
+        theme: z.string(),
+        daily_tasks: z.array(z.object({
+            day: z.string(),
+            topic: z.string(),
+            resource_type: z.string(),
+            resource_link: z.string().url().optional(),
+            challenge: z.string().optional(),
+        }))
+    }))
+});
+export type RoadmapGenerationOutput = z.infer<typeof RoadmapGenerationOutputSchema>;
