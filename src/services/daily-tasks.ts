@@ -3,7 +3,7 @@
 import { db } from "@/lib/firebase";
 import type { DailyTask } from "@/lib/types";
 import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, where } from "firebase/firestore";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 
 const dailyTasksCollection = collection(db, "daily_tasks");
 
@@ -23,21 +23,25 @@ export async function getTasksForDate(date: string, userId: string): Promise<Dai
   }
 }
 
-export async function getMissedTasks(userId: string, yesterday: string): Promise<DailyTask[]> {
+export async function getMissedTasks(userId: string): Promise<DailyTask[]> {
     if (!userId) return [];
 
     try {
-        // This is a more specific query to get tasks that are incomplete and not rescheduled from before today.
+        const sevenDaysAgo = format(subDays(new Date(), 7), 'yyyy-MM-dd');
+        const today = format(new Date(), 'yyyy-MM-dd');
+
+        // Get all tasks from the last 7 days up to yesterday
         const q = query(
             dailyTasksCollection,
             where("userId", "==", userId),
-            where("date", "<=", yesterday),
-            where("completed", "==", false),
+            where("date", ">=", sevenDaysAgo),
+            where("date", "<", today)
         );
         const querySnapshot = await getDocs(q);
-        // We still filter for rescheduled here because Firestore doesn't support a "not-exists" query combined with other filters.
         const tasks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyTask));
-        return tasks.filter(task => !task.rescheduled);
+        
+        // Filter for tasks that are incomplete AND not already rescheduled
+        return tasks.filter(task => !task.completed && !task.rescheduled);
 
     } catch (error) {
         console.error("Error fetching missed tasks:", error);

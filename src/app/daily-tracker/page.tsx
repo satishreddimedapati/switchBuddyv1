@@ -7,7 +7,6 @@ import { useAuth } from "@/lib/auth";
 import { useState, useEffect, useCallback } from "react";
 import type { DailyTask } from "@/lib/types";
 import { getMissedTasks } from "@/services/daily-tasks";
-import { subDays, format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DailyTrackerPage() {
@@ -24,18 +23,17 @@ export default function DailyTrackerPage() {
         
         setLoading(true);
         setError(null);
-        const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
         
         try {
-            const incompleteTasks = await getMissedTasks(user.uid, yesterday);
+            const incompleteTasks = await getMissedTasks(user.uid);
             incompleteTasks.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
             setMissedTasks(incompleteTasks);
         } catch (error: any) {
             console.error("Failed to fetch missed tasks:", error);
             if (error.code === 'failed-precondition') {
-                setError("A database index is required. Please create it using the link in the server console logs.");
+                setError("A database index is required. Please check the server console logs for a link to create it.");
             } else {
-                setError("An unexpected error occurred while fetching tasks.");
+                setError(`An unexpected error occurred while fetching tasks. Code: ${error.code || 'N/A'}`);
             }
         } finally {
             setLoading(false);
