@@ -522,7 +522,7 @@ export const RoadmapGenerationOutputSchema = z.object({
             day: z.string(),
             topic: z.string(),
             resource_type: z.string(),
-            resource_link: z.string().url().optional(),
+            resource_link: z.string().optional(),
             challenge: z.string().optional(),
         }))
     }))
