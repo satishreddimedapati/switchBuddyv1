@@ -27,7 +27,8 @@ export async function getLearningRoadmapsForUser(userId: string): Promise<Learni
 
     } catch (error) {
         console.error("Error fetching learning roadmaps:", error);
-        return [];
+        // This will likely fail with an index error first. The user needs to create the index.
+        throw error;
     }
 }
 
