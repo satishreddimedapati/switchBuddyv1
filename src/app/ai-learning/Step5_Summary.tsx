@@ -13,6 +13,8 @@ import { addLearningRoadmap } from '@/services/learning-roadmaps';
 import { Loader2, Rocket } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { format } from 'date-fns';
+import { generateTopicHistory, TopicHistory } from '@/ai/flows/generate-topic-history';
+import { TopicHistoryDisplay } from './TopicHistoryDisplay';
 
 interface Step5Props {
     data: RoadmapInputs;
@@ -24,6 +26,7 @@ export function Step5_Summary({ data, onRoadmapCreated }: Step5Props) {
     const { toast } = useToast();
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [history, setHistory] = useState<TopicHistory[] | null>(null);
 
     const handleGenerateRoadmap = async () => {
         if (!user) {
@@ -35,10 +38,21 @@ export function Step5_Summary({ data, onRoadmapCreated }: Step5Props) {
         setError(null);
 
         try {
-            const aiResult = await generateLearningRoadmap({
+            // Kick off both AI calls in parallel
+            const historyPromise = generateTopicHistory({ topic: data.topic });
+            const roadmapPromise = generateLearningRoadmap({
                 ...data,
                 startDate: format(data.startDate, 'yyyy-MM-dd'),
             });
+
+            // Show the history cards as soon as they are ready
+            const historyResult = await historyPromise;
+            if (historyResult?.history) {
+                 setHistory(historyResult.history);
+            }
+
+            // Wait for the main roadmap to finish
+            const aiResult = await roadmapPromise;
             
             if (!aiResult || !aiResult.weeks || aiResult.weeks.length === 0) {
                  throw new Error("The AI failed to generate a valid roadmap structure. Please try adjusting your inputs or try again later.");
@@ -49,8 +63,13 @@ export function Step5_Summary({ data, onRoadmapCreated }: Step5Props) {
                 userId: user.uid,
                 roadmap: aiResult,
             });
+            
+            toast({ 
+                title: "Roadmap Ready!", 
+                description: "Your personalized roadmap has been generated."
+            });
 
-            toast({ title: "Success!", description: "Your personalized roadmap is ready."});
+            // This will trigger the parent component to switch views
             onRoadmapCreated();
 
         } catch (err) {
@@ -58,11 +77,14 @@ export function Step5_Summary({ data, onRoadmapCreated }: Step5Props) {
             const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
             setError(errorMessage);
             toast({ title: "Error", description: errorMessage, variant: "destructive" });
-        } finally {
-            setIsGenerating(false);
+            setIsGenerating(false); // Stop generating on error
         }
+        // No finally block needed as we navigate away on success
     }
 
+    if (isGenerating) {
+        return <TopicHistoryDisplay history={history} topic={data.topic} />;
+    }
 
     return (
         <Card>
@@ -91,7 +113,7 @@ export function Step5_Summary({ data, onRoadmapCreated }: Step5Props) {
             <CardFooter className="justify-end">
                 <Button size="lg" onClick={handleGenerateRoadmap} disabled={isGenerating}>
                     {isGenerating ? <Loader2 className="mr-2 animate-spin" /> : <Rocket className="mr-2" />}
-                    {isGenerating ? 'Building your personalized roadmap...' : 'Generate My Roadmap'}
+                    Generate My Roadmap
                 </Button>
             </CardFooter>
         </Card>
