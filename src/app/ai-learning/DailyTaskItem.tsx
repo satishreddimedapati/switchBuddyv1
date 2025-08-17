@@ -25,6 +25,9 @@ const resourceIcons = {
 export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
     const [isCompleted, setIsCompleted] = useState(task.completed || false);
     
+    // DEBUG LOG: Log the incoming props
+    console.log('[DailyTaskItem] Received Task:', task, 'Preferred Channel:', preferredChannel);
+
     // In a real app, you'd likely persist this change.
     const handleToggle = () => setIsCompleted(!isCompleted);
     
@@ -41,6 +44,10 @@ export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
     }
 
     const resourceLink = getResourceLink();
+
+    // DEBUG LOG: Log the final generated link
+    console.log('[DailyTaskItem] Generated resource link:', resourceLink);
+
 
     return (
         <Card className={cn(
