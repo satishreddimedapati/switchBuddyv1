@@ -28,10 +28,11 @@ export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
     // In a real app, you'd likely persist this change.
     const handleToggle = () => setIsCompleted(!isCompleted);
     
+    const isVideo = task.resource_type === 'Video' || task.resource_type === 'Video Tutorials';
     const ResourceIcon = resourceIcons[task.resource_type as keyof typeof resourceIcons] || <ExternalLink className="h-4 w-4" />;
     
     const getResourceLink = () => {
-        if (task.resource_type === 'Video' || task.resource_type === 'Video Tutorials') {
+        if (isVideo) {
             const baseQuery = `${task.day}: ${task.topic}`;
             const query = preferredChannel ? `${baseQuery} ${preferredChannel}` : baseQuery;
             return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
@@ -68,7 +69,7 @@ export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
                         {resourceLink && (
                              <Button variant="outline" size="sm" asChild>
                                 <a href={resourceLink} target="_blank" rel="noopener noreferrer">
-                                     {task.resource_type === 'Video' || task.resource_type === 'Video Tutorials' ? (
+                                     {isVideo ? (
                                         <Youtube className="h-3 w-3 mr-2 text-red-600" />
                                      ) : (
                                         <ExternalLink className="h-3 w-3 mr-2" />
