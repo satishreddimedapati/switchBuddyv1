@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useMemo, useState } from 'react';
-import type { DailyTask } from '@/lib/types';
+import { useMemo, useState, useEffect, useCallback } from 'react';
+import type { DailyTask, UserReward } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowDown, ArrowUp, Coins, CheckCircle, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Badge } from '@/components/ui/badge';
 import { format, isToday, isYesterday, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isBefore, parseISO } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuth } from '@/lib/auth';
+import { getUserRewards } from '@/services/user-rewards';
 
 
 const STARTING_BALANCE = 0;
@@ -84,8 +86,20 @@ function formatActivityDate(dateString: string): string {
 
 
 export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) {
+    const { user } = useAuth();
     const [filter, setFilter] = useState('this-week');
-    
+    const [userRewards, setUserRewards] = useState<UserReward[]>([]);
+
+     const fetchRewards = useCallback(async () => {
+        if (!user) return;
+        const rewards = await getUserRewards(user.uid);
+        setUserRewards(rewards);
+    }, [user]);
+
+    useEffect(() => {
+        fetchRewards();
+    }, [fetchRewards]);
+
     const filteredTasks = useMemo(() => {
         const now = new Date();
         let startDate: Date;
@@ -152,8 +166,10 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
                 return total + dayActivity.netChange;
             }, 0);
             
-        return STARTING_BALANCE + totalNetChange;
-    }, [tasks]);
+        const totalCostOfRedeemed = userRewards.reduce((total, reward) => total + reward.cost, 0);
+
+        return STARTING_BALANCE + totalNetChange - totalCostOfRedeemed;
+    }, [tasks, userRewards]);
 
 
     if (loading) {
@@ -277,3 +293,5 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
         </Accordion>
     )
 }
+
+    
