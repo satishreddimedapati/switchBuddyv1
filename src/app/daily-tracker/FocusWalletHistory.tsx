@@ -82,20 +82,24 @@ export function FocusWalletHistory({ tasks, loading }: FocusWalletHistoryProps) 
     const filteredTasks = useMemo(() => {
         const now = new Date();
         let startDate: Date;
-        let endDate: Date = endOfDay(now);
+        let endDate: Date;
 
         switch (filter) {
             case 'today':
                 startDate = startOfDay(now);
+                endDate = endOfDay(now);
                 break;
             case 'this-week':
                 startDate = startOfWeek(now, { weekStartsOn: 1 });
+                endDate = endOfDay(now);
                 break;
             case 'this-month':
                 startDate = startOfMonth(now);
+                endDate = endOfMonth(now);
                 break;
-            default: // last-7-days
+            default: // Default to this week
                  startDate = startOfWeek(now, { weekStartsOn: 1 });
+                 endDate = endOfDay(now);
         }
 
         return tasks.filter(task => {
