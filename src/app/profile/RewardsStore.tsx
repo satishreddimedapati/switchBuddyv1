@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from "react";
@@ -12,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/lib/auth";
 import { getUserRewards, redeemReward, claimReward, getFocusCoinBalance } from "@/services/user-rewards";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 
 export function RewardsStore() {
     const { user } = useAuth();
@@ -29,6 +31,8 @@ export function RewardsStore() {
                 getUserRewards(user.uid),
             ]);
             setFocusCoins(balance);
+            // Sort rewards by redeemed date, newest first
+            rewards.sort((a, b) => new Date(b.redeemedAt).getTime() - new Date(a.redeemedAt).getTime());
             setUserRewards(rewards);
         } catch (error) {
             console.error("Failed to fetch user data:", error);
@@ -78,8 +82,7 @@ export function RewardsStore() {
         }
     };
 
-    const isRedeemed = (rewardId: number) => userRewards.some(r => r.rewardId === rewardId && r.status === 'unclaimed');
-    const unclaimedRewards = userRewards.filter(r => r.status === 'unclaimed');
+    const isRedeemed = (rewardId: number) => userRewards.some(r => r.rewardId === rewardId);
 
     if (loading) {
         return (
@@ -150,25 +153,29 @@ export function RewardsStore() {
 
                     <div>
                         <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
-                            <Trophy /> My Unclaimed Rewards
+                            <Trophy /> My Rewards History
                         </h3>
-                        {unclaimedRewards.length > 0 ? (
+                        {userRewards.length > 0 ? (
                             <div className="space-y-2">
-                                {unclaimedRewards.map(reward => (
-                                    <Card key={reward.id} className="p-4 flex items-center justify-between">
+                                {userRewards.map(reward => (
+                                    <Card key={reward.id} className={cn("p-4 flex items-center justify-between", reward.status === 'claimed' && "bg-muted/50 text-muted-foreground")}>
                                         <div>
-                                            <h4 className="font-semibold">{reward.icon} {reward.name}</h4>
-                                            <p className="text-sm text-muted-foreground">{reward.description}</p>
+                                            <h4 className={cn("font-semibold", reward.status === 'claimed' && "text-muted-foreground")}>{reward.icon} {reward.name}</h4>
+                                            <p className="text-sm">{reward.description}</p>
                                         </div>
-                                        <Button variant="secondary" onClick={() => handleClaim(reward.id)}>
-                                            <CheckCircle className="mr-2" /> Mark as Claimed
-                                        </Button>
+                                        {reward.status === 'unclaimed' ? (
+                                            <Button variant="secondary" onClick={() => handleClaim(reward.id)}>
+                                                <CheckCircle className="mr-2" /> Mark as Claimed
+                                            </Button>
+                                        ) : (
+                                            <Badge variant="outline">Claimed</Badge>
+                                        )}
                                     </Card>
                                 ))}
                             </div>
                         ) : (
                             <div className="text-center py-8 border rounded-lg border-dashed">
-                                <p className="text-muted-foreground">You have no unclaimed rewards. Redeem one from the store above!</p>
+                                <p className="text-muted-foreground">You have no rewards yet. Redeem one from the store above!</p>
                             </div>
                         )}
                     </div>
