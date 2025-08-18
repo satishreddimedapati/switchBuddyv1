@@ -6,10 +6,18 @@ import type { DailyTaskItem as DailyTaskItemType } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { BookOpen, ExternalLink, TestTube2, Video, MessageSquare, Youtube } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { BookOpen, ExternalLink, TestTube2, Video, MessageSquare, Youtube, ChevronDown, WandSparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ChatLesson } from './ChatLesson';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Badge } from '@/components/ui/badge';
+
 
 interface DailyTaskItemProps {
     task: DailyTaskItemType;
@@ -17,11 +25,10 @@ interface DailyTaskItemProps {
 }
 
 const resourceTypes = [
-    { value: 'Video', label: 'Video', icon: <Video className="h-4 w-4" />, disabled: false },
-    { value: 'Article', label: 'Article', icon: <BookOpen className="h-4 w-4" />, disabled: false },
-    { value: 'Interactive Tutorial', label: 'Interactive Tutorial', icon: <TestTube2 className="h-4 w-4" />, disabled: true },
-    { value: 'Chat Lessons', label: 'Chat Lessons', icon: <MessageSquare className="h-4 w-4" />, disabled: false },
-    { value: 'Video Tutorials', label: 'Video Tutorials', icon: <Video className="h-4 w-4" />, disabled: false },
+    { value: 'Video', label: 'Video', icon: <Video className="h-4 w-4" /> },
+    { value: 'Article', label: 'Article', icon: <BookOpen className="h-4 w-4" /> },
+    { value: 'Interactive Tutorial', label: 'Interactive Tutorial', icon: <TestTube2 className="h-4 w-4" /> },
+    { value: 'Chat Lessons', label: 'Chat Lessons', icon: <MessageSquare className="h-4 w-4" /> },
 ];
 
 export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
@@ -57,63 +64,61 @@ export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
 
     return (
         <>
-            <Card className={cn(
-                "p-4 transition-all",
-                isCompleted && "bg-muted/60"
-            )}>
-                <div className="flex flex-col sm:flex-row items-start gap-4">
-                    <div className="pt-1">
+            <Card className={cn("p-4 transition-all", isCompleted && "bg-muted/60")}>
+                <div className="flex items-center gap-4">
+                    <div className="flex-shrink-0">
                         <Checkbox checked={isCompleted} onCheckedChange={handleToggle} id={`task-${task.day}-${task.topic}`} />
                     </div>
+
                     <div className="flex-grow">
                         <label 
                             htmlFor={`task-${task.day}-${task.topic}`}
-                            className={cn(
-                                "font-semibold cursor-pointer",
-                                isCompleted && "line-through text-muted-foreground"
-                            )}
+                            className={cn("font-semibold cursor-pointer", isCompleted && "line-through text-muted-foreground")}
                         >
                            {task.day}: {task.topic}
                         </label>
-                        <div className="flex items-center gap-4 mt-2 flex-wrap">
-                            <Select value={currentResourceType} onValueChange={setCurrentResourceType}>
-                                <SelectTrigger className="w-full sm:w-[200px] h-9">
-                                    <div className="flex items-center gap-2">
-                                         {selectedResource.icon}
-                                        <SelectValue />
-                                    </div>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {resourceTypes.map(rt => (
-                                         <SelectItem key={rt.value} value={rt.value} disabled={rt.disabled}>
-                                             <div className="flex items-center gap-3">
-                                                {rt.icon}
-                                                <span>{rt.label}</span>
-                                             </div>
-                                         </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
-                             <Button variant="outline" size="sm" onClick={handleResourceButtonClick}>
-                                 {currentResourceType === 'Chat Lessons' ? (
-                                    <MessageSquare className="h-3 w-3 mr-2" />
-                                 ) : isVideo ? (
-                                    <Youtube className="h-3 w-3 mr-2 text-red-600" />
-                                 ) : (
-                                    <ExternalLink className="h-3 w-3 mr-2" />
-                                 )}
-                                {currentResourceType === 'Chat Lessons' ? 'Start Chat' : 'Open Resource'}
-                            </Button>
-                        </div>
+                         {task.challenge && (
+                             <HoverCard>
+                                <HoverCardTrigger asChild>
+                                    <Badge variant="outline" className="ml-2 mt-1 cursor-help">
+                                        <WandSparkles className="h-3 w-3 mr-1" />
+                                        Challenge
+                                    </Badge>
+                                </HoverCardTrigger>
+                                <HoverCardContent className="w-80">
+                                    <p className="text-sm font-semibold">Challenge:</p>
+                                    <p className="text-sm text-muted-foreground italic">&quot;{task.challenge}&quot;</p>
+                                </HoverCardContent>
+                            </HoverCard>
+                        )}
+                    </div>
+                    
+                    <div className="flex-shrink-0">
+                         <DropdownMenu>
+                            <div className="flex rounded-md border">
+                                <Button onClick={handleResourceButtonClick} variant="ghost" className="rounded-r-none border-r">
+                                    {selectedResource.icon}
+                                    <span className="ml-2 hidden sm:inline">Start Learning</span>
+                                </Button>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="rounded-l-none w-8">
+                                        <ChevronDown className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                            </div>
+                            <DropdownMenuContent align="end">
+                                {resourceTypes.map(rt => (
+                                    <DropdownMenuItem key={rt.value} onClick={() => setCurrentResourceType(rt.value)}>
+                                        <div className="flex items-center gap-3">
+                                            {rt.icon}
+                                            <span>{rt.label}</span>
+                                        </div>
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </div>
-                 {task.challenge && (
-                    <div className="mt-3 ml-10 p-3 bg-background rounded-md border">
-                        <p className="text-sm font-semibold">Challenge:</p>
-                        <p className="text-sm text-muted-foreground italic">&quot;{task.challenge}&quot;</p>
-                    </div>
-                )}
             </Card>
 
             {currentResourceType === 'Chat Lessons' && (
