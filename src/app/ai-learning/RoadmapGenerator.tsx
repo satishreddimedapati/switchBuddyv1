@@ -10,8 +10,8 @@ import { Step4_LearningStyle } from './Step4_LearningStyle';
 import { Step5_Summary } from './Step5_Summary';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { format, addDays } from 'date-fns';
-import type { TopicHistory } from '@/lib/types';
+import { addDays } from 'date-fns';
+import type { TopicHistory, InteractiveLesson } from '@/lib/types';
 
 
 export interface RoadmapInputs {
@@ -27,6 +27,7 @@ export interface RoadmapInputs {
     learningStyle: string;
     history?: TopicHistory[];
     preferredChannel?: string;
+    lessons?: Record<string, InteractiveLesson[]>;
 }
 
 const initialInputs: RoadmapInputs = {
@@ -42,6 +43,7 @@ const initialInputs: RoadmapInputs = {
     learningStyle: 'Video Tutorials',
     history: undefined,
     preferredChannel: undefined,
+    lessons: {},
 }
 
 interface RoadmapGeneratorProps {

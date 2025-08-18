@@ -43,7 +43,7 @@ export function RoadmapDisplay({ roadmap }: RoadmapDisplayProps) {
                             </AccordionTrigger>
                             <AccordionContent className="space-y-3 pt-2">
                                  {week.daily_tasks.map((task, index) => (
-                                    <DailyTaskItem key={index} task={task} preferredChannel={roadmap.preferredChannel} />
+                                    <DailyTaskItem key={index} task={task} roadmapId={roadmap.id!} preferredChannel={roadmap.preferredChannel} />
                                 ))}
                             </AccordionContent>
                         </AccordionItem>
@@ -98,7 +98,7 @@ export function RoadmapDisplay({ roadmap }: RoadmapDisplayProps) {
                         <div className="space-y-3 pr-4">
                             {selectedWeek ? (
                                 selectedWeek.daily_tasks.map((task, index) => (
-                                    <DailyTaskItem key={index} task={task} preferredChannel={roadmap.preferredChannel} />
+                                    <DailyTaskItem key={index} task={task} roadmapId={roadmap.id!} preferredChannel={roadmap.preferredChannel} />
                                 ))
                             ) : (
                                 <p className="text-muted-foreground text-center pt-10">Select a week from the left to see the daily plan.</p>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -16,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 interface DailyTaskItemProps {
   task: DailyTaskItemType;
   preferredChannel?: string;
+  roadmapId: string;
 }
 
 const resourceTypes = [
@@ -50,7 +52,7 @@ function ResourceTypeSelector({ onSelect, currentType, onClose }: { onSelect: (t
   );
 }
 
-export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
+export function DailyTaskItem({ task, preferredChannel, roadmapId }: DailyTaskItemProps) {
   const [isCompleted, setIsCompleted] = useState(task.completed || false);
   const [currentResourceType, setCurrentResourceType] = useState(task.resource_type);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -152,6 +154,7 @@ export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
         isOpen={isInteractiveOpen}
         onOpenChange={setIsInteractiveOpen}
         topic={task.topic}
+        roadmapId={roadmapId}
       />
     </>
   );

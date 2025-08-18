@@ -1,4 +1,5 @@
 
+
 import {z} from 'zod';
 import type { Timestamp } from 'firebase/firestore';
 
@@ -304,7 +305,7 @@ export type GetCompanyInsightsInput = z.infer<typeof GetCompanyInsightsInputSche
 
 export const GetCompanyInsightsOutputSchema = z.object({
   culture: z.string().describe("A summary of the company's work culture."),
-  interviewProcess: z.string().describe('A summary of the typical interview process.'),
+  interviewProcess: z.string().describe('A typical summary of the interview process.'),
   pros: z.array(z.string()).describe('A list of common pros of working at the company.'),
   cons: z.array(z.string()).describe('A list of common cons of working at the company.'),
 });
@@ -341,7 +342,7 @@ export const GetMarketIntelligenceOutputSchema = z.object({
   skillsInDemand: z.array(z.string()).describe('A list of trending skills and tools for this role, e.g., ["ASP.NET Core", "Azure", "Microservices"].'),
   
   locationComparison: z.object({
-    commentary: z.string().describe('A comparison of the locations provided, focusing on salary differences and cost of living.'),
+    commentary: z.string().describe('A comparison of the locations provided, focusing on salary and cost of living.'),
   }),
 
   topCompaniesHiring: z.array(z.string()).describe('A list of 3-5 companies currently hiring for this role in the specified locations.'),
@@ -515,6 +516,29 @@ export const RoadmapGenerationOutputSchema = z.object({
 export type RoadmapGenerationOutput = z.infer<typeof RoadmapGenerationOutputSchema>;
 
 
+export const LessonCardSchema = z.object({
+    card_type: z.enum([
+        'simple_explanation',
+        'real_world_example',
+        'pros_cons',
+        'when_to_use',
+        'interview_qa',
+        'fun_fact',
+        'company_use_cases',
+    ]),
+    title: z.string(),
+    content: z.string().describe("Main text content, analogy, or question. For 'interview_qa', use 'Q: ... A: ...' format. For 'pros_cons', use 'Pros:\\n- ...\\n\\nCons:\\n- ...' format."),
+    visual: z.string().describe("A single, relevant emoji."),
+});
+export type LessonCard = z.infer<typeof LessonCardSchema>;
+
+export const InteractiveLessonSchema = z.object({
+    title: z.string().describe("An engaging title for the lesson, matching the topic."),
+    cards: z.array(LessonCardSchema).min(7).max(8).describe("A deck of exactly 7-8 micro-lesson cards in a logical sequence."),
+});
+export type InteractiveLesson = z.infer<typeof InteractiveLessonSchema>;
+
+
 export const LearningRoadmapSchema = z.object({
   id: z.string().optional(),
   userId: z.string(),
@@ -531,6 +555,7 @@ export const LearningRoadmapSchema = z.object({
   preferredChannel: z.string().optional(),
   roadmap: RoadmapGenerationOutputSchema,
   history: z.array(TopicHistorySchema).optional(),
+  lessons: z.record(z.string(), z.array(InteractiveLessonSchema)).optional(),
   createdAt: z.any(),
 });
 export type LearningRoadmap = z.infer<typeof LearningRoadmapSchema>;
@@ -608,26 +633,6 @@ export const GenerateChatLessonOutputSchema = z.object({
 export type GenerateChatLessonOutput = z.infer<typeof GenerateChatLessonOutputSchema>;
 
 // Interactive Card-Based Lessons
-export const LessonCardSchema = z.object({
-    card_type: z.enum([
-        'simple_explanation',
-        'real_world_example',
-        'pros_cons',
-        'when_to_use',
-        'interview_qa',
-    ]),
-    title: z.string(),
-    content: z.string().describe("Main text content, analogy, or question."),
-    visual: z.string().describe("A single, relevant emoji."),
-});
-export type LessonCard = z.infer<typeof LessonCardSchema>;
-
-export const InteractiveLessonSchema = z.object({
-    title: z.string().describe("An engaging title for the lesson, matching the topic."),
-    cards: z.array(LessonCardSchema).length(5).describe("A deck of exactly 5 micro-lesson cards in a logical sequence."),
-});
-export type InteractiveLesson = z.infer<typeof InteractiveLessonSchema>;
-
 
 export const GenerateInteractiveLessonInputSchema = z.object({
   topic: z.string().describe("The topic for the interactive lesson."),

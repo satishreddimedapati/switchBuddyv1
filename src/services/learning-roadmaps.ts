@@ -3,9 +3,9 @@
 'use server';
 
 import { db } from "@/lib/firebase";
-import type { LearningRoadmap } from "@/lib/types";
+import type { LearningRoadmap, InteractiveLesson } from "@/lib/types";
 import { toSerializableLearningRoadmap } from "@/lib/types";
-import { collection, getDocs, doc, addDoc, query, where, serverTimestamp, orderBy, getDoc, updateDoc, deleteDoc, Timestamp } from "firebase/firestore";
+import { collection, getDocs, doc, addDoc, query, where, serverTimestamp, orderBy, getDoc, updateDoc, deleteDoc, Timestamp, arrayUnion } from "firebase/firestore";
 
 const roadmapsCollection = collection(db, "learning_roadmaps");
 
@@ -98,4 +98,38 @@ export async function deleteLearningRoadmap(roadmapId: string, userId: string) {
     }
     
     await deleteDoc(roadmapRef);
+}
+
+
+// Functions for Interactive Lessons within a Roadmap
+
+export async function getInteractiveLessonsForTopic(roadmapId: string, topic: string): Promise<InteractiveLesson[]> {
+    try {
+        const roadmap = await getLearningRoadmap(roadmapId);
+        if (!roadmap || !roadmap.lessons) {
+            return [];
+        }
+        return roadmap.lessons[topic] || [];
+    } catch (error) {
+        console.error(`Error fetching interactive lessons for topic "${topic}":`, error);
+        return [];
+    }
+}
+
+
+export async function addInteractiveLesson(roadmapId: string, topic: string, lesson: InteractiveLesson): Promise<void> {
+    try {
+        const roadmapRef = doc(db, "learning_roadmaps", roadmapId);
+        
+        // Firestore's dot notation allows us to update a nested field.
+        // We use arrayUnion to add the new lesson to the array for that topic.
+        // If the topic field doesn't exist, it will be created.
+        await updateDoc(roadmapRef, {
+            [`lessons.${topic}`]: arrayUnion(lesson)
+        });
+
+    } catch (error) {
+        console.error(`Error adding interactive lesson for topic "${topic}":`, error);
+        throw new Error("Failed to save the new interactive lesson.");
+    }
 }

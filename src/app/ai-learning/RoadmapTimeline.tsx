@@ -15,7 +15,7 @@ interface RoadmapTimelineProps {
   roadmap: LearningRoadmap;
 }
 
-function DailyCheckpoint({ task, preferredChannel }: { task: DailyTaskItemType, preferredChannel?: string }) {
+function DailyCheckpoint({ task, preferredChannel, roadmapId }: { task: DailyTaskItemType, preferredChannel?: string, roadmapId: string }) {
     const taskDate = task.date ? parseISO(task.date) : null;
     return (
         <div className="flex flex-col items-center gap-1">
@@ -30,7 +30,7 @@ function DailyCheckpoint({ task, preferredChannel }: { task: DailyTaskItemType, 
                     <button className="h-4 w-4 bg-muted-foreground rounded-full hover:bg-primary transition-colors"></button>
                 </HoverCardTrigger>
                 <HoverCardContent className="w-96" onMouseDown={(e) => e.stopPropagation()}>
-                    <DailyTaskItem task={task} preferredChannel={preferredChannel} />
+                    <DailyTaskItem task={task} roadmapId={roadmapId} preferredChannel={preferredChannel} />
                 </HoverCardContent>
             </HoverCard>
         </div>
@@ -71,7 +71,7 @@ export function RoadmapTimeline({ roadmap }: RoadmapTimelineProps) {
                                         <div className="flex items-end flex-1 min-w-[300px] lg:min-w-[400px]">
                                             <div className="w-full h-1 bg-border relative flex items-end justify-between px-2">
                                                 {week.daily_tasks.slice(0, dotsToShow).map((task, dayIndex) => (
-                                                     <DailyCheckpoint key={dayIndex} task={task} preferredChannel={roadmap.preferredChannel} />
+                                                     <DailyCheckpoint key={dayIndex} task={task} roadmapId={roadmap.id!} preferredChannel={roadmap.preferredChannel} />
                                                 ))}
                                             </div>
                                         </div>
@@ -99,7 +99,7 @@ export function RoadmapTimeline({ roadmap }: RoadmapTimelineProps) {
                                     <div className={cn("flex w-full items-end justify-center", weekIndex % 2 !== 0 && "flex-row-reverse")}>
                                         <div className="w-full h-1 bg-border relative flex items-end justify-evenly">
                                             {week.daily_tasks.slice(0, dotsToShow).map((task, dayIndex) => (
-                                                <DailyCheckpoint key={dayIndex} task={task} preferredChannel={roadmap.preferredChannel} />
+                                                <DailyCheckpoint key={dayIndex} task={task} roadmapId={roadmap.id!} preferredChannel={roadmap.preferredChannel} />
                                             ))}
                                         </div>
                                     </div>
