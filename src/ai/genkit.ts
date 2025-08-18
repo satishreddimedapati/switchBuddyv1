@@ -17,7 +17,7 @@ if (process.env.GEMINI_API_KEY_2) {
 }
 
 if (apiKeys.length === 0) {
-  throw new Error("No Gemini API keys found. Please set GEMINI_API_KEY in your environment.");
+  throw new Error("No Gemini API keys found. Please set GEMINI_API_KEY and other keys in your environment.");
 }
 
 let keyIndex = 0;
