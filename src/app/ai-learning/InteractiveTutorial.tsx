@@ -10,7 +10,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle as CardTitleComponent, CardDescription as CardDescriptionComponent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle as CardTitleComponent, CardDescription as CardDescriptionComponent, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, AlertTriangle, Lightbulb, Copy } from 'lucide-react';
 import { generateInteractiveLesson } from '@/ai/flows/generate-interactive-lesson';
@@ -117,14 +117,16 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
   const renderContent = () => {
     if (error) {
         return (
-            <div className="absolute inset-0 bg-background/90 flex items-center justify-center">
-                 <Card className="m-4 p-4 text-center border-destructive">
+            <div className="absolute inset-0 bg-background/90 flex items-center justify-center p-4">
+                 <Card className="w-full max-w-md m-4 p-4 text-center border-destructive">
                     <CardHeader className="p-2">
                         <AlertTriangle className="mx-auto h-8 w-8 text-destructive mb-2" />
                         <CardTitleComponent className="font-semibold">Lesson Generation Failed</CardTitleComponent>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground max-h-48 overflow-auto">{error}</p>
+                        <ScrollArea className="max-h-32 w-full rounded-md border bg-muted p-2 text-left">
+                            <p className="text-xs text-muted-foreground whitespace-pre-wrap">{error}</p>
+                        </ScrollArea>
                         <Button variant="outline" onClick={handleCopyError}>
                             <Copy className="mr-2 h-4 w-4" />
                             Copy Error
@@ -144,18 +146,22 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
         );
     }
 
+    if (!lesson) {
+        return <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin" /></div>;
+    }
+
     return (
         <div className="flex flex-col h-full">
             <div className="p-4 border-b">
-                <h3 className="font-semibold">{lesson?.title}</h3>
+                <h3 className="font-semibold">{lesson.title}</h3>
                 <Progress value={progress} className="mt-2" />
             </div>
             <div className="flex-grow flex items-center justify-center p-4 relative overflow-hidden">
-                {lesson && lesson.cards.map((card, index) => {
+                {lesson.cards.map((card, index) => {
                     if (index < currentIndex) return null;
                     return (
                          <TutorialCard
-                            key={index}
+                            key={`${card.title}-${index}`}
                             card={card}
                             index={index}
                             currentIndex={currentIndex}
@@ -165,7 +171,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
                 })}
             </div>
             <div className="p-4 border-t flex justify-between items-center text-xs text-muted-foreground">
-                <p>Card {currentIndex + 1} of {lesson?.cards.length || 0}</p>
+                <p>Card {currentIndex + 1} of {lesson.cards.length}</p>
                 <div className="flex items-center gap-1">
                     <Lightbulb className="h-3 w-3" />
                     <span>Tip: Use arrow keys to navigate</span>
@@ -179,7 +185,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl h-[90vh] flex flex-col p-0">
         <DialogHeader className="p-4 border-b">
-          <DialogTitle>Interactive Tutorial: {topic}</DialogTitle>
+          <DialogTitle>Interactive Tutorial</DialogTitle>
           <DialogDescription>An interactive, card-based lesson for the topic: {topic}.</DialogDescription>
         </DialogHeader>
         {renderContent()}

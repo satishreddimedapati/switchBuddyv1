@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview A flow to generate an interactive, card-based lesson.
+ * @fileOverview A flow to generate an interactive, card-based lesson dynamically.
  */
 
 import { ai } from '@/ai/genkit';
@@ -13,7 +13,7 @@ export type GenerateInteractiveLessonInput = z.infer<typeof GenerateInteractiveL
 export type InteractiveLesson = z.infer<typeof InteractiveLessonSchema>;
 
 export async function generateInteractiveLesson(input: GenerateInteractiveLessonInput): Promise<InteractiveLesson> {
-    return generateInteractiveLessonFlow(input);
+  return generateInteractiveLessonFlow(input);
 }
 
 const prompt = ai.definePrompt({
@@ -28,46 +28,35 @@ Topic: {{{topic}}}
 Experience Level: {{{experienceLevel}}}
 
 The entire response MUST be a single JSON object. This object must contain:
-1.  A 'title' property: A main, engaging title for the entire lesson deck.
-2.  A 'cards' property: An array containing exactly 7 cards in a logical learning sequence.
+1.  A "title" property: A main, engaging title for the entire lesson deck.
+2.  A "cards" property: An array containing exactly 7 cards in a logical learning sequence.
 
-The card types must follow this exact order to create a compelling learning flow:
-1.  **concept**: Start with a simple, visual analogy.
-2.  **concept**: Follow up with a more formal definition and brief explanation.
-3.  **code_snippet**: Provide a clear, simple code example. For this card, you MUST provide 'code' and 'language' properties.
-4.  **challenge_mcq**: A multiple-choice question to check basic understanding. For this card, you MUST provide 'options' (an array of 3 strings), a 'correct_option_index' (0, 1, or 2), and a brief 'explanation'.
-5.  **scenario**: A short, real-world scenario question that requires applying the knowledge.
-6.  **reflection**: An open-ended question to make the user think and articulate the concept in their own words.
-7.  **concept**: A final recap or summary card to reinforce the key takeaway.
+The card types must follow this exact order:
+1.  concept → Start with a simple analogy or visual explanation.
+2.  concept → Formal definition + explanation.
+3.  code_snippet → A minimal, clear code example. Must include "code" and "language".
+4.  challenge_mcq → A multiple-choice question. Must include "options" (3 strings), "correct_option_index" (0–2), and "explanation".
+5.  scenario → A short real-world situation to apply the knowledge.
+6.  reflection → An open-ended question to make the learner think.
+7.  concept → A recap/summary to reinforce the key takeaway.
 
-For EVERY card, you must provide:
-- A valid 'card_type'.
-- A 'title'.
-- 'content' (the main text for the card).
-- A relevant 'visual' emoji.
+For EVERY card:
+- "card_type" is required.
+- "title" is required.
+- "content" is required.
+- "visual" is required (use a relevant emoji).
+- No extra properties outside the schema.
 
-Example of the required final JSON structure:
+Output must strictly follow this JSON structure:
 {
-  "title": "Your Engaging Lesson Title Here",
+  "title": "Lesson Title",
   "cards": [
-    {
-      "card_type": "concept",
-      "title": "Card 1 Title",
-      "content": "Card 1 content...",
-      "visual": "💡"
-    },
-    {
-      "card_type": "concept",
-      "title": "Card 2 Title",
-      "content": "Card 2 content...",
-      "visual": "🧠"
-    }
-    // ...and so on for all 7 cards in the correct order
+    { "card_type": "concept", "title": "...", "content": "...", "visual": "💡" },
+    ...
   ]
 }
 
-Generate the output as a single, valid JSON object that strictly follows all rules and the provided schema.
-`,
+Do not include any text outside of the JSON object.`,
 });
 
 const generateInteractiveLessonFlow = ai.defineFlow(
@@ -77,10 +66,40 @@ const generateInteractiveLessonFlow = ai.defineFlow(
     outputSchema: InteractiveLessonSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
-    if (!output || !output.title || !output.cards || output.cards.length === 0) {
-        throw new Error("The AI failed to generate a valid lesson deck with a title and cards. Please try again.");
+    try {
+      const { output } = await prompt(input);
+
+      if (!output) {
+        throw new Error("The AI returned an empty response.");
+      }
+      
+      // Explicitly check for the required properties to provide a better error message.
+      if (!output.title || !output.cards || !Array.isArray(output.cards)) {
+        throw new Error("The AI failed to generate a valid lesson with a title and cards array. Please try again.");
+      }
+      
+      return output;
+      
+    } catch (e: any) {
+      console.error("Error in generateInteractiveLessonFlow:", e);
+      // Attempt to recover if the AI only returned the cards array
+      if (e.message && e.message.includes("must have required property 'title'") && e.output) {
+        try {
+          const parsedOutput = JSON.parse(e.output);
+          if (parsedOutput.cards && Array.isArray(parsedOutput.cards)) {
+            console.warn("AI response was missing a title. Adding a default title and returning.");
+            return {
+              title: `Interactive Lesson: ${input.topic}`,
+              cards: parsedOutput.cards,
+            };
+          }
+        } catch (parseError) {
+          // If parsing the partial output fails, re-throw the original error.
+           throw new Error(`Failed to generate a valid lesson. The AI returned malformed JSON. Original error: ${e.message}`);
+        }
+      }
+      // Re-throw the original error if recovery is not possible
+      throw new Error(`Could not generate lesson: ${e.message}`);
     }
-    return output;
   }
 );
