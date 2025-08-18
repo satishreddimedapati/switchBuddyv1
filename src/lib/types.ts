@@ -371,20 +371,6 @@ export const GetMarketIntelligenceOutputSchema = z.object({
 export type GetMarketIntelligenceInput = z.infer<typeof GetMarketIntelligenceInputSchema>;
 export type GetMarketIntelligenceOutput = z.infer<typeof GetMarketIntelligenceOutputSchema>;
 
-export const GetPersonalizedSalaryEstimateInputSchema = z.object({
-  jobRole: z.string().min(1, 'Job role is required.'),
-  yearsOfExperience: z.number().min(0, 'Years of experience cannot be negative.'),
-  location: z.string().min(1, 'Location is required.'),
-  skills: z.array(z.string()).min(1, 'Please select at least one skill.'),
-});
-export type GetPersonalizedSalaryEstimateInput = z.infer<typeof GetPersonalizedSalaryEstimateInputSchema>;
-
-export const GetPersonalizedSalaryEstimateOutputSchema = z.object({
-  estimatedSalaryRange: z.string().describe('The estimated salary range in LPA, e.g., "₹10 - 12 LPA".'),
-  commentary: z.string().describe('A brief commentary explaining how skills and experience affect the estimate.'),
-});
-export type GetPersonalizedSalaryEstimateOutput = z.infer<typeof GetPersonalizedSalaryEstimateOutputSchema>;
-
 export const GenerateRecruiterMessageInputSchema = z.object({
     resume: z.string().describe("The user's resume as plain text."),
     jobDescription: z.object({
@@ -624,28 +610,42 @@ export type GenerateChatLessonOutput = z.infer<typeof GenerateChatLessonOutputSc
 
 // Interactive Card-Based Lessons
 export const LessonCardSchema = z.object({
-  card_type: z.enum(['concept', 'challenge_mcq', 'code_snippet', 'scenario', 'reflection']),
-  title: z.string(),
-  content: z.string().describe("Main text content, analogy, or question."),
-  visual: z.string().optional().describe("Emoji or simple visual description."),
-  // For MCQ
-  options: z.array(z.string()).optional(),
-  correct_option_index: z.number().optional(),
-  explanation: z.string().optional().describe("Explanation for why the correct answer is right."),
-  // For Code
-  code: z.string().optional(),
-  language: z.string().optional(),
+    card_type: z.enum([
+        'simple_explanation',
+        'real_world_example',
+        'fun_explanation',
+        'company_use_cases',
+        'interview_qa',
+    ]),
+    title: z.string(),
+    content: z.string().describe("Main text content, analogy, or question."),
+    visual: z.string().describe("A single, relevant emoji."),
 });
 export type LessonCard = z.infer<typeof LessonCardSchema>;
 
 export const InteractiveLessonSchema = z.object({
-  title: z.string(),
-  cards: z.array(LessonCardSchema).describe("A deck of 7-8 micro-lesson cards in a logical sequence."),
+    title: z.string().describe("An engaging title for the lesson, matching the topic."),
+    cards: z.array(LessonCardSchema).length(5).describe("A deck of exactly 5 micro-lesson cards in a logical sequence."),
 });
 export type InteractiveLesson = z.infer<typeof InteractiveLessonSchema>;
+
 
 export const GenerateInteractiveLessonInputSchema = z.object({
   topic: z.string().describe("The topic for the interactive lesson."),
   experienceLevel: z.string().describe("The user's experience level (e.g., Beginner, Intermediate)."),
 });
 export type GenerateInteractiveLessonInput = z.infer<typeof GenerateInteractiveLessonInputSchema>;
+
+export const GetPersonalizedSalaryEstimateInputSchema = z.object({
+  jobRole: z.string().describe('The job role, e.g., "Software Engineer".'),
+  yearsOfExperience: z.number().describe('The user\'s years of professional experience.'),
+  location: z.string().describe('The city or region for the job.'),
+  skills: z.array(z.string()).describe('A list of key skills the user possesses.'),
+});
+export type GetPersonalizedSalaryEstimateInput = z.infer<typeof GetPersonalizedSalaryEstimateInputSchema>;
+
+export const GetPersonalizedSalaryEstimateOutputSchema = z.object({
+  estimatedSalaryRange: z.string().describe('The calculated salary range in LPA, e.g., "15 LPA - 20 LPA".'),
+  commentary: z.string().describe('A brief explanation of how the user\'s profile affects this estimate.'),
+});
+export type GetPersonalizedSalaryEstimateOutput = z.infer<typeof GetPersonalizedSalaryEstimateOutputSchema>;

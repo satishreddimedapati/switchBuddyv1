@@ -22,43 +22,28 @@ const prompt = ai.definePrompt({
   output: { schema: InteractiveLessonSchema },
   prompt: `You are an expert curriculum designer creating engaging, interactive micro-learning experiences.
 
-Your task is to generate a complete, card-based interactive learning deck for the given topic, tailored to the user's experience level.
+Your task is to generate a complete, 5-card interactive learning deck for the given topic.
 
 Topic: {{{topic}}}
 Experience Level: {{{experienceLevel}}}
 
 The entire response MUST be a single JSON object. This object must contain:
-1.  A "title" property: A main, engaging title for the entire lesson deck.
-2.  A "cards" property: An array containing exactly 7 cards in a logical learning sequence.
+1.  A "title" property: An engaging title for the lesson, matching the topic.
+2.  A "cards" property: An array containing exactly 5 cards in a logical learning sequence.
 
-The card types must follow this exact order:
-1.  concept → Start with a simple analogy or visual explanation.
-2.  concept → Formal definition + explanation.
-3.  code_snippet → A minimal, clear code example. Must include "code" and "language".
-4.  challenge_mcq → A multiple-choice question. Must include "options" (an array of 3 strings), "correct_option_index" (a number from 0–2), and an "explanation" for the answer.
-5.  scenario → A short real-world situation to apply the knowledge.
-6.  reflection → An open-ended question to make the learner think.
-7.  concept → A recap/summary to reinforce the key takeaway.
+The card types must follow this exact order and content:
+1.  **Simple Explanation**: A card with 'card_type': 'simple_explanation'. Explain the topic in a very simple, crisp, and easy-to-understand way. Use an analogy.
+2.  **Real-world Example**: A card with 'card_type': 'real_world_example'. Provide a clear, real-world example of how this topic is applied in a practical scenario.
+3.  **Fun Explanation**: A card with 'card_type': 'fun_explanation'. Explain the same topic in a fun, creative, or humorous way to make it memorable.
+4.  **Company Use Cases**: A card with 'card_type': 'company_use_cases'. List 2-3 top tech companies and briefly explain how they use this technology.
+5.  **Interview Q&A**: A card with 'card_type': 'interview_qa'. Provide 2-3 common interview questions related to this topic along with their concise answers.
 
 For EVERY card:
 - "card_type" is required.
 - "title" is required.
 - "content" is required.
-- "visual" is required (use a relevant emoji).
+- "visual" is required (use a single, relevant emoji).
 - No extra properties outside the schema.
-
-Example of the required JSON structure:
-{
-  "title": "Learning JavaScript Promises",
-  "cards": [
-    {
-      "card_type": "concept",
-      "title": "The Pizza Analogy",
-      "content": "A Promise is like ordering a pizza. You get a receipt (the Promise) right away, which isn't the pizza, but it guarantees you'll get it eventually!",
-      "visual": "🍕"
-    }
-  ]
-}
 
 Do not include any text, markdown, or formatting outside of the single, final JSON object.`,
 });
@@ -88,11 +73,17 @@ const generateInteractiveLessonFlow = ai.defineFlow(
     } catch (e: any) {
       console.error("Error in generateInteractiveLessonFlow:", e);
       
-      // Attempt to recover if the AI output includes junk text before the JSON
+      let rawOutput = '';
       if (e.output) {
+          rawOutput = String(e.output);
+      } else if (e.message) {
+          rawOutput = e.message;
+      }
+      
+      // Attempt to recover if the AI output includes junk text before the JSON
+      if (rawOutput) {
         try {
           // Find the first '{' and the last '}' to extract the JSON object
-          const rawOutput = String(e.output);
           const startIndex = rawOutput.indexOf('{');
           const endIndex = rawOutput.lastIndexOf('}');
           if (startIndex !== -1 && endIndex !== -1) {
