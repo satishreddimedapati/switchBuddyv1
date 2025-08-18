@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle as CardTitleComponent, CardDes
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, AlertTriangle, Lightbulb, Copy, X } from 'lucide-react';
 import { generateInteractiveLesson } from '@/ai/flows/generate-interactive-lesson';
-import type { InteractiveLesson as InteractiveLessonType, LessonCard } from '@/lib/types';
+import type { InteractiveLesson as InteractiveLessonType } from '@/lib/types';
 import { TutorialCard } from './TutorialCard';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -73,6 +73,16 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
     });
   }
 
+  const handleNextCard = () => {
+    if (!lesson) return;
+    if (currentIndex < lesson.cards.length - 1) {
+      setCurrentIndex(prev => prev + 1);
+    } else {
+        onOpenChange(false);
+        toast({ title: "Lesson Complete!", description: "Great job finishing the interactive tutorial."});
+    }
+  };
+
   useEffect(() => {
     // Reset state when the dialog is closed
     if (!isOpen) {
@@ -84,6 +94,19 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
       }, 300); // Delay to allow for exit animation
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+         if (!isOpen || !isStarted || !lesson || isGenerating || error) return;
+         if (e.key === 'ArrowRight' || e.key === 'Enter') {
+            handleNextCard();
+        }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => {
+        window.removeEventListener('keydown', handleKeyPress);
+    };
+}, [isOpen, isStarted, lesson, isGenerating, error, currentIndex]);
 
 
   const handleCopyError = () => {
@@ -143,19 +166,11 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
         );
     }
 
-    if (!lesson) {
+    if (!lesson || !lesson.cards[currentIndex]) {
         // This state should ideally not be reached if !isGenerating and !error, but as a fallback:
         return <div className="flex items-center justify-center h-full"><p>Something went wrong. Please try again.</p></div>;
     }
 
-    const handleNextCard = () => {
-        if (currentIndex < lesson.cards.length - 1) {
-          setCurrentIndex(prev => prev + 1);
-        } else {
-            onOpenChange(false);
-            toast({ title: "Lesson Complete!", description: "Great job finishing the interactive tutorial."});
-        }
-    };
 
     return (
         <div className="flex flex-col h-full">
@@ -164,18 +179,11 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
                 <Progress value={progress} className="mt-2" />
             </div>
             <div className="flex-grow flex items-center justify-center p-4 relative overflow-hidden">
-                {lesson.cards.map((card, index) => {
-                    if (index < currentIndex) return null;
-                    return (
-                         <TutorialCard
-                            key={`${card.title}-${index}`}
-                            card={card}
-                            index={index}
-                            currentIndex={currentIndex}
-                            onComplete={handleNextCard}
-                        />
-                    )
-                })}
+                <TutorialCard
+                    key={`${lesson.cards[currentIndex].title}-${currentIndex}`}
+                    card={lesson.cards[currentIndex]}
+                    onComplete={handleNextCard}
+                />
             </div>
             <div className="p-4 border-t flex justify-between items-center text-xs text-muted-foreground">
                 <p>Card {currentIndex + 1} of {lesson.cards.length}</p>
