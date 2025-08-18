@@ -29,7 +29,7 @@ function DailyCheckpoint({ task, preferredChannel }: { task: DailyTaskItemType, 
                 <HoverCardTrigger asChild>
                     <button className="h-4 w-4 bg-muted-foreground rounded-full hover:bg-primary transition-colors"></button>
                 </HoverCardTrigger>
-                <HoverCardContent className="w-96">
+                <HoverCardContent className="w-96" onMouseDown={(e) => e.stopPropagation()}>
                     <DailyTaskItem task={task} preferredChannel={preferredChannel} />
                 </HoverCardContent>
             </HoverCard>
