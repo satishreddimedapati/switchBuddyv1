@@ -56,8 +56,7 @@ Example of the required JSON structure:
       "title": "The Pizza Analogy",
       "content": "A Promise is like ordering a pizza. You get a receipt (the Promise) right away, which isn't the pizza, but it guarantees you'll get it eventually!",
       "visual": "🍕"
-    },
-    // ... more cards following the structure ...
+    }
   ]
 }
 
@@ -111,5 +110,3 @@ const generateInteractiveLessonFlow = ai.defineFlow(
     }
   }
 );
-
-    
