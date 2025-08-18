@@ -2,27 +2,20 @@
 'use client';
 
 import * as React from 'react';
-import type { LearningRoadmap, DailyTaskItem } from '@/lib/types';
+import type { LearningRoadmap, DailyTaskItem as DailyTaskItemType } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { BookOpen, ExternalLink, TestTube2, Video, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
+import { DailyTaskItem } from './DailyTaskItem';
 
-const resourceIcons = {
-    'Video': <Video className="h-4 w-4" />,
-    'Article': <BookOpen className="h-4 w-4" />,
-    'Interactive Tutorial': <TestTube2 className="h-4 w-4" />,
-    'Chat Lessons': <MessageSquare className="h-4 w-4" />,
-};
 
 interface RoadmapTimelineProps {
   roadmap: LearningRoadmap;
 }
 
-function DailyCheckpoint({ task }: { task: DailyTaskItem }) {
+function DailyCheckpoint({ task, preferredChannel }: { task: DailyTaskItemType, preferredChannel?: string }) {
     const taskDate = task.date ? parseISO(task.date) : null;
     return (
         <div className="flex flex-col items-center gap-1">
@@ -36,28 +29,8 @@ function DailyCheckpoint({ task }: { task: DailyTaskItem }) {
                 <HoverCardTrigger asChild>
                     <button className="h-4 w-4 bg-muted-foreground rounded-full hover:bg-primary transition-colors"></button>
                 </HoverCardTrigger>
-                <HoverCardContent className="w-80">
-                    <div className="space-y-2">
-                        <h4 className="font-semibold">{task.day}: {task.topic}</h4>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            {resourceIcons[task.resource_type as keyof typeof resourceIcons] || <ExternalLink className="h-4 w-4" />}
-                            <span>{task.resource_type}</span>
-                        </div>
-                        {task.resource_link && (
-                            <Button variant="outline" size="sm" asChild>
-                                <a href={task.resource_link} target="_blank" rel="noopener noreferrer" className="text-xs">
-                                    <ExternalLink className="h-3 w-3 mr-2" />
-                                    Open Resource
-                                </a>
-                            </Button>
-                        )}
-                        {task.challenge && (
-                            <div className="mt-2 pt-2 border-t">
-                                <p className="text-sm font-semibold">Challenge:</p>
-                                <p className="text-sm text-muted-foreground italic">&quot;{task.challenge}&quot;</p>
-                            </div>
-                        )}
-                    </div>
+                <HoverCardContent className="w-96">
+                    <DailyTaskItem task={task} preferredChannel={preferredChannel} />
                 </HoverCardContent>
             </HoverCard>
         </div>
@@ -94,11 +67,11 @@ export function RoadmapTimeline({ roadmap }: RoadmapTimelineProps) {
                                 <React.Fragment key={week.week}>
                                     <WeekMilestone week={week} />
                                     
-                                    {weekIndex < roadmap.roadmap.weeks.length - 1 && (
+                                    {weekIndex < roadmap.roadmap.weeks.length && (
                                         <div className="flex items-end flex-1 min-w-[300px] lg:min-w-[400px]">
                                             <div className="w-full h-1 bg-border relative flex items-end justify-between px-2">
                                                 {week.daily_tasks.slice(0, dotsToShow).map((task, dayIndex) => (
-                                                     <DailyCheckpoint key={dayIndex} task={task} />
+                                                     <DailyCheckpoint key={dayIndex} task={task} preferredChannel={roadmap.preferredChannel} />
                                                 ))}
                                             </div>
                                         </div>
@@ -126,7 +99,7 @@ export function RoadmapTimeline({ roadmap }: RoadmapTimelineProps) {
                                     <div className={cn("flex w-full items-end justify-center", weekIndex % 2 !== 0 && "flex-row-reverse")}>
                                         <div className="w-full h-1 bg-border relative flex items-end justify-evenly">
                                             {week.daily_tasks.slice(0, dotsToShow).map((task, dayIndex) => (
-                                                <DailyCheckpoint key={dayIndex} task={task} />
+                                                <DailyCheckpoint key={dayIndex} task={task} preferredChannel={roadmap.preferredChannel} />
                                             ))}
                                         </div>
                                     </div>
