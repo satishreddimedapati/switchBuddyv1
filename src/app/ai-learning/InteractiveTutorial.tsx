@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle as CardTitleComponent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, AlertTriangle, Lightbulb, Copy, X, RefreshCw } from 'lucide-react';
+import { Loader2, Sparkles, AlertTriangle, Lightbulb, Copy, X, RefreshCw, ArrowLeft, ArrowRight } from 'lucide-react';
 import { generateInteractiveLesson } from '@/ai/flows/generate-interactive-lesson';
 import type { InteractiveLesson as InteractiveLessonType } from '@/lib/types';
 import { TutorialCard } from './TutorialCard';
@@ -122,6 +122,12 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
       });
   }
 
+  const handlePrevCard = () => {
+    if (currentIndex > 0) {
+        setCurrentIndex(prev => prev - 1);
+    }
+  };
+
   const handleNextCard = () => {
     if (!currentLesson) return;
     if (currentIndex < currentLesson.cards.length - 1) {
@@ -150,13 +156,15 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
          if (!isOpen || !isStarted || !currentLesson || isGenerating || error) return;
          if (e.key === 'ArrowRight' || e.key === 'Enter') {
             handleNextCard();
+        } else if (e.key === 'ArrowLeft') {
+            handlePrevCard();
         }
     };
     window.addEventListener('keydown', handleKeyPress);
     return () => {
         window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [isOpen, isStarted, currentLesson, isGenerating, error, currentIndex, handleNextCard]);
+  }, [isOpen, isStarted, currentLesson, isGenerating, error, currentIndex, handleNextCard, handlePrevCard]);
 
 
   const handleCopyError = () => {
@@ -254,14 +262,17 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
                 <TutorialCard
                     key={`${currentLesson.title}-${currentIndex}`}
                     card={currentLesson.cards[currentIndex]}
-                    onComplete={handleNextCard}
+                    onNext={handleNextCard}
+                    onPrev={handlePrevCard}
+                    isFirst={currentIndex === 0}
+                    isLast={currentIndex === currentLesson.cards.length - 1}
                 />
             </div>
             <div className="p-4 border-t flex justify-between items-center text-xs text-muted-foreground">
                 <p>Card {currentIndex + 1} of {currentLesson.cards.length}</p>
                 <div className="flex items-center gap-1">
                     <Lightbulb className="h-3 w-3" />
-                    <span>Tip: Use Enter or → to advance</span>
+                    <span>Tip: Use ← / → to navigate</span>
                 </div>
             </div>
         </div>
