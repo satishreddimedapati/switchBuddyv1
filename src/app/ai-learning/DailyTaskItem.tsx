@@ -9,12 +9,7 @@ import { Button } from '@/components/ui/button';
 import { BookOpen, ExternalLink, TestTube2, Video, MessageSquare, Youtube, ChevronDown, WandSparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ChatLesson } from './ChatLesson';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Badge } from '@/components/ui/badge';
 
@@ -25,16 +20,42 @@ interface DailyTaskItemProps {
 }
 
 const resourceTypes = [
-    { value: 'Video', label: 'Video', icon: <Video className="h-4 w-4" /> },
-    { value: 'Article', label: 'Article', icon: <BookOpen className="h-4 w-4" /> },
-    { value: 'Interactive Tutorial', label: 'Interactive Tutorial', icon: <TestTube2 className="h-4 w-4" /> },
-    { value: 'Chat Lessons', label: 'Chat Lessons', icon: <MessageSquare className="h-4 w-4" /> },
+    { value: 'Video', label: 'Video', icon: <Video className="h-4 w-4" />, description: "Watch guided lessons from platforms like YouTube." },
+    { value: 'Article', label: 'Article', icon: <BookOpen className="h-4 w-4" />, description: "Learn from official docs and blog posts." },
+    { value: 'Interactive Tutorial', label: 'Interactive Tutorial', icon: <TestTube2 className="h-4 w-4" />, description: "Short videos paired with mini coding challenges." },
+    { value: 'Chat Lessons', label: 'Chat Lessons', icon: <MessageSquare className="h-4 w-4" />, description: "Bite-sized, conversational lessons from an AI tutor." },
 ];
+
+function ResourceTypeSelector({ onSelect, currentType, onClose }: { onSelect: (type: string) => void, currentType: string, onClose: () => void }) {
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {resourceTypes.map(rt => (
+                <Card 
+                    key={rt.value}
+                    onClick={() => { onSelect(rt.value); onClose(); }}
+                    className={cn(
+                        "p-4 cursor-pointer transition-all hover:bg-muted/80",
+                        currentType === rt.value && "ring-2 ring-primary bg-primary/10"
+                    )}
+                >
+                    <div className="flex items-center gap-4">
+                        <div className="text-primary">{rt.icon}</div>
+                        <div>
+                            <h3 className="font-semibold">{rt.label}</h3>
+                            <p className="text-xs text-muted-foreground">{rt.description}</p>
+                        </div>
+                    </div>
+                </Card>
+            ))}
+        </div>
+    );
+}
 
 export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
     const [isCompleted, setIsCompleted] = useState(task.completed || false);
     const [currentResourceType, setCurrentResourceType] = useState(task.resource_type);
     const [isChatOpen, setIsChatOpen] = useState(false);
+    const [isResourceSelectorOpen, setIsResourceSelectorOpen] = useState(false);
     
     const handleToggle = () => setIsCompleted(!isCompleted);
     
@@ -51,7 +72,7 @@ export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
 
     const resourceLink = getResourceLink();
 
-    const selectedResource = resourceTypes.find(rt => rt.value === currentResourceType) || { value: 'Article', label: 'Article', icon: <BookOpen className="h-4 w-4" /> };
+    const selectedResource = resourceTypes.find(rt => rt.value === currentResourceType) || resourceTypes[1];
 
     const handleResourceButtonClick = () => {
         if (currentResourceType === 'Chat Lessons') {
@@ -93,33 +114,31 @@ export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
                         )}
                     </div>
                     
-                    <div className="flex-shrink-0">
-                         <DropdownMenu>
-                            <div className="flex rounded-md border">
-                                <Button onClick={handleResourceButtonClick} variant="ghost" className="rounded-r-none border-r">
-                                    {selectedResource.icon}
-                                    <span className="ml-2 hidden sm:inline">Start Learning</span>
-                                </Button>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="rounded-l-none w-8">
-                                        <ChevronDown className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                            </div>
-                            <DropdownMenuContent align="end">
-                                {resourceTypes.map(rt => (
-                                    <DropdownMenuItem key={rt.value} onClick={() => setCurrentResourceType(rt.value)}>
-                                        <div className="flex items-center gap-3">
-                                            {rt.icon}
-                                            <span>{rt.label}</span>
-                                        </div>
-                                    </DropdownMenuItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                    <div className="flex-shrink-0 flex items-center gap-2">
+                         <Button onClick={handleResourceButtonClick} variant="outline" size="sm">
+                            {selectedResource.icon}
+                            <span className="ml-2 hidden sm:inline">{selectedResource.label}</span>
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setIsResourceSelectorOpen(true)}>
+                            <ChevronDown className="h-4 w-4" />
+                        </Button>
                     </div>
                 </div>
             </Card>
+
+            <Dialog open={isResourceSelectorOpen} onOpenChange={setIsResourceSelectorOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Choose Your Learning Style</DialogTitle>
+                        <DialogDescription>Select how you want to learn this topic.</DialogDescription>
+                    </DialogHeader>
+                    <ResourceTypeSelector 
+                        onSelect={setCurrentResourceType} 
+                        currentType={currentResourceType} 
+                        onClose={() => setIsResourceSelectorOpen(false)}
+                    />
+                </DialogContent>
+            </Dialog>
 
             {currentResourceType === 'Chat Lessons' && (
                 <ChatLesson 
