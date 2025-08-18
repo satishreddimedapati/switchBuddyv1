@@ -604,12 +604,19 @@ export const ChannelSuggestionOutputSchema = z.object({
 export type ChannelSuggestionOutput = z.infer<typeof ChannelSuggestionOutputSchema>;
 
 // Chat Lessons
+export const ChatMessageSchema = z.object({
+  role: z.enum(['user', 'model', 'thinking']),
+  content: z.string(),
+});
+export type ChatMessage = z.infer<typeof ChatMessageSchema>;
+
 export const GenerateChatLessonInputSchema = z.object({
   topic: z.string().describe('The topic for the chat lesson.'),
+  history: z.array(ChatMessageSchema).describe('The conversation history so far.'),
 });
 export type GenerateChatLessonInput = z.infer<typeof GenerateChatLessonInputSchema>;
 
 export const GenerateChatLessonOutputSchema = z.object({
-  lesson: z.string().describe("The AI-generated lesson, formatted as a friendly, conversational chat message."),
+  response: z.string().describe("The AI's response to continue the conversation."),
 });
 export type GenerateChatLessonOutput = z.infer<typeof GenerateChatLessonOutputSchema>;
