@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { BookOpen, ExternalLink, TestTube2, Video, MessageSquare, Youtube } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 interface DailyTaskItemProps {
@@ -14,25 +15,21 @@ interface DailyTaskItemProps {
     preferredChannel?: string;
 }
 
-const resourceIcons = {
-    'Video': <Video className="h-4 w-4" />,
-    'Article': <BookOpen className="h-4 w-4" />,
-    'Interactive Tutorial': <TestTube2 className="h-4 w-4" />,
-    'Chat Lessons': <MessageSquare className="h-4 w-4" />,
-    'Video Tutorials': <Video className="h-4 w-4" />,
-};
+const resourceTypes = [
+    { value: 'Video', label: 'Video', icon: <Video className="h-4 w-4" /> },
+    { value: 'Article', label: 'Article', icon: <BookOpen className="h-4 w-4" /> },
+    { value: 'Interactive Tutorial', label: 'Interactive Tutorial', icon: <TestTube2 className="h-4 w-4" /> },
+    { value: 'Chat Lessons', label: 'Chat Lessons', icon: <MessageSquare className="h-4 w-4" /> },
+    { value: 'Video Tutorials', label: 'Video Tutorials', icon: <Video className="h-4 w-4" /> },
+];
 
 export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
     const [isCompleted, setIsCompleted] = useState(task.completed || false);
+    const [currentResourceType, setCurrentResourceType] = useState(task.resource_type);
     
-    // DEBUG LOG: Log the incoming props
-    console.log('[DailyTaskItem] Received Task:', task, 'Preferred Channel:', preferredChannel);
-
-    // In a real app, you'd likely persist this change.
     const handleToggle = () => setIsCompleted(!isCompleted);
     
-    const isVideo = task.resource_type === 'Video' || task.resource_type === 'Video Tutorials';
-    const ResourceIcon = resourceIcons[task.resource_type as keyof typeof resourceIcons] || <ExternalLink className="h-4 w-4" />;
+    const isVideo = currentResourceType === 'Video' || currentResourceType === 'Video Tutorials';
     
     const getResourceLink = () => {
         if (isVideo) {
@@ -40,14 +37,14 @@ export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
             const query = preferredChannel ? `${baseQuery} ${preferredChannel}` : baseQuery;
             return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
         }
-        return task.resource_link;
+        // For other types, we might want different logic in the future.
+        // For now, we fall back to the original link or a generic search.
+        return task.resource_link || `https://www.google.com/search?q=${encodeURIComponent(task.topic + " " + currentResourceType)}`;
     }
 
     const resourceLink = getResourceLink();
 
-    // DEBUG LOG: Log the final generated link
-    console.log('[DailyTaskItem] Generated resource link:', resourceLink);
-
+    const selectedResource = resourceTypes.find(rt => rt.value === currentResourceType) || { value: 'Article', label: 'Article', icon: <BookOpen className="h-4 w-4" /> };
 
     return (
         <Card className={cn(
@@ -69,10 +66,25 @@ export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
                        {task.day}: {task.topic}
                     </label>
                     <div className="flex items-center gap-4 mt-2 flex-wrap">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            {ResourceIcon}
-                            <span>{task.resource_type}</span>
-                        </div>
+                        <Select value={currentResourceType} onValueChange={setCurrentResourceType}>
+                            <SelectTrigger className="w-full sm:w-[200px] h-9">
+                                <div className="flex items-center gap-2">
+                                     {selectedResource.icon}
+                                    <SelectValue />
+                                </div>
+                            </SelectTrigger>
+                            <SelectContent>
+                                {resourceTypes.map(rt => (
+                                     <SelectItem key={rt.value} value={rt.value}>
+                                         <div className="flex items-center gap-3">
+                                            {rt.icon}
+                                            <span>{rt.label}</span>
+                                         </div>
+                                     </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
                         {resourceLink && (
                              <Button variant="outline" size="sm" asChild>
                                 <a href={resourceLink} target="_blank" rel="noopener noreferrer">
