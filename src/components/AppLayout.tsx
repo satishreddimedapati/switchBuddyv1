@@ -1,3 +1,4 @@
+
 'use client'
 
 import React from 'react';
@@ -32,6 +33,7 @@ import {
   Loader2,
   User,
   Settings,
+  BrainCircuit,
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { useAuth } from '@/lib/auth';
@@ -45,12 +47,14 @@ const navItems = [
   { href: '/', icon: Home, label: 'Dashboard' },
   { href: '/daily-tracker', icon: CalendarCheck, label: 'Daily Tracker' },
   { href: '/job-switch-helper', icon: Briefcase, label: 'JobSwitch Helper' },
+  { href: '/ai-learning', icon: BrainCircuit, label: 'AI Learning' },
   { href: '/profile', icon: User, label: 'Profile & Rewards' },
 ];
 
 const mobileNavItems = [
     { href: '/daily-tracker', icon: CalendarCheck, label: 'Daily Tracker' },
     { href: '/job-switch-helper', icon: Briefcase, label: 'JobSwitch Helper' },
+    { href: '/ai-learning', icon: BrainCircuit, label: 'AI Learning' },
     { href: '/profile', icon: User, label: 'Profile & Rewards' },
 ];
 

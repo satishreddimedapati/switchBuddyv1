@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Briefcase, Cpu, Video, MoreHorizontal } from "lucide-react";
+import { Briefcase, Cpu, Video, MoreHorizontal } from "lucide-react";
 
 
 const sections = [
@@ -91,7 +91,10 @@ export default function JobSwitchHelperPage() {
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-3">
                         {sections.map(section => (
-                            <TabsTrigger key={section.value} value={section.value}>{section.label}</TabsTrigger>
+                            <TabsTrigger key={section.value} value={section.value}>
+                               <section.icon className="mr-2 h-4 w-4" />
+                               {section.label}
+                            </TabsTrigger>
                         ))}
                     </TabsList>
                     <TabsContent value="tracker">

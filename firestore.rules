@@ -1,20 +1,50 @@
+
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Users can read and write their own user document.
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
+
+    // Allow users to manage their own documents in these collections.
+    // The rule checks if the document's userId field matches the authenticated user's uid.
+    match /{collection}/{docId} {
+      allow read, create, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    
+    // Explicitly match all the collections for clarity
     match /job-applications/{jobId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read, write, create, delete: if request.auth != null && request.auth.uid == request.resource.data.userId;
+       allow update: if request.auth != null && request.auth.uid == resource.data.userId;
     }
+    
     match /daily_tasks/{taskId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+       allow read, write, create, delete: if request.auth != null && request.auth.uid == request.resource.data.userId;
+       allow update: if request.auth != null && request.auth.uid == resource.data.userId;
     }
+
     match /interview_plans/{planId} {
-        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+       allow read, write, create, delete: if request.auth != null && request.auth.uid == request.resource.data.userId;
+       allow update: if request.auth != null && request.auth.uid == resource.data.userId;
     }
+    
     match /interview_sessions/{sessionId} {
-        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read, write, create, delete: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    
+    match /learning_roadmaps/{roadmapId} {
+       allow read, write, create, delete: if request.auth != null && request.auth.uid == request.resource.data.userId;
+       allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    
+    match /redeemed_rewards/{rewardId} {
+       allow read, write, create, delete: if request.auth != null && request.auth.uid == request.resource.data.userId;
+       allow update: if request.auth != null && request.auth.uid == resource.data.userId;
     }
   }
 }
