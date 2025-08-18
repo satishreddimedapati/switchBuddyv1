@@ -6,9 +6,10 @@ import type { DailyTaskItem as DailyTaskItemType } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { BookOpen, ExternalLink, TestTube2, Video, MessageSquare, Youtube, ChevronDown, WandSparkles } from 'lucide-react';
+import { BookOpen, ExternalLink, TestTube2, Video, MessageSquare, Youtube, ChevronDown, WandSparkles, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ChatLesson } from './ChatLesson';
+import { InteractiveTutorial } from './InteractiveTutorial';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +23,7 @@ interface DailyTaskItemProps {
 const resourceTypes = [
     { value: 'Video', label: 'Video', icon: <Video className="h-4 w-4" />, description: "Watch guided lessons from platforms like YouTube." },
     { value: 'Article', label: 'Article', icon: <BookOpen className="h-4 w-4" />, description: "Learn from official docs and blog posts." },
-    { value: 'Interactive Tutorial', label: 'Interactive Tutorial', icon: <TestTube2 className="h-4 w-4" />, description: "Short videos paired with mini coding challenges." },
+    { value: 'Interactive Tutorial', label: 'Interactive Tutorial', icon: <Sparkles className="h-4 w-4" />, description: "A guided, card-based interactive lesson." },
     { value: 'Chat Lessons', label: 'Chat Lessons', icon: <MessageSquare className="h-4 w-4" />, description: "Bite-sized, conversational lessons from an AI tutor." },
 ];
 
@@ -55,6 +56,7 @@ export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
     const [isCompleted, setIsCompleted] = useState(task.completed || false);
     const [currentResourceType, setCurrentResourceType] = useState(task.resource_type);
     const [isChatOpen, setIsChatOpen] = useState(false);
+    const [isInteractiveOpen, setIsInteractiveOpen] = useState(false);
     const [isResourceSelectorOpen, setIsResourceSelectorOpen] = useState(false);
     
     const handleToggle = () => setIsCompleted(!isCompleted);
@@ -77,6 +79,8 @@ export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
     const handleResourceButtonClick = () => {
         if (currentResourceType === 'Chat Lessons') {
             setIsChatOpen(true);
+        } else if (currentResourceType === 'Interactive Tutorial') {
+            setIsInteractiveOpen(true);
         } else {
             window.open(resourceLink, '_blank', 'noopener,noreferrer');
         }
@@ -140,13 +144,17 @@ export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
                 </DialogContent>
             </Dialog>
 
-            {currentResourceType === 'Chat Lessons' && (
-                <ChatLesson 
-                    isOpen={isChatOpen} 
-                    onOpenChange={setIsChatOpen} 
-                    topic={task.topic} 
-                />
-            )}
+            <ChatLesson 
+                isOpen={isChatOpen} 
+                onOpenChange={setIsChatOpen} 
+                topic={task.topic} 
+            />
+
+            <InteractiveTutorial
+                isOpen={isInteractiveOpen}
+                onOpenChange={setIsInteractiveOpen}
+                topic={task.topic}
+            />
         </>
     );
 }

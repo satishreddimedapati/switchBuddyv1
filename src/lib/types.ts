@@ -621,3 +621,31 @@ export const GenerateChatLessonOutputSchema = z.object({
   response: z.string().describe("The AI's response to continue the conversation."),
 });
 export type GenerateChatLessonOutput = z.infer<typeof GenerateChatLessonOutputSchema>;
+
+// Interactive Card-Based Lessons
+export const LessonCardSchema = z.object({
+  card_type: z.enum(['concept', 'challenge_mcq', 'code_snippet', 'scenario', 'reflection']),
+  title: z.string(),
+  content: z.string().describe("Main text content, analogy, or question."),
+  visual: z.string().optional().describe("Emoji or simple visual description."),
+  // For MCQ
+  options: z.array(z.string()).optional(),
+  correct_option_index: z.number().optional(),
+  explanation: z.string().optional().describe("Explanation for why the correct answer is right."),
+  // For Code
+  code: z.string().optional(),
+  language: z.string().optional(),
+});
+export type LessonCard = z.infer<typeof LessonCardSchema>;
+
+export const InteractiveLessonSchema = z.object({
+  title: z.string(),
+  cards: z.array(LessonCardSchema).describe("A deck of 7-8 micro-lesson cards in a logical sequence."),
+});
+export type InteractiveLesson = z.infer<typeof InteractiveLessonSchema>;
+
+export const GenerateInteractiveLessonInputSchema = z.object({
+  topic: z.string().describe("The topic for the interactive lesson."),
+  experienceLevel: z.string().describe("The user's experience level (e.g., Beginner, Intermediate)."),
+});
+export type GenerateInteractiveLessonInput = z.infer<typeof GenerateInteractiveLessonInputSchema>;
