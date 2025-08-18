@@ -10,7 +10,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle as CardTitleComponent, CardDescription as CardDescriptionComponent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, AlertTriangle, Lightbulb } from 'lucide-react';
 import { generateInteractiveLesson } from '@/ai/flows/generate-interactive-lesson';
@@ -99,6 +99,10 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl h-[90vh] flex flex-col p-0">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Interactive Tutorial: {topic}</DialogTitle>
+          <DialogDescription>An interactive, card-based lesson for the topic: {topic}.</DialogDescription>
+        </DialogHeader>
         {!isStarted ? (
           <IntroductionScreen
             onStart={() => setIsStarted(true)}
@@ -106,10 +110,10 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
           />
         ) : (
           <div className="flex flex-col h-full">
-            <DialogHeader className="p-4 border-b">
-              <DialogTitle>{lesson?.title}</DialogTitle>
+            <div className="p-4 border-b">
+              <h3 className="font-semibold">{lesson?.title}</h3>
               <Progress value={progress} className="mt-2" />
-            </DialogHeader>
+            </div>
             <div className="flex-grow flex items-center justify-center p-4 relative overflow-hidden">
                 {lesson && lesson.cards.map((card, index) => {
                     if (index < currentIndex) return null;
