@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle as CardTitleComponent, CardDescription as CardDescriptionComponent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, AlertTriangle, Lightbulb } from 'lucide-react';
+import { Loader2, Sparkles, AlertTriangle, Lightbulb, Copy } from 'lucide-react';
 import { generateInteractiveLesson } from '@/ai/flows/generate-interactive-lesson';
 import type { InteractiveLesson as InteractiveLessonType, LessonCard } from '@/lib/types';
 import { TutorialCard } from './TutorialCard';
@@ -90,6 +90,13 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
         toast({ title: "Lesson Complete!", description: "Great job finishing the interactive tutorial."});
     }
   };
+  
+  const handleCopyError = () => {
+      if (error) {
+          navigator.clipboard.writeText(error);
+          toast({ title: "Copied!", description: "Error message copied to clipboard." });
+      }
+  }
 
   const progress = useMemo(() => {
       if (!lesson) return 0;
@@ -103,12 +110,12 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
           <DialogTitle>Interactive Tutorial: {topic}</DialogTitle>
           <DialogDescription>An interactive, card-based lesson for the topic: {topic}.</DialogDescription>
         </DialogHeader>
-        {!isStarted ? (
+        {!isStarted && !error ? (
           <IntroductionScreen
             onStart={() => setIsStarted(true)}
             isLoading={isGenerating || !lesson}
           />
-        ) : (
+        ) : !error ? (
           <div className="flex flex-col h-full">
             <div className="p-4 border-b">
               <h3 className="font-semibold">{lesson?.title}</h3>
@@ -136,13 +143,21 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
               </div>
             </div>
           </div>
-        )}
+        ) : null}
         {error && (
             <div className="absolute inset-0 bg-background/90 flex items-center justify-center">
                  <Card className="m-4 p-4 text-center border-destructive">
-                    <AlertTriangle className="mx-auto h-8 w-8 text-destructive mb-2" />
-                    <h3 className="font-semibold">Lesson Generation Failed</h3>
-                    <p className="text-sm text-muted-foreground">{error}</p>
+                    <CardHeader className="p-2">
+                        <AlertTriangle className="mx-auto h-8 w-8 text-destructive mb-2" />
+                        <h3 className="font-semibold">Lesson Generation Failed</h3>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <p className="text-sm text-muted-foreground max-h-48 overflow-auto">{error}</p>
+                        <Button variant="outline" onClick={handleCopyError}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            Copy Error
+                        </Button>
+                    </CardContent>
                  </Card>
             </div>
         )}
