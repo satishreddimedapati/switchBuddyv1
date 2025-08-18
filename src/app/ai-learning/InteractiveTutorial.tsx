@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle as CardTitleComponent, CardDescription as CardDescriptionComponent, CardFooter } from '@/components/ui/card';
@@ -206,5 +207,3 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
     </Dialog>
   );
 }
-
-    
