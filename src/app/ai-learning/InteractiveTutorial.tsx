@@ -70,6 +70,11 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
     try {
       const existingLessons = await getInteractiveLessonsForTopic(roadmapId, topic);
       setLessons(existingLessons);
+      if (existingLessons.length > 0) {
+        setCurrentLesson(existingLessons[0]);
+      } else {
+        setCurrentLesson(null);
+      }
     } catch (err) {
        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
        setError(`Failed to load existing lessons: ${errorMessage}`);
@@ -84,19 +89,12 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
     }
   }, [isOpen, fetchLessons]);
 
-  // This effect sets the current lesson and resets the index
-  useEffect(() => {
-    if (lessons.length > 0) {
-      setCurrentLesson(lessons[0]);
-    } else {
-      setCurrentLesson(null);
-    }
-    setCurrentIndex(0); // Always reset index when lessons array changes
-  }, [lessons]);
-
   const handleStart = () => {
       setIsStarted(true);
-      if (lessons.length > 0 && currentLesson) return;
+      if (lessons.length > 0 && currentLesson) {
+        setCurrentIndex(0);
+        return;
+      };
 
       handleGenerateNew();
   };
@@ -111,8 +109,12 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
                throw new Error("The AI returned an incomplete or invalid lesson structure. Please try again.");
           }
           await addInteractiveLesson(roadmapId, topic, result);
-          // Refetch all lessons to get the new one and update state correctly
-          await fetchLessons(); 
+          
+          // Directly update state to avoid race conditions
+          setLessons(prev => [...prev, result]);
+          setCurrentLesson(result);
+          setCurrentIndex(0);
+
           toast({ title: "New lesson generated!", description: "A fresh perspective on the topic is ready." });
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
