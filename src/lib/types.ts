@@ -613,6 +613,7 @@ export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 export const GenerateChatLessonInputSchema = z.object({
   topic: z.string().describe('The topic for the chat lesson.'),
   history: z.array(ChatMessageSchema).describe('The conversation history so far.'),
+  intent: z.string().optional().describe("A specific user intent to guide the AI's response style, e.g., 'Explain for an interview' or 'Translate to Hindi'."),
 });
 export type GenerateChatLessonInput = z.infer<typeof GenerateChatLessonInputSchema>;
 
