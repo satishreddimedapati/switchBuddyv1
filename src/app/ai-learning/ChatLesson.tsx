@@ -22,6 +22,9 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
 interface ChatLessonProps {
   isOpen: boolean;
@@ -72,6 +75,55 @@ function Message({ message }: { message: ChatMessage }) {
                 </Avatar>
              )}
         </div>
+    )
+}
+
+function QuickActionsPopover({ onQuickFilter, disabled }: { onQuickFilter: (intent: string) => void, disabled: boolean }) {
+    return (
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" disabled={disabled}>
+                    <Wand2 />
+                    <span className="sr-only">Quick Actions</span>
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+                <div className="grid gap-4">
+                    <div className="space-y-2">
+                        <h4 className="font-medium leading-none">Quick Actions</h4>
+                        <p className="text-sm text-muted-foreground">
+                            Change the AI's explanation style for its next response.
+                        </p>
+                    </div>
+                    <div className="grid gap-2">
+                        <div className="grid grid-cols-3 items-center gap-4">
+                            <Label>Change Style</Label>
+                             <div className="col-span-2 flex flex-wrap gap-2">
+                                {quickFilters.map(filter => (
+                                    <Badge key={filter.value} variant="outline" className="cursor-pointer" onClick={() => onQuickFilter(filter.value)}>
+                                        {filter.label}
+                                    </Badge>
+                                ))}
+                            </div>
+                        </div>
+                        <Separator />
+                        <div className="grid grid-cols-3 items-center gap-4">
+                            <Label>Translate</Label>
+                            <Select onValueChange={(value) => onQuickFilter(`Translate to ${value}`)}>
+                                <SelectTrigger className="w-auto h-auto px-2 py-1 text-xs rounded-md border col-span-2">
+                                <SelectValue placeholder="Translate to..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="English">English</SelectItem>
+                                    <SelectItem value="Hindi">Hindi</SelectItem>
+                                    <SelectItem value="Telugu">Telugu</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </div>
+            </PopoverContent>
+        </Popover>
     )
 }
 
@@ -136,17 +188,14 @@ export function ChatLesson({ isOpen, onOpenChange, topic }: ChatLessonProps) {
 
   const handleQuickFilter = (intent: string) => {
     const lastMessage = history[history.length - 1];
-    // Don't do anything if we are already generating
     if(isGenerating || !lastMessage) return;
 
-    // Create a new "user" message with the intent for the prompt, but don't show it in history
     const intentMessage: ChatMessage = { role: 'user', content: `(Instruction: ${intent})` };
     const thinkingMessage: ChatMessage = { role: 'thinking', content: '...' };
     
     const historyWithIntent = [...history, intentMessage];
     setHistory(prev => [...prev, thinkingMessage]);
     
-    // We pass the new history with the hidden intent to the AI
     generateResponse(historyWithIntent, intent);
   }
 
@@ -170,30 +219,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic }: ChatLessonProps) {
             </div>
         </ScrollArea>
         
-        <div className="p-4 border-t space-y-4">
-            <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                     <Wand2 className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">Quick Actions</span>
-                </div>
-                 <div className="flex flex-wrap gap-2">
-                    {quickFilters.map(filter => (
-                        <Badge key={filter.value} variant="outline" className="cursor-pointer" onClick={() => handleQuickFilter(filter.value)}>
-                            {filter.label}
-                        </Badge>
-                    ))}
-                     <Select onValueChange={(value) => handleQuickFilter(`Translate to ${value}`)}>
-                        <SelectTrigger className="w-auto h-auto px-2 py-0.5 text-xs rounded-full border">
-                           <SelectValue placeholder="Translate..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="English">English</SelectItem>
-                            <SelectItem value="Hindi">Hindi</SelectItem>
-                            <SelectItem value="Telugu">Telugu</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
+        <div className="p-4 border-t">
             <div className="flex items-center gap-2">
                 <Input 
                     placeholder="Ask a follow-up question..."
@@ -202,6 +228,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic }: ChatLessonProps) {
                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                     disabled={isGenerating}
                 />
+                <QuickActionsPopover onQuickFilter={handleQuickFilter} disabled={isGenerating} />
                 <Button onClick={handleSend} disabled={isGenerating || !input.trim()}>
                     {isGenerating ? <Loader2 className="animate-spin" /> : <Send />}
                     <span className="sr-only">Send</span>
