@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import { LessonCard } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, X, ChevronsRight } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -20,7 +20,7 @@ interface TutorialCardProps {
     onComplete: () => void;
 }
 
-function CardBody({ card, onAnswer, answerState }: { card: LessonCard, onAnswer: (value: number) => void, answerState: 'unanswered' | 'correct' | 'incorrect' }) {
+function CardBody({ card, onAnswer, answerState, selectedValue }: { card: LessonCard, onAnswer: (value: number | null) => void, answerState: 'unanswered' | 'correct' | 'incorrect', selectedValue: number | null }) {
     switch (card.card_type) {
         case 'concept':
         case 'scenario':
@@ -40,7 +40,6 @@ function CardBody({ card, onAnswer, answerState }: { card: LessonCard, onAnswer:
                 </pre>
             );
         case 'challenge_mcq':
-            const selectedValue = answerState !== 'unanswered' ? card.correct_option_index : null;
             return (
                  <div className="space-y-4">
                     <p className="text-muted-foreground">{card.content}</p>
@@ -134,7 +133,7 @@ export function TutorialCard({ card, index, currentIndex, onComplete }: Tutorial
     }
 
     const getCardTypeBadge = () => {
-        const types = {
+        const types: Record<string, { label: string; color: string }> = {
             concept: { label: 'Concept', color: 'bg-blue-500' },
             challenge_mcq: { label: 'Challenge', color: 'bg-amber-500' },
             code_snippet: { label: 'Code', color: 'bg-gray-600' },
@@ -162,20 +161,21 @@ export function TutorialCard({ card, index, currentIndex, onComplete }: Tutorial
             <Card className="h-full flex flex-col shadow-xl">
                 <CardHeader>
                     <div className="flex justify-between items-start">
-                         <CardTitle className="text-xl">
-                            <span className="text-3xl mr-2">{card.visual}</span>
+                         <CardTitle className="text-xl flex items-center gap-2">
+                            <span className="text-2xl">{card.visual}</span>
                             {card.title}
                         </CardTitle>
                         {getCardTypeBadge()}
                     </div>
                 </CardHeader>
                 <CardContent className="flex-grow overflow-y-auto">
-                    <CardBody card={card} onAnswer={setSelectedValue} answerState={answerState} />
+                    <CardBody card={card} onAnswer={setSelectedValue} answerState={answerState} selectedValue={selectedValue} />
                 </CardContent>
-                <div className="p-6 pt-0">
+                <CardFooter>
                     {renderFooter()}
-                </div>
+                </CardFooter>
             </Card>
         </motion.div>
     );
 }
+

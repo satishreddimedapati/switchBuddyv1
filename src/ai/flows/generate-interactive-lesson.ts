@@ -27,7 +27,11 @@ Your task is to generate a complete, card-based interactive learning deck for th
 Topic: {{{topic}}}
 Experience Level: {{{experienceLevel}}}
 
-The lesson deck must contain exactly 7 cards in a logical learning sequence. The card types must follow this order to create a compelling learning flow:
+The lesson deck must contain:
+1.  A main 'title' for the entire lesson deck. The title should be engaging and relevant to the topic.
+2.  A 'cards' array containing exactly 7 cards in a logical learning sequence.
+
+The card types must follow this order to create a compelling learning flow:
 1.  **concept**: Start with a simple, visual analogy.
 2.  **concept**: Follow up with a more formal definition and brief explanation.
 3.  **code_snippet**: Provide a clear, simple code example demonstrating the core idea.
