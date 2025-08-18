@@ -1,40 +1,65 @@
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/googleai';
 
-import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
-
-// Array to hold all available API keys
+// -----------------------------
+// Load API Keys
+// -----------------------------
 const apiKeys: string[] = [];
 
-// The primary API key from the default environment variable
+// Load from env variables
 if (process.env.GEMINI_API_KEY) {
-    apiKeys.push(process.env.GEMINI_API_KEY);
+  apiKeys.push(process.env.GEMINI_API_KEY);
 }
-// Add the additional keys you provided
 if (process.env.GEMINI_API_KEY_1) {
-    apiKeys.push(process.env.GEMINI_API_KEY_1);
+  apiKeys.push(process.env.GEMINI_API_KEY_1);
 }
 if (process.env.GEMINI_API_KEY_2) {
-    apiKeys.push(process.env.GEMINI_API_KEY_2);
+  apiKeys.push(process.env.GEMINI_API_KEY_2);
 }
 
 if (apiKeys.length === 0) {
-    throw new Error("No Gemini API keys found. Please set GEMINI_API_KEY in your environment.");
+  throw new Error("No Gemini API keys found. Please set GEMINI_API_KEY in your environment.");
 }
 
 let keyIndex = 0;
 
-// This function will be called for each API request, rotating the keys.
+// Rotate API keys for each request
 function getApiKey() {
-    const key = apiKeys[keyIndex];
-    keyIndex = (keyIndex + 1) % apiKeys.length; // Move to the next key for the next request
-    return key;
+  const key = apiKeys[keyIndex];
+  keyIndex = (keyIndex + 1) % apiKeys.length;
+  return key;
 }
 
+// -----------------------------
+// 1) Static export: ai (uses only one key, for compatibility)
+// -----------------------------
 export const ai = genkit({
   plugins: [
     googleAI({
-      apiKey: getApiKey,
+      apiKey: getApiKey(), // picked once at startup
     }),
   ],
   model: 'googleai/gemini-2.0-flash',
 });
+
+// -----------------------------
+// 2) Rotating version: runPrompt()
+// -----------------------------
+function createAI() {
+  return genkit({
+    plugins: [
+      googleAI({
+        apiKey: getApiKey(), // rotates per request
+      }),
+    ],
+    model: 'googleai/gemini-2.0-flash',
+  });
+}
+
+export async function runPrompt(prompt: string) {
+  const aiInstance = createAI();
+  const result = await aiInstance.generate({
+    prompt,
+  });
+  return result.output;
+}
