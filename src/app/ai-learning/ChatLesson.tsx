@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { generateChatLesson, GenerateChatLessonOutput } from '@/ai/flows/generate-chat-lesson';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, User, Loader2, Send, Wand2 } from 'lucide-react';
+import { Bot, User, Loader2, Send, Wand2, BookOpen, Lightbulb, Code, TestTube, Briefcase } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -25,6 +25,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 interface ChatLessonProps {
   isOpen: boolean;
@@ -32,17 +34,28 @@ interface ChatLessonProps {
   topic: string;
 }
 
-const quickFilters = [
+const explanationFilters = [
     { label: 'For Interview', value: 'Explain for interview' },
-    { label: 'Interview Q&A', value: 'Interview Q&A' },
-    { label: 'Shortcuts', value: 'Easy remembering shortcuts' },
-    { label: 'Fun Explanation', value: 'Fun way of explanation' },
     { label: 'Real-World Example', value: 'Real-World Example' },
-    { label: 'Code Snippet', value: 'Code Snippet' },
+    { label: 'Fun Explanation', value: 'Fun way of explanation' },
+    { label: 'New Analogy', value: 'Change Analogy'},
     { label: 'Pros & Cons', value: 'Pros & Cons' },
+    { label: `ELI5`, value: `Explain Like I'm 5 (ELI5)` },
+    { label: `History`, value: `Historical Context / The 'Why'` },
+    { label: `Compare/Contrast`, value: `Compare & Contrast`},
+];
+
+const generationFilters = [
+    { label: 'Interview Q&A', value: 'Interview Q&A' },
+    { label: 'Code Snippet', value: 'Code Snippet' },
+    { label: 'Mini-Project Idea', value: 'Suggest a Mini-Project' },
+    { label: 'Job Relevance', value: 'Job Market Relevance' },
+];
+
+const toolFilters = [
     { label: 'Test My Knowledge', value: 'Test My Knowledge' },
     { label: 'Summarize', value: 'Summarize Key Points' },
-];
+]
 
 function LoadingState() {
   return (
@@ -92,19 +105,38 @@ function QuickActionsPopover({ onQuickFilter, disabled }: { onQuickFilter: (inte
                     <span className="sr-only">Quick Actions</span>
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80">
-                <div className="grid gap-4">
-                    <div className="space-y-2">
-                        <h4 className="font-medium leading-none">Quick Actions</h4>
-                        <p className="text-sm text-muted-foreground">
-                            Change the AI's explanation style for its next response.
-                        </p>
-                    </div>
-                    <div className="grid gap-2">
-                        <div className="grid grid-cols-1 items-center gap-4">
-                            <Label>Change Style</Label>
-                             <div className="col-span-2 flex flex-wrap gap-1">
-                                {quickFilters.map(filter => (
+            <PopoverContent className="w-96">
+                 <Tabs defaultValue="explain" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="explain">Explain</TabsTrigger>
+                        <TabsTrigger value="generate">Generate</TabsTrigger>
+                        <TabsTrigger value="tools">Tools</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="explain" className="pt-4">
+                        <Label className="text-xs text-muted-foreground">Change how the AI explains the topic.</Label>
+                        <div className="flex flex-wrap gap-1 pt-2">
+                            {explanationFilters.map(filter => (
+                                <Badge key={filter.value} variant="outline" className="cursor-pointer" onClick={() => onQuickFilter(filter.value)}>
+                                    {filter.label}
+                                </Badge>
+                            ))}
+                        </div>
+                    </TabsContent>
+                    <TabsContent value="generate" className="pt-4">
+                        <Label className="text-xs text-muted-foreground">Ask the AI to create something new.</Label>
+                         <div className="flex flex-wrap gap-1 pt-2">
+                            {generationFilters.map(filter => (
+                                <Badge key={filter.value} variant="outline" className="cursor-pointer" onClick={() => onQuickFilter(filter.value)}>
+                                    {filter.label}
+                                </Badge>
+                            ))}
+                        </div>
+                    </TabsContent>
+                    <TabsContent value="tools" className="pt-4 space-y-4">
+                         <div>
+                            <Label className="text-xs text-muted-foreground">Check your understanding.</Label>
+                            <div className="flex flex-wrap gap-1 pt-2">
+                                {toolFilters.map(filter => (
                                     <Badge key={filter.value} variant="outline" className="cursor-pointer" onClick={() => onQuickFilter(filter.value)}>
                                         {filter.label}
                                     </Badge>
@@ -113,10 +145,10 @@ function QuickActionsPopover({ onQuickFilter, disabled }: { onQuickFilter: (inte
                         </div>
                         <Separator />
                         <div className="grid grid-cols-3 items-center gap-4">
-                            <Label>Translate</Label>
+                            <Label>Translate To</Label>
                             <Select onValueChange={(value) => onQuickFilter(`Translate to ${value}`)}>
                                 <SelectTrigger className="w-auto h-auto px-2 py-1 text-xs rounded-md border col-span-2">
-                                <SelectValue placeholder="Translate to..." />
+                                <SelectValue placeholder="Language..." />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="English">English</SelectItem>
@@ -125,8 +157,8 @@ function QuickActionsPopover({ onQuickFilter, disabled }: { onQuickFilter: (inte
                                 </SelectContent>
                             </Select>
                         </div>
-                    </div>
-                </div>
+                    </TabsContent>
+                </Tabs>
             </PopoverContent>
         </Popover>
     )

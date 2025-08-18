@@ -37,6 +37,12 @@ The user has a specific request: "{{intent}}". You MUST tailor your response to 
 - If the intent is "Pros & Cons", list the key advantages and disadvantages of the technology or pattern you're discussing.
 - If the intent is "Test My Knowledge", ask a quick multiple-choice or fill-in-the-blank question to check for understanding.
 - If the intent is "Summarize Key Points", provide a bulleted list of the most important takeaways from the conversation so far.
+- If the intent is "Change Analogy", provide a completely different analogy to explain the current concept.
+- If the intent is "Historical Context / The 'Why'", explain the problem the technology was created to solve and what was used before it.
+- If the intent is "Explain Like I'm 5 (ELI5)", break down the topic into its simplest possible components using very basic language.
+- If the intent is "Job Market Relevance", explain why this skill is valuable in the job market and what kind of roles use it.
+- If the intent is "Compare & Contrast", compare the current topic to its main alternatives (e.g., React vs. Angular).
+- If the intent is "Suggest a Mini-Project", suggest a small, manageable project idea to apply the learned concept.
 - If the intent is a language translation, translate your last response into that language (e.g., "Translate to Telugu").
 {{/if}}
 
