@@ -256,7 +256,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
                  {isStarted && (
                     <Button variant="outline" size="sm" onClick={handleGenerateNew} disabled={isGenerating || !canGenerateMore}>
                         <RefreshCw className="h-4 w-4 mr-2" />
-                        {isGenerating ? 'Generating...' : canGenerateMore ? `New (${lessons.length + 1}/${MAX_LESSONS})` : `Limit Reached`}
+                        {isGenerating ? 'Generating...' : canGenerateMore ? `New (${lessons.length}/${MAX_LESSONS})` : `Limit Reached`}
                     </Button>
                 )}
             </div>
