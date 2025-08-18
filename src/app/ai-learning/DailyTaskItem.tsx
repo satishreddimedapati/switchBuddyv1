@@ -16,11 +16,11 @@ interface DailyTaskItemProps {
 }
 
 const resourceTypes = [
-    { value: 'Video', label: 'Video', icon: <Video className="h-4 w-4" /> },
-    { value: 'Article', label: 'Article', icon: <BookOpen className="h-4 w-4" /> },
-    { value: 'Interactive Tutorial', label: 'Interactive Tutorial', icon: <TestTube2 className="h-4 w-4" /> },
-    { value: 'Chat Lessons', label: 'Chat Lessons', icon: <MessageSquare className="h-4 w-4" /> },
-    { value: 'Video Tutorials', label: 'Video Tutorials', icon: <Video className="h-4 w-4" /> },
+    { value: 'Video', label: 'Video', icon: <Video className="h-4 w-4" />, disabled: false },
+    { value: 'Article', label: 'Article', icon: <BookOpen className="h-4 w-4" />, disabled: false },
+    { value: 'Interactive Tutorial', label: 'Interactive Tutorial', icon: <TestTube2 className="h-4 w-4" />, disabled: true },
+    { value: 'Chat Lessons', label: 'Chat Lessons', icon: <MessageSquare className="h-4 w-4" />, disabled: true },
+    { value: 'Video Tutorials', label: 'Video Tutorials', icon: <Video className="h-4 w-4" />, disabled: false },
 ];
 
 export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
@@ -75,7 +75,7 @@ export function DailyTaskItem({ task, preferredChannel }: DailyTaskItemProps) {
                             </SelectTrigger>
                             <SelectContent>
                                 {resourceTypes.map(rt => (
-                                     <SelectItem key={rt.value} value={rt.value}>
+                                     <SelectItem key={rt.value} value={rt.value} disabled={rt.disabled}>
                                          <div className="flex items-center gap-3">
                                             {rt.icon}
                                             <span>{rt.label}</span>
