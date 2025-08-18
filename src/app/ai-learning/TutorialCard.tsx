@@ -20,6 +20,63 @@ interface TutorialCardProps {
     onComplete: () => void;
 }
 
+function CardBody({ card, onAnswer, answerState }: { card: LessonCard, onAnswer: (value: number) => void, answerState: 'unanswered' | 'correct' | 'incorrect' }) {
+    switch (card.card_type) {
+        case 'concept':
+        case 'scenario':
+        case 'reflection':
+            return (
+                <>
+                    <p className="text-muted-foreground whitespace-pre-wrap">{card.content}</p>
+                    {card.card_type === 'reflection' && (
+                        <Textarea placeholder="Type your thoughts here..." className="mt-4 bg-background" />
+                    )}
+                </>
+            );
+        case 'code_snippet':
+            return (
+                 <pre className="bg-muted p-4 rounded-md text-sm overflow-x-auto">
+                    <code className={`language-${card.language}`}>{card.code}</code>
+                </pre>
+            );
+        case 'challenge_mcq':
+            const selectedValue = answerState !== 'unanswered' ? card.correct_option_index : null;
+            return (
+                 <div className="space-y-4">
+                    <p className="text-muted-foreground">{card.content}</p>
+                    <RadioGroup 
+                        onValueChange={(value) => onAnswer(parseInt(value))}
+                        disabled={answerState !== 'unanswered'}
+                    >
+                        {(card.options || []).map((option, idx) => (
+                            <div key={idx} className={cn(
+                                "flex items-center space-x-2 p-3 rounded-md border transition-all",
+                                answerState === 'correct' && idx === card.correct_option_index && "bg-green-100 border-green-400 dark:bg-green-900/30",
+                                answerState === 'incorrect' && idx === selectedValue && "bg-red-100 border-red-400 dark:bg-red-900/30",
+                                answerState === 'incorrect' && idx === card.correct_option_index && "bg-green-100 border-green-400 dark:bg-green-900/30"
+                            )}>
+                                <RadioGroupItem value={idx.toString()} id={`option-${idx}`} />
+                                <Label htmlFor={`option-${idx}`}>{option}</Label>
+                            </div>
+                        ))}
+                    </RadioGroup>
+                    {answerState !== 'unanswered' && (
+                         <div className={cn(
+                            "p-3 rounded-md text-sm",
+                            answerState === 'correct' ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200" : "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200"
+                        )}>
+                            <p className="font-semibold">{answerState === 'correct' ? 'Correct!' : 'Not quite.'}</p>
+                            <p>{card.explanation}</p>
+                        </div>
+                    )}
+                </div>
+            );
+        default:
+            return null;
+    }
+}
+
+
 export function TutorialCard({ card, index, currentIndex, onComplete }: TutorialCardProps) {
     const controls = useAnimation();
     const [answerState, setAnswerState] = useState<'unanswered' | 'correct' | 'incorrect'>('unanswered');
@@ -57,61 +114,6 @@ export function TutorialCard({ card, index, currentIndex, onComplete }: Tutorial
         }
     };
     
-    const renderCardContent = () => {
-        switch (card.card_type) {
-            case 'concept':
-            case 'scenario':
-            case 'reflection':
-                return (
-                    <>
-                        <p className="text-muted-foreground whitespace-pre-wrap">{card.content}</p>
-                        {card.card_type === 'reflection' && (
-                            <Textarea placeholder="Type your thoughts here..." className="mt-4 bg-background" />
-                        )}
-                    </>
-                );
-            case 'code_snippet':
-                return (
-                     <pre className="bg-muted p-4 rounded-md text-sm overflow-x-auto">
-                        <code className={`language-${card.language}`}>{card.code}</code>
-                    </pre>
-                );
-            case 'challenge_mcq':
-                return (
-                     <div className="space-y-4">
-                        <p className="text-muted-foreground">{card.content}</p>
-                        <RadioGroup 
-                            onValueChange={(value) => setSelectedValue(parseInt(value))}
-                            disabled={answerState !== 'unanswered'}
-                        >
-                            {(card.options || []).map((option, idx) => (
-                                <div key={idx} className={cn(
-                                    "flex items-center space-x-2 p-3 rounded-md border transition-all",
-                                    answerState === 'correct' && idx === card.correct_option_index && "bg-green-100 border-green-400 dark:bg-green-900/30",
-                                    answerState === 'incorrect' && idx === selectedValue && "bg-red-100 border-red-400 dark:bg-red-900/30",
-                                    answerState === 'incorrect' && idx === card.correct_option_index && "bg-green-100 border-green-400 dark:bg-green-900/30"
-                                )}>
-                                    <RadioGroupItem value={idx.toString()} id={`option-${idx}`} />
-                                    <Label htmlFor={`option-${idx}`}>{option}</Label>
-                                </div>
-                            ))}
-                        </RadioGroup>
-                        {answerState !== 'unanswered' && (
-                             <div className={cn(
-                                "p-3 rounded-md text-sm",
-                                answerState === 'correct' ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200" : "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200"
-                            )}>
-                                <p className="font-semibold">{answerState === 'correct' ? 'Correct!' : 'Not quite.'}</p>
-                                <p>{card.explanation}</p>
-                            </div>
-                        )}
-                    </div>
-                );
-            default:
-                return null;
-        }
-    }
-
     const renderFooter = () => {
         if (card.card_type === 'challenge_mcq') {
             return (
@@ -168,7 +170,7 @@ export function TutorialCard({ card, index, currentIndex, onComplete }: Tutorial
                     </div>
                 </CardHeader>
                 <CardContent className="flex-grow overflow-y-auto">
-                    {renderCardContent()}
+                    <CardBody card={card} onAnswer={setSelectedValue} answerState={answerState} />
                 </CardContent>
                 <div className="p-6 pt-0">
                     {renderFooter()}
