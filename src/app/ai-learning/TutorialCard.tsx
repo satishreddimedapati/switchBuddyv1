@@ -93,8 +93,7 @@ function CardBody({ card, onAnswer, answerState, selectedValue }: { card: Lesson
                 </div>
             );
         default:
-            // This should not happen if the AI is behaving
-            return <p className="text-destructive">Error: Unknown card type &quot;{card.card_type}&quot;</p>;
+            return <p className="text-destructive">Error: Unknown card type &quot;{String(card.card_type)}&quot;</p>;
     }
 }
 
@@ -141,19 +140,19 @@ export function TutorialCard({ card, index, currentIndex, onComplete }: Tutorial
     const renderFooter = () => {
         if (card.card_type === 'challenge_mcq') {
             return (
-                <div className="flex justify-end">
-                     {answerState === 'unanswered' ? (
-                        <Button onClick={handleCheckAnswer} disabled={selectedValue === null}>Check Answer</Button>
+                 <CardFooter>
+                    {answerState === 'unanswered' ? (
+                        <Button onClick={handleCheckAnswer} disabled={selectedValue === null} className="w-full">Check Answer</Button>
                     ) : (
-                        <Button onClick={handleNext}>Next <ChevronsRight className="ml-2" /></Button>
+                        <Button onClick={handleNext} className="w-full">Next <ChevronsRight className="ml-2" /></Button>
                     )}
-                </div>
+                 </CardFooter>
             )
         }
         return (
-             <div className="flex justify-end">
-                <Button onClick={handleNext}>Next <ChevronsRight className="ml-2" /></Button>
-            </div>
+             <CardFooter>
+                <Button onClick={handleNext} className="w-full">Next <ChevronsRight className="ml-2" /></Button>
+            </CardFooter>
         )
     }
 
@@ -199,10 +198,10 @@ export function TutorialCard({ card, index, currentIndex, onComplete }: Tutorial
                 <CardContent className="flex-grow overflow-y-auto">
                     <CardBody card={card} onAnswer={setSelectedValue} answerState={answerState} selectedValue={selectedValue} />
                 </CardContent>
-                <CardFooter>
-                    {renderFooter()}
-                </CardFooter>
+                {renderFooter()}
             </Card>
         </motion.div>
     );
 }
+
+    
