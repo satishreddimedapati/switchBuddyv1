@@ -8,6 +8,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { GenerateInteractiveLessonInputSchema, InteractiveLessonSchema } from '@/lib/types';
+import { googleAI } from '@genkit-ai/googleai';
 
 export type GenerateInteractiveLessonInput = z.infer<typeof GenerateInteractiveLessonInputSchema>;
 export type InteractiveLesson = z.infer<typeof InteractiveLessonSchema>;
@@ -18,6 +19,7 @@ export async function generateInteractiveLesson(input: GenerateInteractiveLesson
 
 const prompt = ai.definePrompt({
   name: 'generateInteractiveLessonPrompt',
+  model: googleAI.model('gemini-1.5-flash'),
   input: { schema: GenerateInteractiveLessonInputSchema },
   // We remove the output schema here to get the raw text, which we will parse manually.
   prompt: `You are an expert curriculum designer creating engaging, interactive micro-learning experiences.
@@ -53,10 +55,9 @@ const generateInteractiveLessonFlow = ai.defineFlow(
     outputSchema: InteractiveLessonSchema,
   },
   async (input) => {
-    let response;
     try {
       // Get the raw text response from the prompt
-      response = await prompt(input);
+      const response = await prompt(input);
       const rawText = response.text;
       
       // Find the start and end of the JSON object
