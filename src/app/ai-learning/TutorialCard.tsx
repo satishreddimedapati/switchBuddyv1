@@ -1,4 +1,3 @@
-
 'use client';
 
 import { LessonCard } from '@/lib/types';
@@ -26,8 +25,8 @@ export function TutorialCard({ card, onComplete }: TutorialCardProps) {
         const types: Record<string, { label: string; color: string }> = {
             simple_explanation: { label: 'Simple Explanation', color: 'bg-blue-500' },
             real_world_example: { label: 'Real World Example', color: 'bg-green-500' },
-            fun_explanation: { label: 'Fun Explanation', color: 'bg-amber-500' },
-            company_use_cases: { label: 'Used By', color: 'bg-purple-500' },
+            pros_cons: { label: 'Pros & Cons', color: 'bg-yellow-500 text-black' },
+            when_to_use: { label: 'When to Use', color: 'bg-indigo-500' },
             interview_qa: { label: 'Interview Q&A', color: 'bg-red-500' },
         }
         const typeInfo = types[card.card_type];
@@ -36,25 +35,22 @@ export function TutorialCard({ card, onComplete }: TutorialCardProps) {
     }
 
     return (
-        <div className="w-full h-full">
-            <Card className="h-full flex flex-col shadow-xl">
-                <CardHeader>
-                    <div className="flex justify-between items-start">
-                         <CardTitle className="text-xl flex items-center gap-2">
-                            <span className="text-2xl">{card.visual}</span>
-                            {card.title}
-                        </CardTitle>
-                        {getCardTypeBadge()}
-                    </div>
-                </CardHeader>
-                <CardContent className="flex-grow overflow-y-auto">
-                   <CardBody card={card} />
-                </CardContent>
-                 <CardFooter>
-                    <Button onClick={onComplete} className="w-full">Next <ChevronsRight className="ml-2" /></Button>
-                </CardFooter>
-            </Card>
-        </div>
+         <Card className="h-full w-full flex flex-col shadow-xl">
+            <CardHeader>
+                <div className="flex justify-between items-start">
+                     <CardTitle className="text-xl flex items-center gap-2">
+                        <span className="text-2xl">{card.visual}</span>
+                        {card.title}
+                    </CardTitle>
+                    {getCardTypeBadge()}
+                </div>
+            </CardHeader>
+            <CardContent className="flex-grow overflow-y-auto">
+               <CardBody card={card} />
+            </CardContent>
+             <CardFooter>
+                <Button onClick={onComplete} className="w-full">Next <ChevronsRight className="ml-2" /></Button>
+            </CardFooter>
+        </Card>
     );
 }
-

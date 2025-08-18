@@ -1,5 +1,4 @@
 
-
 import {z} from 'zod';
 import type { Timestamp } from 'firebase/firestore';
 
@@ -613,8 +612,8 @@ export const LessonCardSchema = z.object({
     card_type: z.enum([
         'simple_explanation',
         'real_world_example',
-        'fun_explanation',
-        'company_use_cases',
+        'pros_cons',
+        'when_to_use',
         'interview_qa',
     ]),
     title: z.string(),
@@ -638,7 +637,7 @@ export type GenerateInteractiveLessonInput = z.infer<typeof GenerateInteractiveL
 
 export const GetPersonalizedSalaryEstimateInputSchema = z.object({
   jobRole: z.string().describe('The job role, e.g., "Software Engineer".'),
-  yearsOfExperience: z.number().describe('The user\'s years of professional experience.'),
+  yearsOfExperience: z.number().describe("The user's years of professional experience."),
   location: z.string().describe('The city or region for the job.'),
   skills: z.array(z.string()).describe('A list of key skills the user possesses.'),
 });
@@ -646,6 +645,6 @@ export type GetPersonalizedSalaryEstimateInput = z.infer<typeof GetPersonalizedS
 
 export const GetPersonalizedSalaryEstimateOutputSchema = z.object({
   estimatedSalaryRange: z.string().describe('The calculated salary range in LPA, e.g., "15 LPA - 20 LPA".'),
-  commentary: z.string().describe('A brief explanation of how the user\'s profile affects this estimate.'),
+  commentary: z.string().describe("A brief explanation of how the user's profile affects this estimate."),
 });
 export type GetPersonalizedSalaryEstimateOutput = z.infer<typeof GetPersonalizedSalaryEstimateOutputSchema>;

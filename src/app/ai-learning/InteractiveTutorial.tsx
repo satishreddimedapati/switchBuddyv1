@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
@@ -61,7 +60,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
     startGenerationTransition(async () => {
       try {
         const result = await generateInteractiveLesson({ topic, experienceLevel: 'Beginner' });
-        if (!result || !result.title || !result.cards) {
+        if (!result || !result.title || !result.cards || result.cards.length < 5) {
              throw new Error("The AI returned an incomplete or invalid lesson structure. Please try again.");
         }
         setLesson(result);
@@ -180,7 +179,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
             </div>
             <div className="flex-grow flex items-center justify-center p-4 relative overflow-hidden">
                 <TutorialCard
-                    key={`${lesson.cards[currentIndex].title}-${currentIndex}`}
+                    key={currentIndex}
                     card={lesson.cards[currentIndex]}
                     onComplete={handleNextCard}
                 />
@@ -198,7 +197,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl h-[90vh] flex flex-col p-0">
+      <DialogContent className="max-w-xl h-[90vh] flex flex-col p-0 gap-0">
         <DialogHeader className="p-4 border-b flex-row flex justify-between items-center">
             <div>
               <DialogTitle>Interactive Tutorial: {topic}</DialogTitle>
