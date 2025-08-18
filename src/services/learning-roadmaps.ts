@@ -5,7 +5,7 @@
 import { db } from "@/lib/firebase";
 import type { LearningRoadmap, InteractiveLesson } from "@/lib/types";
 import { toSerializableLearningRoadmap } from "@/lib/types";
-import { collection, getDocs, doc, addDoc, query, where, serverTimestamp, orderBy, getDoc, updateDoc, deleteDoc, Timestamp, arrayUnion } from "firebase/firestore";
+import { collection, getDocs, doc, addDoc, query, where, serverTimestamp, orderBy, getDoc, updateDoc, deleteDoc, Timestamp } from "firebase/firestore";
 
 const roadmapsCollection = collection(db, "learning_roadmaps");
 
@@ -120,12 +120,23 @@ export async function getInteractiveLessonsForTopic(roadmapId: string, topic: st
 export async function addInteractiveLesson(roadmapId: string, topic: string, lesson: InteractiveLesson): Promise<void> {
     try {
         const roadmapRef = doc(db, "learning_roadmaps", roadmapId);
-        
-        // Firestore's dot notation allows us to update a nested field.
-        // We use arrayUnion to add the new lesson to the array for that topic.
-        // If the topic field doesn't exist, it will be created.
+        const roadmapDoc = await getDoc(roadmapRef);
+
+        if (!roadmapDoc.exists()) {
+            throw new Error("Roadmap not found.");
+        }
+
+        const roadmapData = roadmapDoc.data() as LearningRoadmap;
+        const existingLessons = roadmapData.lessons || {};
+        const topicLessons = existingLessons[topic] || [];
+
+        const newTopicLessons = [...topicLessons, lesson];
+
         await updateDoc(roadmapRef, {
-            [`lessons.${topic}`]: arrayUnion(lesson)
+            lessons: {
+                ...existingLessons,
+                [topic]: newTopicLessons
+            }
         });
 
     } catch (error) {
