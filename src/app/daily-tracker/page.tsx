@@ -16,7 +16,7 @@ import { format, subDays } from 'date-fns';
 import { FocusWalletHistory } from "./FocusWalletHistory";
 import { Button } from "@/components/ui/button";
 import { Coins } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { getUserRewards } from "@/services/user-rewards";
 import { getFocusCoinBalance } from "@/services/user-rewards";
 
@@ -34,6 +34,9 @@ function FocusWalletFAB({ balance, tasks, rewards, loading }: { balance: number,
             <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle>Focus Wallet History</DialogTitle>
+                    <DialogDescription>
+                        A complete log of all your earned and spent Focus Coins.
+                    </DialogDescription>
                 </DialogHeader>
                 <div className="flex-grow overflow-hidden">
                     <FocusWalletHistory tasks={tasks} rewards={rewards} loading={loading} />
