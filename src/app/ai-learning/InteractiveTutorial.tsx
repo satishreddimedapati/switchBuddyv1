@@ -60,10 +60,10 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    if (isOpen && topic && !lesson && !isGenerating) {
+    // Only fetch if the dialog is open, a topic is provided, and no lesson exists yet.
+    if (isOpen && topic && !lesson && !isGenerating && !error) {
       startGenerationTransition(async () => {
         try {
-          setError(null);
           const result = await generateInteractiveLesson({ topic, experienceLevel: 'Beginner' });
           setLesson(result);
         } catch (err) {
@@ -73,14 +73,25 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
         }
       });
     }
-    // Reset state when dialog is closed
+
+    // Reset state when the dialog is closed
     if (!isOpen) {
+      setTimeout(() => {
         setLesson(null);
         setError(null);
         setIsStarted(false);
         setCurrentIndex(0);
+      }, 300); // Delay to allow for exit animation
     }
   }, [isOpen, topic]);
+
+  const handleStart = () => {
+      if (lesson) {
+          setIsStarted(true);
+      } else {
+          toast({ title: "Lesson Not Ready", description: "The AI is still generating your lesson. Please wait a moment.", variant: "default"});
+      }
+  }
 
   const handleNextCard = () => {
     if (lesson && currentIndex < lesson.cards.length - 1) {
@@ -103,23 +114,41 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
       return ((currentIndex + 1) / lesson.cards.length) * 100;
   }, [currentIndex, lesson]);
 
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl h-[90vh] flex flex-col p-0">
-        <DialogHeader className="sr-only">
-          <DialogTitle>Interactive Tutorial: {topic}</DialogTitle>
-          <DialogDescription>An interactive, card-based lesson for the topic: {topic}.</DialogDescription>
-        </DialogHeader>
-        {!isStarted && !error ? (
-          <IntroductionScreen
-            onStart={() => setIsStarted(true)}
-            isLoading={isGenerating || !lesson}
-          />
-        ) : !error ? (
-          <div className="flex flex-col h-full">
+  const renderContent = () => {
+    if (error) {
+        return (
+            <div className="absolute inset-0 bg-background/90 flex items-center justify-center">
+                 <Card className="m-4 p-4 text-center border-destructive">
+                    <CardHeader className="p-2">
+                        <AlertTriangle className="mx-auto h-8 w-8 text-destructive mb-2" />
+                        <CardTitleComponent className="font-semibold">Lesson Generation Failed</CardTitleComponent>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <p className="text-sm text-muted-foreground max-h-48 overflow-auto">{error}</p>
+                        <Button variant="outline" onClick={handleCopyError}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            Copy Error
+                        </Button>
+                    </CardContent>
+                 </Card>
+            </div>
+        );
+    }
+    
+    if (!isStarted) {
+        return (
+            <IntroductionScreen
+                onStart={handleStart}
+                isLoading={isGenerating || !lesson}
+            />
+        );
+    }
+
+    return (
+        <div className="flex flex-col h-full">
             <div className="p-4 border-b">
-              <h3 className="font-semibold">{lesson?.title}</h3>
-              <Progress value={progress} className="mt-2" />
+                <h3 className="font-semibold">{lesson?.title}</h3>
+                <Progress value={progress} className="mt-2" />
             </div>
             <div className="flex-grow flex items-center justify-center p-4 relative overflow-hidden">
                 {lesson && lesson.cards.map((card, index) => {
@@ -136,31 +165,24 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic }: Interactive
                 })}
             </div>
             <div className="p-4 border-t flex justify-between items-center text-xs text-muted-foreground">
-              <p>Card {currentIndex + 1} of {lesson?.cards.length}</p>
-              <div className="flex items-center gap-1">
-                 <Lightbulb className="h-3 w-3" />
-                 <span>Tip: Use arrow keys to navigate</span>
-              </div>
+                <p>Card {currentIndex + 1} of {lesson?.cards.length || 0}</p>
+                <div className="flex items-center gap-1">
+                    <Lightbulb className="h-3 w-3" />
+                    <span>Tip: Use arrow keys to navigate</span>
+                </div>
             </div>
-          </div>
-        ) : null}
-        {error && (
-            <div className="absolute inset-0 bg-background/90 flex items-center justify-center">
-                 <Card className="m-4 p-4 text-center border-destructive">
-                    <CardHeader className="p-2">
-                        <AlertTriangle className="mx-auto h-8 w-8 text-destructive mb-2" />
-                        <h3 className="font-semibold">Lesson Generation Failed</h3>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground max-h-48 overflow-auto">{error}</p>
-                        <Button variant="outline" onClick={handleCopyError}>
-                            <Copy className="mr-2 h-4 w-4" />
-                            Copy Error
-                        </Button>
-                    </CardContent>
-                 </Card>
-            </div>
-        )}
+        </div>
+    );
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-4 border-b">
+          <DialogTitle>Interactive Tutorial: {topic}</DialogTitle>
+          <DialogDescription>An interactive, card-based lesson for the topic: {topic}.</DialogDescription>
+        </DialogHeader>
+        {renderContent()}
       </DialogContent>
     </Dialog>
   );
