@@ -178,4 +178,3 @@ export function TutorialCard({ card, index, currentIndex, onComplete }: Tutorial
         </motion.div>
     );
 }
-
