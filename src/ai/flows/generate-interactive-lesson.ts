@@ -87,26 +87,31 @@ const generateInteractiveLessonFlow = ai.defineFlow(
       
     } catch (e: any) {
       console.error("Error in generateInteractiveLessonFlow:", e);
-      // Attempt to recover if the AI only returned the cards array
-      if (e.message && e.message.includes("must have required property 'title'") && e.output) {
+      
+      // Attempt to recover if the AI output includes junk text before the JSON
+      if (e.output) {
         try {
-          // Sometimes the raw output from the model is a string that needs to be parsed
-          const potentialJson = e.output.replace(/```json\n?/, '').replace(/```$/, '');
-          const parsedOutput = JSON.parse(potentialJson);
+          // Find the first '{' and the last '}' to extract the JSON object
+          const rawOutput = String(e.output);
+          const startIndex = rawOutput.indexOf('{');
+          const endIndex = rawOutput.lastIndexOf('}');
+          if (startIndex !== -1 && endIndex !== -1) {
+            const jsonString = rawOutput.substring(startIndex, endIndex + 1);
+            const parsedOutput = JSON.parse(jsonString);
 
-          if (parsedOutput.cards && Array.isArray(parsedOutput.cards)) {
-            console.warn("AI response was missing a title. Adding a default title and returning.");
-            return {
-              title: `Interactive Lesson: ${input.topic}`,
-              cards: parsedOutput.cards,
-            };
+            // Validate the recovered JSON
+             if (parsedOutput.title && parsedOutput.cards && Array.isArray(parsedOutput.cards)) {
+                console.warn("Recovered from malformed AI response. Returning parsed JSON.");
+                return parsedOutput;
+            }
           }
         } catch (parseError) {
-           throw new Error(`Failed to generate a valid lesson. The AI returned malformed JSON. Original error: ${e.message}`);
+           throw new Error(`Failed to generate a valid lesson. The AI returned malformed JSON that could not be recovered. Original error: ${e.message}`);
         }
       }
+      
       // Re-throw the original error if recovery is not possible
-      throw new Error(`Could not generate lesson: ${e.message}`);
+      throw new Error(`Could not generate lesson: ${e.message || 'An unknown error occurred.'}`);
     }
   }
 );
