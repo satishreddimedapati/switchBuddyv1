@@ -109,7 +109,7 @@ export default function DashboardPage() {
             Welcome back, {user?.email?.split('@')[0]}!
           </h1>
           <p className="text-muted-foreground">
-            Today is {format(new Date(), 'EEEE, MMMM d')}. Let&apos;s make some progress.
+            Today is {format(new Date(), 'EEEE, MMMM d')}. Let's make some progress.
           </p>
         </div>
 
@@ -119,7 +119,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Button asChild variant="outline">
-                    <Link href="/tracker">
+                    <Link href="/job-switch-helper?tab=tracker">
                         <PlusCircle />
                         Add Job
                     </Link>
@@ -131,13 +131,13 @@ export default function DashboardPage() {
                     </Link>
                 </Button>
                 <Button asChild variant="outline">
-                    <Link href="/interview-prep/new">
+                    <Link href="/job-switch-helper?tab=interview-prep">
                         <Video />
                         New Prep Plan
                     </Link>
                 </Button>
                 <Button asChild variant="outline">
-                    <Link href="/job-intelligence">
+                    <Link href="/job-switch-helper?tab=intelligence">
                         <Search />
                         Analyze Role
                     </Link>
@@ -235,13 +235,13 @@ export default function DashboardPage() {
                                     ) : (
                                          <div className="text-center py-8">
                                             <p className="text-muted-foreground">No jobs tracked yet.</p>
-                                            <Button variant="link" asChild><Link href="/tracker"><PlusCircle className="mr-2"/>Add a Job</Link></Button>
+                                            <Button variant="link" asChild><Link href="/job-switch-helper?tab=tracker"><PlusCircle className="mr-2"/>Add a Job</Link></Button>
                                         </div>
                                     )}
                                 </div>
                                 {jobApplications.length > 0 && (
                                     <div className="mt-4">
-                                        <Button variant="secondary" className="w-full" asChild><Link href="/tracker">View All Applications</Link></Button>
+                                        <Button variant="secondary" className="w-full" asChild><Link href="/job-switch-helper?tab=tracker">View All Applications</Link></Button>
                                     </div>
                                 )}
                             </div>
@@ -270,7 +270,7 @@ export default function DashboardPage() {
                                                 <Badge variant="secondary" className="mt-1">{plan.difficulty}</Badge>
                                             </div>
                                             <Button size="sm" asChild>
-                                               <Link href={`/interview-prep`}><Video className="mr-2"/>Start</Link>
+                                               <Link href={`/job-switch-helper?tab=interview-prep`}><Video className="mr-2"/>Start</Link>
                                            </Button>
                                        </div>
                                        <div className="mt-3 space-y-2">
@@ -282,14 +282,14 @@ export default function DashboardPage() {
                            ) : (
                                <div className="text-center py-10">
                                     <p className="text-muted-foreground">No active interview plans.</p>
-                                    <Button variant="link" asChild><Link href="/interview-prep/new"><PlusCircle className="mr-2"/>Create a New Plan</Link></Button>
+                                    <Button variant="link" asChild><Link href="/job-switch-helper?tab=interview-prep"><PlusCircle className="mr-2"/>Create a New Plan</Link></Button>
                                 </div>
                            )}
                         </div>
                         {activeInterviewPlans.length > 0 && (
                             <div className="mt-4">
                                 <Button className="w-full" asChild>
-                                    <Link href="/interview-prep">Go to Prep Dashboard</Link>
+                                    <Link href="/job-switch-helper?tab=interview-prep">Go to Prep Dashboard</Link>
                                 </Button>
                             </div>
                         )}

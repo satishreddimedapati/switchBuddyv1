@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileJobTracker } from "@/components/tracker/MobileJobTracker";
 
-export default function TrackerPage() {
+export function JobTracker() {
   const { user } = useAuth();
   const [jobApplications, setJobApplications] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,16 +44,8 @@ export default function TrackerPage() {
   }
 
   return (
-      <div className="flex flex-col h-full">
-         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="font-headline text-3xl font-bold tracking-tight">
-                Job Application Tracker
-              </h1>
-              <p className="text-muted-foreground">
-                Manage your applications from wishlist to offer.
-              </p>
-            </div>
+      <div className="flex flex-col h-full pt-6">
+         <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4">
             <AddJobApplicationForm onApplicationAdded={fetchJobs} />
         </div>
         <div className="mt-6 flex-grow overflow-hidden">
@@ -75,3 +67,4 @@ export default function TrackerPage() {
       </div>
   );
 }
+

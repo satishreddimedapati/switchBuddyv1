@@ -108,7 +108,7 @@ export function MarketIntelligence({}: MarketIntelligenceProps) {
     return (
         <div className="space-y-4">
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <Label htmlFor="jobRole">Job Role</Label>
                         <Input id="jobRole" placeholder="e.g. Software Engineer" {...form.register('jobRole')} />
@@ -119,15 +119,15 @@ export function MarketIntelligence({}: MarketIntelligenceProps) {
                         <Input id="companyName" placeholder="e.g. Google" {...form.register('companyName')} />
                         {form.formState.errors.companyName && <p className="text-destructive text-sm mt-1">{form.formState.errors.companyName.message}</p>}
                     </div>
-                    <div>
+                    <div className="md:col-span-2">
                         <Label htmlFor="location">Location(s)</Label>
                         <Input id="location" placeholder="e.g. Bangalore, Hyderabad" {...form.register('location')} />
                         {form.formState.errors.location && <p className="text-destructive text-sm mt-1">{form.formState.errors.location.message}</p>}
                     </div>
-                </div>
-                 <div>
-                    <Label htmlFor="yearsOfExperience">Years of Experience (for personalized salary)</Label>
-                    <Input id="yearsOfExperience" type="number" {...form.register('yearsOfExperience')} className="max-w-xs" />
+                    <div className="md:col-span-2">
+                        <Label htmlFor="yearsOfExperience">Years of Experience (for personalized salary)</Label>
+                        <Input id="yearsOfExperience" type="number" {...form.register('yearsOfExperience')} />
+                    </div>
                 </div>
                 
                 <div className="flex justify-end">
@@ -147,7 +147,7 @@ export function MarketIntelligence({}: MarketIntelligenceProps) {
                     <Accordion type="multiple" defaultValue={['personalized-salary', 'growth-path']} className="w-full space-y-2">
                         {salaryResult && (
                             <AccordionItem value="personalized-salary">
-                                <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
+                                <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base text-left">
                                     <span className="flex items-center gap-2"><Sparkles/> Your Personalized Salary Estimate</span>
                                 </AccordionTrigger>
                                 <AccordionContent className="p-4 border rounded-b-md">
@@ -165,7 +165,7 @@ export function MarketIntelligence({}: MarketIntelligenceProps) {
                         {intelResult && (
                             <>
                                 <AccordionItem value="growth-path">
-                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
+                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base text-left">
                                         <span className="flex items-center gap-2"><GitBranch/> Growth Path & Salary</span>
                                     </AccordionTrigger>
                                     <AccordionContent className="p-4 border rounded-b-md">
@@ -181,7 +181,7 @@ export function MarketIntelligence({}: MarketIntelligenceProps) {
                                 </AccordionItem>
                                 
                                 <AccordionItem value="skills">
-                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
+                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base text-left">
                                         <span className="flex items-center gap-2"><Star/> Skills in Demand</span>
                                     </AccordionTrigger>
                                     <AccordionContent className="p-4 border rounded-b-md">
@@ -192,7 +192,7 @@ export function MarketIntelligence({}: MarketIntelligenceProps) {
                                 </AccordionItem>
 
                                 <AccordionItem value="location-comparison">
-                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
+                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base text-left">
                                         <span className="flex items-center gap-2"><Map/> Location Comparison</span>
                                     </AccordionTrigger>
                                     <AccordionContent className="p-4 border rounded-b-md space-y-2">
@@ -201,7 +201,7 @@ export function MarketIntelligence({}: MarketIntelligenceProps) {
                                 </AccordionItem>
                                 
                                 <AccordionItem value="top-companies">
-                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
+                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base text-left">
                                         <span className="flex items-center gap-2"><Building/> Top Companies Hiring</span>
                                     </AccordionTrigger>
                                     <AccordionContent className="p-4 border rounded-b-md">
@@ -212,7 +212,7 @@ export function MarketIntelligence({}: MarketIntelligenceProps) {
                                 </AccordionItem>
 
                                 <AccordionItem value="alumni-insights">
-                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
+                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base text-left">
                                         <span className="flex items-center gap-2"><Users/> Alumni Career Switches</span>
                                     </AccordionTrigger>
                                     <AccordionContent className="p-4 border rounded-b-md space-y-2">
@@ -227,7 +227,7 @@ export function MarketIntelligence({}: MarketIntelligenceProps) {
                                 </AccordionItem>
                                 
                                 <AccordionItem value="interview-prep">
-                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
+                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base text-left">
                                         <span className="flex items-center gap-2"><BrainCircuit/> Interview Prep</span>
                                     </AccordionTrigger>
                                     <AccordionContent className="p-4 border rounded-b-md space-y-2">
@@ -242,7 +242,7 @@ export function MarketIntelligence({}: MarketIntelligenceProps) {
                                 </AccordionItem>
                                 
                                 <AccordionItem value="application-strategy">
-                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base">
+                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base text-left">
                                         <span className="flex items-center gap-2"><CheckCircle/> Application Strategy</span>
                                     </AccordionTrigger>
                                     <AccordionContent className="p-4 border rounded-b-md space-y-2">

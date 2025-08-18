@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,7 +54,7 @@ export function InterviewPlanCard({ plan }: InterviewPlanCardProps) {
                 const sessionId = await addInterviewSession(newSession);
 
                 toast({ title: 'Success!', description: 'Your interview is ready.' });
-                router.push(`/interview-prep/session/${sessionId}`);
+                router.push(`/job-switch-helper/session/${sessionId}`);
             } catch (error) {
                 console.error("Failed to start new session:", error);
                 toast({
@@ -68,13 +69,13 @@ export function InterviewPlanCard({ plan }: InterviewPlanCardProps) {
     return (
         <Card className="border-l-4" style={{ borderColor: isCompleted ? 'hsl(var(--muted))' : 'hsl(var(--primary))' }}>
             <CardHeader>
-                <div className="flex justify-between items-start">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
                     <div>
                         <CardTitle className="text-xl">{plan.topic}</CardTitle>
                         <CardDescription>Difficulty: {plan.difficulty} | Duration: {plan.durationMinutes} min</CardDescription>
                     </div>
-                    <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/interview-prep/edit/${plan.id}`}>
+                    <Button variant="ghost" size="sm" asChild className="shrink-0">
+                        <Link href={`/job-switch-helper/edit/${plan.id}`}>
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
                         </Link>
