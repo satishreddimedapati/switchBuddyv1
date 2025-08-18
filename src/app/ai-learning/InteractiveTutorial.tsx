@@ -70,9 +70,6 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
     try {
       const existingLessons = await getInteractiveLessonsForTopic(roadmapId, topic);
       setLessons(existingLessons);
-      if (existingLessons.length > 0) {
-        setCurrentLesson(existingLessons[0]);
-      }
     } catch (err) {
        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
        setError(`Failed to load existing lessons: ${errorMessage}`);
@@ -82,12 +79,24 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   }, [user, isOpen, roadmapId, topic]);
 
   useEffect(() => {
-    fetchLessons();
-  }, [fetchLessons]);
+    if (isOpen) {
+      fetchLessons();
+    }
+  }, [isOpen, fetchLessons]);
+
+  // This effect sets the current lesson and resets the index
+  useEffect(() => {
+    if (lessons.length > 0) {
+      setCurrentLesson(lessons[0]);
+    } else {
+      setCurrentLesson(null);
+    }
+    setCurrentIndex(0); // Always reset index when lessons array changes
+  }, [lessons]);
 
   const handleStart = () => {
       setIsStarted(true);
-      if (currentLesson) return;
+      if (lessons.length > 0 && currentLesson) return;
 
       handleGenerateNew();
   };
@@ -102,9 +111,8 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
                throw new Error("The AI returned an incomplete or invalid lesson structure. Please try again.");
           }
           await addInteractiveLesson(roadmapId, topic, result);
-          await fetchLessons(); // Refetch to get the new lesson and update state
-          setCurrentLesson(result); // Immediately set the new lesson for viewing
-          setCurrentIndex(0); // Reset to the first card
+          // Refetch all lessons to get the new one and update state correctly
+          await fetchLessons(); 
           toast({ title: "New lesson generated!", description: "A fresh perspective on the topic is ready." });
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
@@ -127,8 +135,8 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   useEffect(() => {
     if (!isOpen) {
       setTimeout(() => {
-        setCurrentLesson(null);
         setLessons([]);
+        setCurrentLesson(null);
         setError(null);
         setIsStarted(false);
         setCurrentIndex(0);
@@ -148,7 +156,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
     return () => {
         window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [isOpen, isStarted, currentLesson, isGenerating, error, currentIndex]);
+  }, [isOpen, isStarted, currentLesson, isGenerating, error, currentIndex, handleNextCard]);
 
 
   const handleCopyError = () => {
@@ -209,11 +217,22 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
         );
     }
 
-    if (!currentLesson || !currentLesson.cards[currentIndex]) {
+    if (!currentLesson) {
+        // This case handles when there are no lessons and the user has started.
+        // It's a loading state before the first lesson is generated.
         return <div className="flex flex-col items-center justify-center h-full gap-4">
             <Loader2 className="animate-spin h-12 w-12 text-primary" />
             <p className="text-muted-foreground">Preparing your first lesson...</p>
         </div>
+    }
+
+    if (!currentLesson.cards[currentIndex]) {
+        // This is a safeguard for an unlikely edge case
+        return (
+            <div className="p-4 text-center">
+                <p className="text-destructive">Error: Could not display the current card.</p>
+            </div>
+        )
     }
 
 
@@ -224,10 +243,10 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
                   <h3 className="font-semibold">{currentLesson.title}</h3>
                   <Progress value={progress} className="mt-2" />
                 </div>
-                 {isStarted && lessons.length > 0 && (
+                 {isStarted && (
                     <Button variant="outline" size="sm" onClick={handleGenerateNew} disabled={isGenerating || !canGenerateMore}>
                         <RefreshCw className="h-4 w-4 mr-2" />
-                        {isGenerating ? 'Generating...' : `New (${lessons.length}/${MAX_LESSONS})`}
+                        {isGenerating ? 'Generating...' : canGenerateMore ? `New (${lessons.length + 1}/${MAX_LESSONS})` : `Limit Reached`}
                     </Button>
                 )}
             </div>
