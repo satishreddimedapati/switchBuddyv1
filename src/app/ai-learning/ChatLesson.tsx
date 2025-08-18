@@ -33,10 +33,15 @@ interface ChatLessonProps {
 }
 
 const quickFilters = [
-    { label: 'Explain for Interview', value: 'Explain for an interview' },
-    { label: 'Interview Q&A', value: 'Provide interview Q&A' },
-    { label: 'Easy Shortcuts', value: 'Provide easy-to-remember shortcuts' },
-    { label: 'Fun Explanation', value: 'Explain in a fun way' },
+    { label: 'For Interview', value: 'Explain for interview' },
+    { label: 'Interview Q&A', value: 'Interview Q&A' },
+    { label: 'Shortcuts', value: 'Easy remembering shortcuts' },
+    { label: 'Fun Explanation', value: 'Fun way of explanation' },
+    { label: 'Real-World Example', value: 'Real-World Example' },
+    { label: 'Code Snippet', value: 'Code Snippet' },
+    { label: 'Pros & Cons', value: 'Pros & Cons' },
+    { label: 'Test My Knowledge', value: 'Test My Knowledge' },
+    { label: 'Summarize', value: 'Summarize Key Points' },
 ];
 
 function LoadingState() {
@@ -96,9 +101,9 @@ function QuickActionsPopover({ onQuickFilter, disabled }: { onQuickFilter: (inte
                         </p>
                     </div>
                     <div className="grid gap-2">
-                        <div className="grid grid-cols-3 items-center gap-4">
+                        <div className="grid grid-cols-1 items-center gap-4">
                             <Label>Change Style</Label>
-                             <div className="col-span-2 flex flex-wrap gap-2">
+                             <div className="col-span-2 flex flex-wrap gap-1">
                                 {quickFilters.map(filter => (
                                     <Badge key={filter.value} variant="outline" className="cursor-pointer" onClick={() => onQuickFilter(filter.value)}>
                                         {filter.label}

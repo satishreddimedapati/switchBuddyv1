@@ -32,6 +32,11 @@ The user has a specific request: "{{intent}}". You MUST tailor your response to 
 - If the intent is "Interview Q&A", provide 2-3 likely interview questions about the current topic and a brief, ideal answer for each.
 - If the intent is "Easy remembering shortcuts", provide mnemonic devices, analogies, or simple rules of thumb.
 - If the intent is "Fun way of explanation", use a creative analogy, a short story, or a very casual, humorous tone.
+- If the intent is "Real-World Example", provide a practical, real-world scenario where the current topic is used.
+- If the intent is "Code Snippet", provide a concise, ready-to-use code example that demonstrates the concept being discussed.
+- If the intent is "Pros & Cons", list the key advantages and disadvantages of the technology or pattern you're discussing.
+- If the intent is "Test My Knowledge", ask a quick multiple-choice or fill-in-the-blank question to check for understanding.
+- If the intent is "Summarize Key Points", provide a bulleted list of the most important takeaways from the conversation so far.
 - If the intent is a language translation, translate your last response into that language (e.g., "Translate to Telugu").
 {{/if}}
 
