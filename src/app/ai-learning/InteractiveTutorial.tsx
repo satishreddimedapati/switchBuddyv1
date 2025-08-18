@@ -110,10 +110,10 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
           }
           await addInteractiveLesson(roadmapId, topic, result);
           
-          // Directly update state to avoid race conditions
           setLessons(prev => [...prev, result]);
           setCurrentLesson(result);
           setCurrentIndex(0);
+          setIsStarted(true); // Explicitly start the tutorial view
 
           toast({ title: "New lesson generated!", description: "A fresh perspective on the topic is ready." });
         } catch (err) {
