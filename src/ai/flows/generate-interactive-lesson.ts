@@ -34,35 +34,15 @@ The entire response MUST be a single JSON object. This object must contain:
 The card types should follow a logical flow and can include:
 - 'simple_explanation': Explain the core concept simply. Use an analogy.
 - 'real_world_example': Provide a clear, real-world example.
-- 'pros_cons': List 2-3 key advantages (pros) and disadvantages (cons). Format as "Pros:\n- ...\n\nCons:\n- ...".
-- 'when_to_use': Provide clear scenarios for when this is a good choice vs. a bad choice.
-- 'interview_qa': Provide 2-3 common interview questions and their concise answers. Format as "Q: ...\nA: ...".
+- 'pros_cons': List 2-3 key advantages (pros) and disadvantages (cons). Format as "Pros:\\n- ...\\n\\nCons:\\n- ...".
+- 'when_to_use': Provide clear scenarios for when this is a good choice vs. a bad choice. Format as "Use When:\\n- ...\\n\\nDon't Use When:\\n- ...".
+- 'interview_qa': Provide 2-3 common interview questions and their concise answers. Format as "Q: ...\\nA: ...".
 - 'fun_fact': A surprising or little-known piece of trivia.
 - 'company_use_cases': Name 2-3 companies and briefly explain how they use this technology.
 
 For EVERY card:
 - "card_type", "title", "content", and "visual" (a single emoji) are required.
 - Do not include any text, markdown, or formatting outside of the single, final JSON object.
-
-Example Output Structure:
-{
-  "title": "Learning About [Topic]",
-  "cards": [
-    {
-      "card_type": "simple_explanation",
-      "title": "What is it?",
-      "content": "A simple explanation with an analogy.",
-      "visual": "💡"
-    },
-    // ... more cards ...
-    {
-      "card_type": "interview_qa",
-      "title": "Interview Prep",
-      "content": "Q: First question?\\nA: Answer to first question.\\nQ: Second question?\\nA: Answer to second question.",
-      "visual": "🤔"
-    }
-  ]
-}
 `,
 });
 
@@ -73,64 +53,59 @@ const generateInteractiveLessonFlow = ai.defineFlow(
     outputSchema: InteractiveLessonSchema,
   },
   async (input) => {
+    let response;
     try {
-      const { output } = await prompt(input);
+      response = await prompt(input);
+      const output = response.output;
 
-      if (!output) {
-        throw new Error("The AI returned an empty response. Please try again.");
+      // Happy path: valid output
+      if (output && output.title && output.cards && Array.isArray(output.cards)) {
+        return output;
       }
       
-      if (!output.title || !output.cards || !Array.isArray(output.cards)) {
-        console.error("Malformed AI response:", output);
-        // Attempt recovery from a common failure mode where it just returns the cards array
-        if ((output as any).cards && Array.isArray((output as any).cards)) {
-            console.warn("Attempting to recover from malformed JSON by adding a title.");
-            return {
-                title: `Interactive Lesson: ${input.topic}`,
-                cards: (output as any).cards,
-            };
-        }
-        throw new Error("The AI failed to generate a valid lesson with a title and cards array. Please check the AI's response format.");
+      // Recovery Path 1: Output is an object but missing title
+      if (output && !output.title && (output as any).cards && Array.isArray((output as any).cards)) {
+         console.warn("Attempting to recover from malformed JSON by adding a title.");
+         return {
+            title: `Interactive Lesson: ${input.topic}`,
+            cards: (output as any).cards,
+         };
       }
       
-      return output;
-      
+      // If we reach here, something is wrong with the output format.
+      // We will let the catch block handle it.
+      throw new Error("Initial validation failed, proceeding to catch block.");
+
     } catch (e: any) {
-      console.error("Error in generateInteractiveLessonFlow:", e);
-      
-      let rawOutput = '';
-      if (e.cause?.output) {
-        rawOutput = String(e.cause.output);
-      } else if (e.message) {
-        rawOutput = e.message;
-      }
-      
-      // Attempt to recover if the AI output includes junk text before the JSON
-      if (rawOutput) {
-        try {
-          const startIndex = rawOutput.indexOf('{');
-          const endIndex = rawOutput.lastIndexOf('}');
-          if (startIndex !== -1 && endIndex !== -1) {
-            const jsonString = rawOutput.substring(startIndex, endIndex + 1);
-            const parsedOutput = JSON.parse(jsonString) as InteractiveLesson;
+      console.error("Error in generateInteractiveLessonFlow, attempting recovery:", e.message);
 
-            if (!parsedOutput.title && parsedOutput.cards && Array.isArray(parsedOutput.cards)) {
+      // Recovery Path 2: The error contains the raw output string that might be fixable
+      const rawOutput = response?.output as any || e.cause?.output || e.message || '';
+      const rawString = String(rawOutput);
+
+      try {
+        const startIndex = rawString.indexOf('{');
+        const endIndex = rawString.lastIndexOf('}');
+        if (startIndex !== -1 && endIndex > startIndex) {
+          const jsonString = rawString.substring(startIndex, endIndex + 1);
+          const parsedOutput = JSON.parse(jsonString) as InteractiveLesson;
+
+          if (parsedOutput.cards && Array.isArray(parsedOutput.cards)) {
+            if (!parsedOutput.title) {
                 parsedOutput.title = `Interactive Lesson: ${input.topic}`;
-                console.warn("Recovered from malformed AI response. Added missing title.");
-                return parsedOutput;
+                console.warn("Recovered from malformed AI response (string parsing). Added missing title.");
+            } else {
+                 console.warn("Recovered from malformed AI response (string parsing).");
             }
-
-            if (parsedOutput.title && parsedOutput.cards && Array.isArray(parsedOutput.cards)) {
-                console.warn("Recovered from malformed AI response. Returning parsed JSON.");
-                return parsedOutput;
-            }
+            return parsedOutput;
           }
-        } catch (parseError) {
-           throw new Error(`Failed to generate a valid lesson. The AI returned malformed JSON that could not be recovered. Original error: ${e.message}`);
         }
+      } catch (parseError) {
+         throw new Error(`Failed to generate a valid lesson. The AI returned malformed JSON that could not be recovered. Original error: ${e.message}`);
       }
       
-      throw new Error(`Could not generate lesson: ${e.message || 'An unknown error occurred.'}`);
+      // If all recovery attempts fail, throw final error.
+      throw new Error(`Could not generate lesson. The AI response was not in the expected format and could not be repaired. Please try again.`);
     }
   }
 );
