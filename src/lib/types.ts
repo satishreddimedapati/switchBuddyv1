@@ -602,3 +602,14 @@ export const ChannelSuggestionOutputSchema = z.object({
   channels: z.array(z.string()).describe('A list of 3-5 recommended YouTube channel or creator names.'),
 });
 export type ChannelSuggestionOutput = z.infer<typeof ChannelSuggestionOutputSchema>;
+
+// Chat Lessons
+export const GenerateChatLessonInputSchema = z.object({
+  topic: z.string().describe('The topic for the chat lesson.'),
+});
+export type GenerateChatLessonInput = z.infer<typeof GenerateChatLessonInputSchema>;
+
+export const GenerateChatLessonOutputSchema = z.object({
+  lesson: z.string().describe("The AI-generated lesson, formatted as a friendly, conversational chat message."),
+});
+export type GenerateChatLessonOutput = z.infer<typeof GenerateChatLessonOutputSchema>;
