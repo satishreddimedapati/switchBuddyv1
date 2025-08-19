@@ -73,37 +73,44 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
     setScreen('loading');
   }, []);
   
-  const fetchLessons = useCallback(async () => {
-    if (!user || !isOpen) return;
-    
-    resetState();
-    
-    try {
-      const existingLessons = await getInteractiveLessonsForTopic(roadmapId, topic);
-      if (existingLessons.length > 0) {
-        setLessons(existingLessons);
-        setCurrentLesson(existingLessons[0]);
-        setScreen('intro'); // Show intro screen, user can start or generate new
-      } else {
-        setScreen('intro'); // No lessons, show intro to generate first one
-      }
-    } catch (err) {
-       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
-       setError(`Failed to load existing lessons: ${errorMessage}`);
-       setScreen('error');
-    }
-  }, [user, isOpen, roadmapId, topic, resetState]);
-
   useEffect(() => {
+    const fetchLessons = async () => {
+        if (!user || !isOpen) return;
+
+        setScreen('loading');
+        
+        try {
+            const existingLessons = await getInteractiveLessonsForTopic(roadmapId, topic);
+            if (existingLessons.length > 0) {
+                setLessons(existingLessons);
+                setCurrentLesson(existingLessons[0]);
+                setScreen('intro'); // Show intro, user can start or generate new
+            } else {
+                setScreen('intro'); // No lessons, show intro to generate first one
+            }
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+            setError(`Failed to load existing lessons: ${errorMessage}`);
+            setScreen('error');
+        }
+    };
+    
     if (isOpen) {
       fetchLessons();
+    } else {
+       // Reset state when dialog is fully closed
+      setTimeout(() => {
+        resetState();
+      }, 300);
     }
-  }, [isOpen, fetchLessons]);
+  }, [isOpen, user, roadmapId, topic]);
+
 
   const handleStart = () => {
-      if (currentLesson) {
-          setScreen('lesson');
+      if (lessons.length > 0 && lessons[0]) {
+          setCurrentLesson(lessons[0]);
           setCurrentIndex(0);
+          setScreen('lesson');
       } else {
           handleGenerateNew();
       }
@@ -148,20 +155,13 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   const handleNextCard = () => {
     if (!currentLesson) return;
     if (currentIndex < currentLesson.cards.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+      setCurrentIndex(prev => prev - 1);
     } else {
         onOpenChange(false);
         toast({ title: "Lesson Complete!", description: "Great job finishing the interactive tutorial."});
     }
   };
 
-  useEffect(() => {
-    if (!isOpen) {
-      setTimeout(() => {
-        resetState();
-      }, 300);
-    }
-  }, [isOpen, resetState]);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -176,7 +176,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
     return () => {
         window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [screen, currentLesson, isGenerating, currentIndex, handleNextCard, handlePrevCard]);
+  }, [screen, currentLesson, isGenerating, currentIndex]);
 
 
   const handleCopyError = () => {
@@ -198,7 +198,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
         case 'loading':
             return <div className="flex flex-col items-center justify-center h-full gap-4">
                 <Loader2 className="animate-spin h-12 w-12 text-primary" />
-                <p className="text-muted-foreground">Building a fresh lesson for you...</p>
+                <p className="text-muted-foreground">Building your learning experience...</p>
             </div>;
         
         case 'intro':
