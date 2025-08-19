@@ -85,6 +85,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   const [showGeneratedDialog, setShowGeneratedDialog] = useState(false);
   
   const resetState = useCallback(() => {
+    setLessons([]);
     setCurrentLesson(null);
     setError(null);
     setCurrentIndex(0);
@@ -92,7 +93,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   }, []);
 
   const fetchLessons = useCallback(async () => {
-    if (!user) return;
+    if (!user) return [];
     setScreen('loading');
     try {
         const existingLessons = await getInteractiveLessonsForTopic(roadmapId, topic);
@@ -100,12 +101,11 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
         if (existingLessons.length > 0) {
             setCurrentLesson(existingLessons[0]);
         }
+        setScreen('intro'); // Always go to intro after fetching
     } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
         setError(`Failed to load existing lessons: ${errorMessage}`);
         setScreen('error');
-    } finally {
-        setScreen('intro');
     }
   }, [user, roadmapId, topic]);
   
@@ -122,7 +122,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
       if (lessons.length > 0) {
           const lessonToStart = lessons[0];
           setCurrentLesson(lessonToStart);
-          setCurrentIndex(0); // Explicitly reset index here
+          setCurrentIndex(0);
           setScreen('lesson');
       } else {
           handleGenerateNew();
