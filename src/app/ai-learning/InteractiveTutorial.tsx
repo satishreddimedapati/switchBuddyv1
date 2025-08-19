@@ -122,7 +122,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
       if (lessons.length > 0) {
           const lessonToStart = lessons[0];
           setCurrentLesson(lessonToStart);
-          setCurrentIndex(0);
+          setCurrentIndex(0); // Explicitly reset index here
           setScreen('lesson');
       } else {
           handleGenerateNew();
@@ -304,13 +304,13 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
             <AlertDialogHeader>
                 <AlertDialogTitle>Lesson Generated!</AlertDialogTitle>
                 <AlertDialogDescription>
-                    {`Your new lesson for "${topic}" is ready. You can start it from the menu.`}
+                    {`New lesson for "${topic}" is ready! You can start it from the menu.`}
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogAction onClick={() => {
                     setShowGeneratedDialog(false);
-                    fetchLessons();
+                    setScreen('intro');
                 }}>
                     OK
                 </AlertDialogAction>
