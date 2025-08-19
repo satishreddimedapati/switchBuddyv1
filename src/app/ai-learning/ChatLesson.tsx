@@ -531,5 +531,3 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
     </>
   );
 }
-
-    
