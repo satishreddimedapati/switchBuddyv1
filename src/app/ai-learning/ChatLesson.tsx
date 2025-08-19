@@ -5,6 +5,8 @@ import { useState, useEffect, useTransition, useRef, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { generateChatLesson } from '@/ai/flows/generate-chat-lesson';
 import { useToast } from '@/hooks/use-toast';
@@ -272,7 +274,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session }: ChatLessonP
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-3xl h-full md:h-[90vh] flex flex-col p-0 gap-0">
-        <div className="p-4 border-b flex justify-between items-center bg-card rounded-t-lg">
+        <DialogHeader className="p-4 border-b flex-row flex justify-between items-center bg-card rounded-t-lg">
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" onClick={() => handleOpenChange(false)} className="md:hidden">
                     <ArrowLeft />
@@ -282,7 +284,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session }: ChatLessonP
                         <AvatarFallback><Bot/></AvatarFallback>
                     </Avatar>
                     <div>
-                        <h2 className="font-semibold">{activeTopic}</h2>
+                        <DialogTitle className="font-semibold text-base">{activeTopic}</DialogTitle>
                         <p className="text-xs text-muted-foreground">Your AI Tutor</p>
                     </div>
                 </div>
@@ -290,7 +292,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session }: ChatLessonP
             <Button variant="ghost" size="icon" onClick={() => handleOpenChange(false)} className="hidden md:flex">
                 <X />
             </Button>
-        </div>
+        </DialogHeader>
         
         <ScrollArea className="flex-grow bg-muted/30" ref={scrollAreaRef}>
              <div className="p-4 space-y-6">
