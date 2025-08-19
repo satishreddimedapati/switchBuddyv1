@@ -29,6 +29,8 @@ interface InteractiveTutorialProps {
   roadmapId: string;
 }
 
+type Screen = 'intro' | 'loading' | 'lesson' | 'error';
+
 const MAX_LESSONS = 3;
 
 function IntroductionScreen({ onStart, isLoading, topic }: { onStart: () => void; isLoading: boolean; topic: string }) {
@@ -60,29 +62,37 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   const [currentLesson, setCurrentLesson] = useState<InteractiveLessonType | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isGenerating, startGenerationTransition] = useTransition();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isStarted, setIsStarted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [screen, setScreen] = useState<Screen>('loading');
+  
+  const resetState = useCallback(() => {
+    setLessons([]);
+    setCurrentLesson(null);
+    setError(null);
+    setCurrentIndex(0);
+    setScreen('loading');
+  }, []);
   
   const fetchLessons = useCallback(async () => {
     if (!user || !isOpen) return;
-    setIsLoading(true);
-    setError(null);
+    
+    resetState();
+    
     try {
       const existingLessons = await getInteractiveLessonsForTopic(roadmapId, topic);
-      setLessons(existingLessons);
       if (existingLessons.length > 0) {
+        setLessons(existingLessons);
         setCurrentLesson(existingLessons[0]);
+        setScreen('intro'); // Show intro screen, user can start or generate new
       } else {
-        setCurrentLesson(null);
+        setScreen('intro'); // No lessons, show intro to generate first one
       }
     } catch (err) {
        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
        setError(`Failed to load existing lessons: ${errorMessage}`);
-    } finally {
-      setIsLoading(false);
+       setScreen('error');
     }
-  }, [user, isOpen, roadmapId, topic]);
+  }, [user, isOpen, roadmapId, topic, resetState]);
 
   useEffect(() => {
     if (isOpen) {
@@ -91,17 +101,19 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   }, [isOpen, fetchLessons]);
 
   const handleStart = () => {
-      setIsStarted(true);
-      if (lessons.length > 0 && currentLesson) {
-        setCurrentIndex(0);
-        return;
+      if (currentLesson) {
+          setScreen('lesson');
+          setCurrentIndex(0);
+      } else {
+          handleGenerateNew();
       }
-      handleGenerateNew();
   };
 
   const handleGenerateNew = () => {
       if (!user) return;
+      
       startGenerationTransition(async () => {
+        setScreen('loading');
         setError(null);
         try {
           const result = await generateInteractiveLesson({ topic, experienceLevel: 'Beginner' });
@@ -113,14 +125,15 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
           
           setLessons(prev => [...prev, newLessonWithId]);
           setCurrentLesson(newLessonWithId);
+          setCurrentIndex(0);
+          setScreen('lesson');
 
           toast({ title: "New lesson generated!", description: "A fresh perspective on the topic is ready." });
-          setCurrentIndex(0);
-          setIsStarted(true);
 
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
           setError(errorMessage);
+          setScreen('error');
           toast({ title: "Error", description: `Could not generate lesson: ${errorMessage}`, variant: 'destructive' });
         }
       });
@@ -145,19 +158,14 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   useEffect(() => {
     if (!isOpen) {
       setTimeout(() => {
-        setLessons([]);
-        setCurrentLesson(null);
-        setError(null);
-        setIsStarted(false);
-        setCurrentIndex(0);
-        setIsLoading(true);
+        resetState();
       }, 300);
     }
-  }, [isOpen]);
+  }, [isOpen, resetState]);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-         if (!isOpen || !isStarted || !currentLesson || isGenerating || error) return;
+         if (screen !== 'lesson' || !currentLesson || isGenerating) return;
          if (e.key === 'ArrowRight' || e.key === 'Enter') {
             handleNextCard();
         } else if (e.key === 'ArrowLeft') {
@@ -168,7 +176,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
     return () => {
         window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [isOpen, isStarted, currentLesson, isGenerating, error, currentIndex, handleNextCard, handlePrevCard]);
+  }, [screen, currentLesson, isGenerating, currentIndex, handleNextCard, handlePrevCard]);
 
 
   const handleCopyError = () => {
@@ -186,101 +194,80 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   const canGenerateMore = lessons.length < MAX_LESSONS;
 
   const renderContent = () => {
-    if (isLoading && !isStarted) {
-        return <div className="flex flex-col items-center justify-center h-full gap-4">
-            <Loader2 className="animate-spin h-12 w-12 text-primary" />
-            <p className="text-muted-foreground">Loading lesson...</p>
-        </div>
-    }
+    switch (screen) {
+        case 'loading':
+            return <div className="flex flex-col items-center justify-center h-full gap-4">
+                <Loader2 className="animate-spin h-12 w-12 text-primary" />
+                <p className="text-muted-foreground">Building a fresh lesson for you...</p>
+            </div>;
+        
+        case 'intro':
+            return <IntroductionScreen onStart={handleStart} isLoading={isGenerating} topic={topic} />;
 
-    if (!isStarted) {
-        return <IntroductionScreen onStart={handleStart} isLoading={isGenerating || isLoading} topic={topic} />;
-    }
-
-    if (isGenerating) {
-        return <div className="flex flex-col items-center justify-center h-full gap-4">
-            <Loader2 className="animate-spin h-12 w-12 text-primary" />
-            <p className="text-muted-foreground">Building a fresh lesson for you...</p>
-        </div>
-    }
-
-    if (error) {
-        return (
-            <div className="flex items-center justify-center h-full p-4">
-                 <Card className="w-full max-w-md m-4 p-4 text-center border-destructive bg-destructive/5">
-                    <CardHeader className="p-2">
-                        <AlertTriangle className="mx-auto h-8 w-8 text-destructive mb-2" />
-                        <CardTitleComponent className="font-semibold">Lesson Generation Failed</CardTitleComponent>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <p className="text-xs text-muted-foreground whitespace-pre-wrap">{error}</p>
-                        <div className='flex gap-2 justify-center'>
-                             <Button variant="destructive" onClick={handleGenerateNew} disabled={!canGenerateMore}>
-                                {canGenerateMore ? "Try Again" : "Limit Reached"}
-                            </Button>
-                            <Button variant="outline" onClick={handleCopyError}>
-                                <Copy className="mr-2 h-4 w-4" />
-                                Copy Error
-                            </Button>
+        case 'error':
+            return (
+                <div className="flex items-center justify-center h-full p-4">
+                     <Card className="w-full max-w-md m-4 p-4 text-center border-destructive bg-destructive/5">
+                        <CardHeader className="p-2">
+                            <AlertTriangle className="mx-auto h-8 w-8 text-destructive mb-2" />
+                            <CardTitleComponent className="font-semibold">Lesson Generation Failed</CardTitleComponent>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <p className="text-xs text-muted-foreground whitespace-pre-wrap">{error}</p>
+                            <div className='flex gap-2 justify-center'>
+                                 <Button variant="destructive" onClick={handleGenerateNew} disabled={!canGenerateMore}>
+                                    {canGenerateMore ? "Try Again" : "Limit Reached"}
+                                </Button>
+                                <Button variant="outline" onClick={handleCopyError}>
+                                    <Copy className="mr-2 h-4 w-4" />
+                                    Copy Error
+                                </Button>
+                            </div>
+                        </CardContent>
+                     </Card>
+                </div>
+            );
+            
+        case 'lesson':
+            if (!currentLesson || !currentLesson.cards[currentIndex]) {
+                 return (
+                    <div className="p-4 text-center">
+                        <p className="text-destructive">Error: Could not display the current card.</p>
+                    </div>
+                )
+            }
+            return (
+                <div className="flex flex-col h-full">
+                    <div className="p-4 border-b flex justify-between items-center">
+                        <div>
+                          <h3 className="font-semibold">{currentLesson.title}</h3>
+                          <Progress value={progress} className="mt-2" />
                         </div>
-                    </CardContent>
-                 </Card>
-            </div>
-        );
-    }
-
-    if (!currentLesson) {
-        // This case handles when there are no lessons and the user has started.
-        // It's a loading state before the first lesson is generated.
-        return <div className="flex flex-col items-center justify-center h-full gap-4">
-            <Loader2 className="animate-spin h-12 w-12 text-primary" />
-            <p className="text-muted-foreground">Preparing your first lesson...</p>
-        </div>
-    }
-
-    if (!currentLesson.cards[currentIndex]) {
-        // This is a safeguard for an unlikely edge case
-        return (
-            <div className="p-4 text-center">
-                <p className="text-destructive">Error: Could not display the current card.</p>
-            </div>
-        )
-    }
-
-
-    return (
-        <div className="flex flex-col h-full">
-            <div className="p-4 border-b flex justify-between items-center">
-                <div>
-                  <h3 className="font-semibold">{currentLesson.title}</h3>
-                  <Progress value={progress} className="mt-2" />
+                         <Button variant="outline" size="sm" onClick={handleGenerateNew} disabled={isGenerating || !canGenerateMore}>
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            {isGenerating ? 'Generating...' : canGenerateMore ? `New (${lessons.length}/${MAX_LESSONS})` : `Limit Reached`}
+                        </Button>
+                    </div>
+                    <div className="flex-grow flex items-center justify-center p-4 relative overflow-hidden">
+                        <TutorialCard
+                            key={`${currentLesson.id}-${currentIndex}`}
+                            card={currentLesson.cards[currentIndex]}
+                            onNext={handleNextCard}
+                            onPrev={handlePrevCard}
+                            isFirst={currentIndex === 0}
+                            isLast={currentIndex === currentLesson.cards.length - 1}
+                        />
+                    </div>
+                    <div className="p-4 border-t flex justify-between items-center text-xs text-muted-foreground">
+                        <p>Card {currentIndex + 1} of {currentLesson.cards.length}</p>
+                        <div className="flex items-center gap-1">
+                            <Lightbulb className="h-3 w-3" />
+                            <span>Tip: Use ← / → to navigate</span>
+                        </div>
+                    </div>
                 </div>
-                 {isStarted && (
-                    <Button variant="outline" size="sm" onClick={handleGenerateNew} disabled={isGenerating || !canGenerateMore}>
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        {isGenerating ? 'Generating...' : canGenerateMore ? `New (${lessons.length}/${MAX_LESSONS})` : `Limit Reached`}
-                    </Button>
-                )}
-            </div>
-            <div className="flex-grow flex items-center justify-center p-4 relative overflow-hidden">
-                <TutorialCard
-                    key={`${currentLesson.id}-${currentIndex}`}
-                    card={currentLesson.cards[currentIndex]}
-                    onNext={handleNextCard}
-                    onPrev={handlePrevCard}
-                    isFirst={currentIndex === 0}
-                    isLast={currentIndex === currentLesson.cards.length - 1}
-                />
-            </div>
-            <div className="p-4 border-t flex justify-between items-center text-xs text-muted-foreground">
-                <p>Card {currentIndex + 1} of {currentLesson.cards.length}</p>
-                <div className="flex items-center gap-1">
-                    <Lightbulb className="h-3 w-3" />
-                    <span>Tip: Use ← / → to navigate</span>
-                </div>
-            </div>
-        </div>
-    );
+            );
+    }
   }
 
   return (
