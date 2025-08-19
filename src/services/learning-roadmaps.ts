@@ -120,7 +120,7 @@ export async function getInteractiveLessonsForTopic(roadmapId: string, topic: st
 }
 
 
-export async function addInteractiveLesson(roadmapId: string, topic: string, lesson: Omit<InteractiveLesson, 'id'>): Promise<void> {
+export async function addInteractiveLesson(roadmapId: string, topic: string, lesson: Omit<InteractiveLesson, 'id'>): Promise<string> {
     try {
         const roadmapRef = doc(db, "learning_roadmaps", roadmapId);
         const roadmapDoc = await getDoc(roadmapRef);
@@ -143,6 +143,8 @@ export async function addInteractiveLesson(roadmapId: string, topic: string, les
         await updateDoc(roadmapRef, {
             [`lessons.${topic}`]: newTopicLessons
         });
+        
+        return newLesson.id!;
 
     } catch (error) {
         console.error(`Error adding interactive lesson for topic "${topic}":`, error);
