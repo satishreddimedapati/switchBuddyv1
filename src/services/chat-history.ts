@@ -39,13 +39,16 @@ export async function getChatSessionsForUser(userId: string): Promise<ChatSessio
         );
         const querySnapshot = await getDocs(q);
         
-        return querySnapshot.docs.map(doc => {
+        const sessions = querySnapshot.docs.map(doc => {
             const data = doc.data();
             return {
                 id: doc.id,
                 ...toSerializableChatSession(data),
             } as ChatSession;
         });
+
+        sessions.sort((a,b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
+        return sessions;
 
     } catch (error) {
         console.error("Error fetching chat sessions:", error);
@@ -59,11 +62,9 @@ export async function getChatSessionForTopic(userId: string, topic: string): Pro
         const q = query(
             sessionsCollection,
             where("userId", "==", userId),
-            where("topic", "==", topic)
-            // The combination of multiple 'where' clauses with 'orderBy' requires a composite index.
-            // To avoid this, we fetch all sessions for the topic and sort them in the application.
-            // orderBy("lastMessageAt", "desc"),
-            // limit(1)
+            where("topic", "==", topic),
+            orderBy("lastMessageAt", "desc"),
+            limit(1)
         );
         const querySnapshot = await getDocs(q);
 
@@ -71,17 +72,11 @@ export async function getChatSessionForTopic(userId: string, topic: string): Pro
             return null;
         }
 
-        const sessions = querySnapshot.docs.map(doc => {
-            return {
-                id: doc.id,
-                ...toSerializableChatSession(doc.data()),
-            } as ChatSession;
-        });
-
-        // Sort sessions by last message date, descending, to find the most recent one.
-        sessions.sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
-
-        return sessions[0] || null;
+        const doc = querySnapshot.docs[0];
+        return {
+            id: doc.id,
+            ...toSerializableChatSession(doc.data()),
+        } as ChatSession;
 
     } catch (error) {
         console.error("Error fetching chat session for topic:", error);
