@@ -6,12 +6,13 @@ import type { DailyTaskItem as DailyTaskItemType } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Video, MessageSquare, ChevronDown, WandSparkles, Sparkles } from 'lucide-react';
+import { BookOpen, Video, MessageSquare, ChevronDown, WandSparkles, Sparkles, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ChatLesson } from './ChatLesson';
 import { InteractiveTutorial } from './InteractiveTutorial';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/auth';
 import { updateTaskCompletionInRoadmap } from '@/services/learning-roadmaps';
@@ -22,6 +23,7 @@ interface DailyTaskItemProps {
   task: DailyTaskItemType;
   preferredChannel?: string;
   roadmapId: string;
+  hasGeneratedLesson: boolean;
 }
 
 const resourceTypes = [
@@ -56,7 +58,7 @@ function ResourceTypeSelector({ onSelect, currentType, onClose }: { onSelect: (t
   );
 }
 
-export function DailyTaskItem({ task, preferredChannel, roadmapId }: DailyTaskItemProps) {
+export function DailyTaskItem({ task, preferredChannel, roadmapId, hasGeneratedLesson }: DailyTaskItemProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isCompleted, setIsCompleted] = useState(task.completed || false);
@@ -145,7 +147,19 @@ export function DailyTaskItem({ task, preferredChannel, roadmapId }: DailyTaskIt
             )}
           </div>
 
-          <div className="flex-shrink-0 flex items-center gap-2">
+          <div className="flex-shrink-0 flex items-center gap-1">
+             {currentResourceType === 'Interactive Tutorial' && (
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger>
+                             <Info className={cn("h-4 w-4", hasGeneratedLesson ? "text-green-500" : "text-red-500")} />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>{hasGeneratedLesson ? "Lesson Ready" : "Lesson Not Generated"}</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+             )}
             <Button onClick={handleResourceButtonClick} variant="outline" size="sm">
               {selectedResource.icon}
               <span className="ml-2 hidden sm:inline">{selectedResource.label}</span>

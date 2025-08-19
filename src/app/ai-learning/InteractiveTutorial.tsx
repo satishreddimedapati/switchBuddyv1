@@ -9,6 +9,15 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle as CardTitleComponent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -73,6 +82,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   const [isGenerating, startGenerationTransition] = useTransition();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [screen, setScreen] = useState<Screen>('loading');
+  const [showGeneratedDialog, setShowGeneratedDialog] = useState(false);
   
   const resetState = useCallback(() => {
     setLessons([]);
@@ -88,6 +98,9 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
     try {
         const existingLessons = await getInteractiveLessonsForTopic(roadmapId, topic);
         setLessons(existingLessons);
+        if (existingLessons.length > 0) {
+            setCurrentLesson(existingLessons[0]);
+        }
     } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
         setError(`Failed to load existing lessons: ${errorMessage}`);
@@ -101,15 +114,13 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
     if (isOpen) {
         fetchLessons();
     } else {
-        // Use setTimeout to avoid flickering when closing
         setTimeout(resetState, 300);
     }
   }, [isOpen, fetchLessons, resetState]);
 
 
   const handleStart = () => {
-      if (lessons.length > 0 && lessons[0]) {
-          setCurrentLesson(lessons[0]);
+      if (currentLesson) {
           setCurrentIndex(0);
           setScreen('lesson');
       } else {
@@ -132,11 +143,12 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
           if (!result || !result.title || !result.cards || result.cards.length < 5) {
                throw new Error("The AI returned an incomplete or invalid lesson structure. Please try again.");
           }
-          await addInteractiveLesson(roadmapId, topic, result);
+          const newLessonId = await addInteractiveLesson(roadmapId, topic, result);
+          const newLessonWithId = { ...result, id: newLessonId };
           
-          toast({ title: "New Lesson Generated!", description: `The lesson for "${topic}" is ready. You can start it from the menu.` });
-          await fetchLessons(); // Refetch lessons to include the new one and go to intro screen
-
+          setLessons(prev => [...prev, newLessonWithId]);
+          setShowGeneratedDialog(true);
+          
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
           setError(errorMessage);
@@ -155,13 +167,12 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   const handleNextCard = () => {
     if (!currentLesson) return;
     if (currentIndex < currentLesson.cards.length - 1) {
-      setCurrentIndex(prev => prev - 1);
+      setCurrentIndex(prev => prev + 1);
     } else {
         onOpenChange(false);
         toast({ title: "Lesson Complete!", description: "Great job finishing the interactive tutorial."});
     }
   };
-
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -176,7 +187,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
     return () => {
         window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [screen, currentLesson, isGenerating, currentIndex]);
+  }, [screen, currentLesson, isGenerating, currentIndex, handleNextCard, handlePrevCard]);
 
 
   const handleCopyError = () => {
@@ -271,6 +282,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   }
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl w-full h-full md:h-[90vh] md:w-[90vw] flex flex-col p-0 gap-0">
         <DialogHeader className="p-4 border-b">
@@ -284,5 +296,24 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
         </div>
       </DialogContent>
     </Dialog>
+    <AlertDialog open={showGeneratedDialog} onOpenChange={setShowGeneratedDialog}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Lesson Generated!</AlertDialogTitle>
+                <AlertDialogDescription>
+                    {`Your new lesson for "${topic}" is ready. You can start it from the menu.`}
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogAction onClick={() => {
+                    setShowGeneratedDialog(false);
+                    fetchLessons();
+                }}>
+                    OK
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
