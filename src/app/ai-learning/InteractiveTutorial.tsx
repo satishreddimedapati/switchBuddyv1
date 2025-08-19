@@ -295,7 +295,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl h-[90vh] flex flex-col p-0 gap-0">
+      <DialogContent className="max-w-4xl w-full h-full md:h-[90vh] md:w-[90vw] flex flex-col p-0 gap-0">
         <DialogHeader className="p-4 border-b flex-row flex justify-between items-center">
             <div>
               <DialogTitle>Interactive Tutorial: {topic}</DialogTitle>
