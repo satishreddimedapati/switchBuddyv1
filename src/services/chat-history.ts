@@ -59,9 +59,11 @@ export async function getChatSessionForTopic(userId: string, topic: string): Pro
         const q = query(
             sessionsCollection,
             where("userId", "==", userId),
-            where("topic", "==", topic),
-            orderBy("lastMessageAt", "desc"),
-            limit(1)
+            where("topic", "==", topic)
+            // The combination of multiple 'where' clauses with 'orderBy' requires a composite index.
+            // To avoid this, we fetch all sessions for the topic and sort them in the application.
+            // orderBy("lastMessageAt", "desc"),
+            // limit(1)
         );
         const querySnapshot = await getDocs(q);
 
@@ -69,16 +71,21 @@ export async function getChatSessionForTopic(userId: string, topic: string): Pro
             return null;
         }
 
-        const doc = querySnapshot.docs[0];
-        return {
-            id: doc.id,
-            ...toSerializableChatSession(doc.data()),
-        } as ChatSession;
+        const sessions = querySnapshot.docs.map(doc => {
+            return {
+                id: doc.id,
+                ...toSerializableChatSession(doc.data()),
+            } as ChatSession;
+        });
+
+        // Sort sessions by last message date, descending, to find the most recent one.
+        sessions.sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
+
+        return sessions[0] || null;
 
     } catch (error) {
         console.error("Error fetching chat session for topic:", error);
-        // This query requires a composite index. Firestore usually provides a link to create it
-        // in the error message in the functions console.
+        // This query requires a composite index if orderBy is used. By removing it, we avoid the error.
         throw error;
     }
 }
