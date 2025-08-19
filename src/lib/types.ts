@@ -708,4 +708,34 @@ export const GetPersonalizedSalaryEstimateOutputSchema = z.object({
 });
 export type GetPersonalizedSalaryEstimateOutput = z.infer<typeof GetPersonalizedSalaryEstimateOutputSchema>;
 
-    
+// QUICK INTERVIEW ROADMAP
+
+export const ParseJobDetailsInputSchema = z.object({
+    resume: z.string().describe("The user's full resume text."),
+    jobDescription: z.string().describe("The full job description text."),
+});
+
+export const ParseJobDetailsOutputSchema = z.object({
+    company: z.string().describe("The extracted company name."),
+    role: z.string().describe("The extracted job role or title."),
+    techStack: z.array(z.string()).describe("A list of key technologies and skills mentioned."),
+});
+
+export type ParseJobDetailsInput = z.infer<typeof ParseJobDetailsInputSchema>;
+export type ParseJobDetailsOutput = z.infer<typeof ParseJobDetailsOutputSchema>;
+
+
+export const GenerateQuickRoadmapInputSchema = z.object({
+    daysToPrepare: z.number().describe("The number of days the user has to prepare."),
+    company: z.string(),
+    role: z.string(),
+    techStack: z.array(z.string()),
+    selfAssessment: z.string().optional().describe("The user's self-assessment of their strengths and weaknesses."),
+});
+
+export type GenerateQuickRoadmapInput = z.infer<typeof GenerateQuickRoadmapInputSchema>;
+
+// We can reuse the existing RoadmapGenerationOutputSchema, as the structure is compatible.
+// The AI will just be instructed to generate a day-by-day plan without weekly themes.
+export const GenerateQuickRoadmapOutputSchema = RoadmapGenerationOutputSchema;
+export type GenerateQuickRoadmapOutput = z.infer<typeof GenerateQuickRoadmapOutputSchema>;

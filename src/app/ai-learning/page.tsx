@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { RoadmapGenerator } from './RoadmapGenerator';
 import { RoadmapDisplay } from './RoadmapDisplay';
-import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Zap } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +25,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 function LoadingState() {
     return (
@@ -43,6 +43,7 @@ function LoadingState() {
 export default function AiLearningPage() {
     const { user } = useAuth();
     const { toast } = useToast();
+    const router = useRouter();
     const [roadmaps, setRoadmaps] = useState<LearningRoadmap[]>([]);
     const [loading, setLoading] = useState(true);
     const [isBuilding, setIsBuilding] = useState(false);
@@ -105,10 +106,16 @@ export default function AiLearningPage() {
                         Your personalized, AI-powered guide to mastering new skills.
                     </p>
                 </div>
-                <Button size="lg" onClick={() => setIsBuilding(true)}>
-                    <PlusCircle className="mr-2"/>
-                    Build New Roadmap
-                </Button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                    <Button size="lg" onClick={() => router.push('/ai-learning/quick-roadmap')} className="flex-1" variant="outline">
+                        <Zap className="mr-2"/>
+                        Quick Roadmap
+                    </Button>
+                    <Button size="lg" onClick={() => setIsBuilding(true)} className="flex-1">
+                        <PlusCircle className="mr-2"/>
+                        Build New Roadmap
+                    </Button>
+                </div>
             </div>
             
              {roadmaps.length > 0 ? (
@@ -164,7 +171,7 @@ export default function AiLearningPage() {
             ) : (
                 <Card className="text-center p-8 flex flex-col items-center gap-4 border-dashed">
                     <CardTitle>No Learning Roadmaps Yet</CardTitle>
-                    <CardDescription>Click the button above to build your first personalized learning plan with AI.</CardDescription>
+                    <CardDescription>Click a button above to build your first personalized learning plan with AI.</CardDescription>
                 </Card>
             )}
 
