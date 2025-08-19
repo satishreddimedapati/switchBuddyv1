@@ -83,33 +83,27 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   }, []);
   
  useEffect(() => {
-    if (!isOpen) {
-      // Use setTimeout to avoid flickering when closing
-      setTimeout(resetState, 300);
-      return;
-    }
-
-    const fetchLessons = async () => {
-        if (!user) return;
-        setScreen('loading');
-        try {
-            const existingLessons = await getInteractiveLessonsForTopic(roadmapId, topic);
-            setLessons(existingLessons);
-            if (existingLessons.length > 0) {
-                // Set the first existing lesson as current for the intro screen.
-                setCurrentLesson(existingLessons[0]); 
+    if (isOpen) {
+        const fetchLessons = async () => {
+            if (!user) return;
+            setScreen('loading');
+            try {
+                const existingLessons = await getInteractiveLessonsForTopic(roadmapId, topic);
+                setLessons(existingLessons);
+            } catch (err) {
+                const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+                setError(`Failed to load existing lessons: ${errorMessage}`);
+                setScreen('error');
+            } finally {
+                setScreen('intro');
             }
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
-            setError(`Failed to load existing lessons: ${errorMessage}`);
-            setScreen('error');
-        } finally {
-            setScreen('intro');
-        }
-    };
-    
-    fetchLessons();
-  }, [isOpen, user, roadmapId, topic]);
+        };
+        fetchLessons();
+    } else {
+        // Use setTimeout to avoid flickering when closing
+        setTimeout(resetState, 300);
+    }
+  }, [isOpen, user, roadmapId, topic, resetState]);
 
 
   const handleStart = () => {
@@ -296,3 +290,5 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
     </Dialog>
   );
 }
+
+    
