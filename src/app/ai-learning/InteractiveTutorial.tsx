@@ -21,7 +21,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle as CardTitleComponent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, AlertTriangle, Lightbulb, Copy, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Loader2, Sparkles, AlertTriangle, Lightbulb, Copy, ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
 import { generateInteractiveLesson } from '@/ai/flows/generate-interactive-lesson';
 import type { InteractiveLesson as InteractiveLessonType } from '@/lib/types';
 import { TutorialCard } from './TutorialCard';
@@ -121,7 +121,8 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
 
   const handleStart = () => {
       if (lessons.length > 0) {
-          setCurrentLesson(lessons[0]);
+          const lessonToStart = lessons[0];
+          setCurrentLesson(lessonToStart);
           setCurrentIndex(0);
           setScreen('lesson');
       } else {
@@ -148,7 +149,9 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
           const newLessonWithId = { ...result, id: newLessonId };
           
           setLessons(prev => [...prev, newLessonWithId]);
-          setShowGeneratedDialog(true);
+          setCurrentLesson(newLessonWithId);
+          setCurrentIndex(0);
+          setScreen('lesson');
           
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
@@ -168,7 +171,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   const handleNextCard = () => {
     if (!currentLesson) return;
     if (currentIndex < currentLesson.cards.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+      setCurrentIndex(prev => prev - 1);
     } else {
         onOpenChange(false);
         toast({ title: "Lesson Complete!", description: "Great job finishing the interactive tutorial."});
