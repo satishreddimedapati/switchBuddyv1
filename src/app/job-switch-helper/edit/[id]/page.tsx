@@ -14,19 +14,33 @@ import { useToast } from '@/hooks/use-toast';
 import { updateInterviewPlan, getInterviewPlan } from '@/services/interview-plans';
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, User, ShieldQuestion, Zap, Smile } from 'lucide-react';
 import type { InterviewPlan } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { InterviewerPersona, InterviewerPersonaSchema } from '@/lib/types';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { cn } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
+
 
 const planSchema = z.object({
   topic: z.string().min(1, 'Topic is required.'),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']),
+  persona: InterviewerPersonaSchema,
   durationMinutes: z.coerce.number().int().min(1),
   numberOfQuestions: z.coerce.number().int().min(1, 'You must have at least one question.'),
   totalInterviews: z.coerce.number().int().min(1, 'You must plan at least one interview.'),
+  allowQuestionRepetition: z.boolean(),
 });
 
 type PlanFormValues = z.infer<typeof planSchema>;
+
+const personas: { name: InterviewerPersona, icon: React.ElementType, description: string }[] = [
+    { name: 'Friendly', icon: Smile, description: 'Encouraging and helpful.' },
+    { name: 'Strict', icon: ShieldQuestion, description: 'Direct and technical.' },
+    { name: 'Rapid-Fire', icon: Zap, description: 'Quick questions, tests speed.' },
+    { name: 'HR', icon: User, description: 'Focus on behavioral skills.' },
+];
 
 export default function EditInterviewPlanPage() {
     const { user } = useAuth();
@@ -50,9 +64,11 @@ export default function EditInterviewPlanPage() {
                 form.reset({
                     topic: plan.topic,
                     difficulty: plan.difficulty,
+                    persona: plan.persona || 'Friendly',
                     durationMinutes: plan.durationMinutes,
                     numberOfQuestions: plan.numberOfQuestions,
                     totalInterviews: plan.totalInterviews,
+                    allowQuestionRepetition: plan.allowQuestionRepetition,
                 });
             } else {
                 toast({ title: "Error", description: "Plan not found or you don't have permission to edit it.", variant: "destructive" });
@@ -118,13 +134,14 @@ export default function EditInterviewPlanPage() {
                     Adjust the details of your practice plan.
                 </p>
             </div>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <Card>
                 <CardHeader>
                     <CardTitle>Plan Details</CardTitle>
                     <CardDescription>Update the parameters for your mock interview sessions.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    
                         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             <div>
                                 <Label htmlFor="topic">Topic</Label>
@@ -181,15 +198,73 @@ export default function EditInterviewPlanPage() {
                             </div>
                         </div>
 
-                        <div className="flex justify-end">
-                            <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? <Loader2 className="animate-spin" /> : <Save />}
-                                Save Changes
-                            </Button>
-                        </div>
-                    </form>
+                        
                 </CardContent>
             </Card>
+            
+            <Card>
+                    <CardHeader>
+                        <CardTitle>AI Interviewer Persona</CardTitle>
+                        <CardDescription>Choose the style of your AI interviewer.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <Controller
+                            control={form.control}
+                            name="persona"
+                            render={({ field }) => (
+                                <ToggleGroup
+                                    type="single"
+                                    value={field.value}
+                                    onValueChange={(value: InterviewerPersona) => value && field.onChange(value)}
+                                    className="grid grid-cols-2 md:grid-cols-4 gap-4"
+                                >
+                                    {personas.map((persona) => (
+                                        <ToggleGroupItem key={persona.name} value={persona.name} className="h-auto" asChild>
+                                           <div className={cn(
+                                                "p-4 border rounded-lg cursor-pointer transition-all text-center space-y-2",
+                                                field.value === persona.name && "ring-2 ring-primary bg-primary/10"
+                                            )}>
+                                                <persona.icon className="h-8 w-8 mx-auto" />
+                                                <p className="font-semibold">{persona.name}</p>
+                                                <p className="text-xs text-muted-foreground">{persona.description}</p>
+                                           </div>
+                                        </ToggleGroupItem>
+                                    ))}
+                                </ToggleGroup>
+                            )}
+                        />
+                    </CardContent>
+            </Card>
+            
+            <Card>
+                <CardHeader>
+                    <CardTitle>Settings</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center space-x-2">
+                        <Controller
+                            control={form.control}
+                            name="allowQuestionRepetition"
+                            render={({ field }) => (
+                                <Switch
+                                    id="allowQuestionRepetition"
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                />
+                            )}
+                        />
+                        <Label htmlFor="allowQuestionRepetition">Allow Question Repetition?</Label>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <div className="flex justify-end">
+                <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="animate-spin" /> : <Save />}
+                    Save Changes
+                </Button>
+            </div>
+            </form>
         </div>
     );
 }

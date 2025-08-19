@@ -3,7 +3,7 @@
 'use server';
 
 import { db } from "@/lib/firebase";
-import type { LearningRoadmap, InteractiveLesson } from "@/lib/types";
+import type { LearningRoadmap, InteractiveLesson, DailyTaskItem } from "@/lib/types";
 import { toSerializableLearningRoadmap } from "@/lib/types";
 import { collection, getDocs, doc, addDoc, query, where, serverTimestamp, orderBy, getDoc, updateDoc, deleteDoc, Timestamp } from "firebase/firestore";
 
@@ -109,7 +109,10 @@ export async function getInteractiveLessonsForTopic(roadmapId: string, topic: st
         if (!roadmap || !roadmap.lessons) {
             return [];
         }
-        return roadmap.lessons[topic] || [];
+        return (roadmap.lessons[topic] || []).map(lesson => ({
+            ...lesson,
+            id: lesson.id || crypto.randomUUID(), // Assign a temporary ID if it's missing
+        }));
     } catch (error) {
         console.error(`Error fetching interactive lessons for topic "${topic}":`, error);
         return [];
@@ -117,7 +120,39 @@ export async function getInteractiveLessonsForTopic(roadmapId: string, topic: st
 }
 
 
-export async function addInteractiveLesson(roadmapId: string, topic: string, lesson: InteractiveLesson): Promise<void> {
+export async function addInteractiveLesson(roadmapId: string, topic: string, lesson: Omit<InteractiveLesson, 'id'>): Promise<string> {
+    try {
+        const roadmapRef = doc(db, "learning_roadmaps", roadmapId);
+        const roadmapDoc = await getDoc(roadmapRef);
+
+        if (!roadmapDoc.exists()) {
+            throw new Error("Roadmap not found.");
+        }
+        
+        const newLesson: InteractiveLesson = {
+            ...lesson,
+            id: crypto.randomUUID(),
+        };
+
+        const roadmapData = roadmapDoc.data() as LearningRoadmap;
+        const existingLessons = roadmapData.lessons || {};
+        const topicLessons = existingLessons[topic] || [];
+
+        const newTopicLessons = [...topicLessons, newLesson];
+
+        await updateDoc(roadmapRef, {
+            [`lessons.${topic}`]: newTopicLessons
+        });
+        
+        return newLesson.id!;
+
+    } catch (error) {
+        console.error(`Error adding interactive lesson for topic "${topic}":`, error);
+        throw new Error("Failed to save the new interactive lesson.");
+    }
+}
+
+export async function updateTaskCompletionInRoadmap(roadmapId: string, taskTopic: string, completed: boolean): Promise<void> {
     try {
         const roadmapRef = doc(db, "learning_roadmaps", roadmapId);
         const roadmapDoc = await getDoc(roadmapRef);
@@ -127,20 +162,28 @@ export async function addInteractiveLesson(roadmapId: string, topic: string, les
         }
 
         const roadmapData = roadmapDoc.data() as LearningRoadmap;
-        const existingLessons = roadmapData.lessons || {};
-        const topicLessons = existingLessons[topic] || [];
+        const weeks = roadmapData.roadmap.weeks;
 
-        const newTopicLessons = [...topicLessons, lesson];
+        // Find and update the specific task
+        const newWeeks = weeks.map(week => {
+            return {
+                ...week,
+                daily_tasks: week.daily_tasks.map(task => {
+                    if (task.topic === taskTopic) {
+                        return { ...task, completed: completed };
+                    }
+                    return task;
+                })
+            };
+        });
 
+        // Update the entire roadmap object in Firestore
         await updateDoc(roadmapRef, {
-            lessons: {
-                ...existingLessons,
-                [topic]: newTopicLessons
-            }
+            'roadmap.weeks': newWeeks
         });
 
     } catch (error) {
-        console.error(`Error adding interactive lesson for topic "${topic}":`, error);
-        throw new Error("Failed to save the new interactive lesson.");
+        console.error(`Error updating task completion for topic "${taskTopic}":`, error);
+        throw new Error("Failed to update task completion status.");
     }
 }

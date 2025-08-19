@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -199,7 +200,7 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-end">
                      <div className="space-y-2">
                         <Label>Start Date</Label>
                         <Popover>
@@ -251,7 +252,7 @@ export function Step1_Topic({ data, onUpdate }: Step1Props) {
                             </PopoverContent>
                         </Popover>
                     </div>
-                    <div className="flex items-center space-x-2 pb-2">
+                    <div className="flex items-center space-x-2 pb-2 justify-start sm:justify-center">
                         <Switch
                             id="learn-on-weekends"
                             checked={data.learnOnWeekends}

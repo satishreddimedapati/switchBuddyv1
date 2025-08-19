@@ -8,6 +8,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { GenerateInteractiveLessonInputSchema, InteractiveLessonSchema } from '@/lib/types';
+import { googleAI } from '@genkit-ai/googleai';
 
 export type GenerateInteractiveLessonInput = z.infer<typeof GenerateInteractiveLessonInputSchema>;
 export type InteractiveLesson = z.infer<typeof InteractiveLessonSchema>;
@@ -18,8 +19,9 @@ export async function generateInteractiveLesson(input: GenerateInteractiveLesson
 
 const prompt = ai.definePrompt({
   name: 'generateInteractiveLessonPrompt',
+  model: googleAI.model('gemini-1.5-flash'),
   input: { schema: GenerateInteractiveLessonInputSchema },
-  output: { schema: InteractiveLessonSchema },
+  // We remove the output schema here to get the raw text, which we will parse manually.
   prompt: `You are an expert curriculum designer creating engaging, interactive micro-learning experiences.
 
 Your task is to generate a complete, 7-8 card interactive learning deck for the given topic.
@@ -53,59 +55,45 @@ const generateInteractiveLessonFlow = ai.defineFlow(
     outputSchema: InteractiveLessonSchema,
   },
   async (input) => {
-    let response;
     try {
-      response = await prompt(input);
-      const output = response.output;
+      // Get the raw text response from the prompt
+      const response = await prompt(input);
+      const rawText = response.text;
+      
+      // Find the start and end of the JSON object
+      const startIndex = rawText.indexOf('{');
+      const endIndex = rawText.lastIndexOf('}');
+      
+      if (startIndex === -1 || endIndex === -1) {
+        throw new Error("Could not find a valid JSON object in the AI response.");
+      }
+      
+      const jsonString = rawText.substring(startIndex, endIndex + 1);
+      
+      // Parse the extracted JSON string
+      const parsedJson = JSON.parse(jsonString);
 
-      // Happy path: valid output
-      if (output && output.title && output.cards && Array.isArray(output.cards)) {
-        return output;
+      // Validate the parsed JSON against our Zod schema
+      const validationResult = InteractiveLessonSchema.safeParse(parsedJson);
+
+      if (validationResult.success) {
+        // If the title is missing but cards are present, add a default title.
+        if (!validationResult.data.title && validationResult.data.cards) {
+            validationResult.data.title = `Interactive Lesson: ${input.topic}`;
+        }
+        return validationResult.data;
+      } else {
+        // Throw the Zod validation error if parsing failed
+        throw new Error(`Parsed JSON failed validation: ${validationResult.error.message}`);
       }
-      
-      // Recovery Path 1: Output is an object but missing title
-      if (output && !output.title && (output as any).cards && Array.isArray((output as any).cards)) {
-         console.warn("Attempting to recover from malformed JSON by adding a title.");
-         return {
-            title: `Interactive Lesson: ${input.topic}`,
-            cards: (output as any).cards,
-         };
-      }
-      
-      // If we reach here, something is wrong with the output format.
-      // We will let the catch block handle it.
-      throw new Error("Initial validation failed, proceeding to catch block.");
 
     } catch (e: any) {
-      console.error("Error in generateInteractiveLessonFlow, attempting recovery:", e.message);
-
-      // Recovery Path 2: The error contains the raw output string that might be fixable
-      const rawOutput = response?.output as any || e.cause?.output || e.message || '';
-      const rawString = String(rawOutput);
-
-      try {
-        const startIndex = rawString.indexOf('{');
-        const endIndex = rawString.lastIndexOf('}');
-        if (startIndex !== -1 && endIndex > startIndex) {
-          const jsonString = rawString.substring(startIndex, endIndex + 1);
-          const parsedOutput = JSON.parse(jsonString) as InteractiveLesson;
-
-          if (parsedOutput.cards && Array.isArray(parsedOutput.cards)) {
-            if (!parsedOutput.title) {
-                parsedOutput.title = `Interactive Lesson: ${input.topic}`;
-                console.warn("Recovered from malformed AI response (string parsing). Added missing title.");
-            } else {
-                 console.warn("Recovered from malformed AI response (string parsing).");
-            }
-            return parsedOutput;
-          }
-        }
-      } catch (parseError) {
-         throw new Error(`Failed to generate a valid lesson. The AI returned malformed JSON that could not be recovered. Original error: ${e.message}`);
-      }
-      
-      // If all recovery attempts fail, throw final error.
-      throw new Error(`Could not generate lesson. The AI response was not in the expected format and could not be repaired. Please try again.`);
+      console.error("Error in generateInteractiveLessonFlow:", e);
+      // Construct a helpful error message
+      const finalError = new Error(
+        `Failed to generate a valid lesson. The AI returned malformed JSON that could not be repaired. Original error: ${e.message}`
+      );
+      throw finalError;
     }
   }
 );

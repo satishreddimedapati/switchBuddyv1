@@ -1,8 +1,9 @@
 
+
 'use client';
 
 import * as React from 'react';
-import type { LearningRoadmap, DailyTaskItem as DailyTaskItemType } from '@/lib/types';
+import type { LearningRoadmap, DailyTaskItem as DailyTaskItemType, WeeklyPlan } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -37,7 +38,7 @@ function DailyCheckpoint({ task, preferredChannel, roadmapId }: { task: DailyTas
     )
 }
 
-function WeekMilestone({ week }: { week: LearningRoadmap['roadmap']['weeks'][0] }) {
+function WeekMilestone({ week }: { week: WeeklyPlan }) {
     return (
         <div className="flex flex-col items-center text-center w-48 shrink-0">
             <div className="h-10 w-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-lg mb-2">
@@ -85,33 +86,37 @@ export function RoadmapTimeline({ roadmap }: RoadmapTimelineProps) {
 
                 {/* Mobile View: Vertical Snake */}
                 <div className="md:hidden">
-                    <div className="flex flex-col items-center space-y-2">
+                     <div className="relative w-full">
+                        {/* The main vertical line connecting milestones */}
+                        <div className="absolute left-1/2 -translate-x-1/2 top-5 bottom-5 w-px bg-border -z-10" />
+                        
+                        <div className="flex flex-col items-center gap-8">
                         {roadmap.roadmap.weeks.map((week, weekIndex) => (
                              <React.Fragment key={week.week}>
                                 <WeekMilestone week={week} />
 
+                                {/* Render checkpoints between weeks */}
                                 {weekIndex < roadmap.roadmap.weeks.length - 1 && (
-                                    <>
-                                    {/* Connector line from milestone to path */}
-                                    <div className="w-px h-6 bg-border"></div>
+                                    <div className="flex flex-col items-center gap-4 w-full px-8">
+                                    {week.daily_tasks.slice(0, 3).map((task, taskIndex) => (
+                                        <div key={taskIndex} className="w-full flex items-center justify-center relative">
+                                            {/* Line from center to the dot */}
+                                            <div className="absolute left-1/2 top-1/2 h-px w-1/2 bg-border -translate-y-1/2" />
 
-                                    {/* Daily path */}
-                                    <div className={cn("flex w-full items-end justify-center", weekIndex % 2 !== 0 && "flex-row-reverse")}>
-                                        <div className="w-full h-1 bg-border relative flex items-end justify-evenly">
-                                            {week.daily_tasks.slice(0, dotsToShow).map((task, dayIndex) => (
-                                                <DailyCheckpoint key={dayIndex} task={task} roadmapId={roadmap.id!} preferredChannel={roadmap.preferredChannel} />
-                                            ))}
+                                            {/* Alternate left and right */}
+                                            <div className={cn(
+                                                'absolute top-1/2 -translate-y-1/2',
+                                                taskIndex % 2 === 0 ? 'left-[calc(50%-4rem)] -translate-x-full' : 'right-[calc(50%-4rem)] translate-x-full'
+                                            )}>
+                                                 <DailyCheckpoint task={task} roadmapId={roadmap.id!} preferredChannel={roadmap.preferredChannel} />
+                                            </div>
                                         </div>
+                                    ))}
                                     </div>
-                                    
-                                    {/* Connector line from path to next milestone */}
-                                     <div className="w-full flex">
-                                        <div className={cn("w-px h-6 bg-border", weekIndex % 2 !== 0 ? "ml-auto" : "mr-auto")}></div>
-                                    </div>
-                                    </>
                                 )}
                             </React.Fragment>
                         ))}
+                        </div>
                     </div>
                 </div>
             </CardContent>

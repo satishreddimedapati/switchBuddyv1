@@ -1,13 +1,13 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
 import type { InterviewPlan, InterviewSession } from "@/lib/types";
 import { getInterviewPlans } from "@/services/interview-plans";
-import { FileText, PlusCircle, Video, Loader2 } from "lucide-react";
+import { FileText, PlusCircle, Video, Loader2, History, Edit } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import { getInterviewSessions } from "@/services/interview-sessions";
@@ -16,6 +16,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { InterviewPlanCard } from "@/app/interview-prep/InterviewPlanCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
+import { Separator } from "@/components/ui/separator";
 
 function NoActivePlan() {
     const router = useRouter();
@@ -36,6 +37,30 @@ function LoadingState() {
         <div className="space-y-4">
             <Skeleton className="h-24 w-full" />
             <Skeleton className="h-24 w-full" />
+        </div>
+    )
+}
+
+function PastInterviewRow({ interview }: { interview: InterviewSession }) {
+    return (
+        <div className="flex justify-between items-center p-2 rounded-md hover:bg-muted/50">
+            <div>
+                <p className="font-semibold text-sm">Interview #{interview.interviewNumber}</p>
+                <p className="text-xs text-muted-foreground">
+                    {interview.completedAt ? format(new Date(interview.completedAt), 'PPP') : 'N/A'}
+                </p>
+            </div>
+            <div className="flex items-center gap-4">
+                 <div className="text-right">
+                    <p className="font-bold">{interview.overallScore ? interview.overallScore.toFixed(1) : 'N/A'}</p>
+                    <p className="text-xs text-muted-foreground">Score</p>
+                </div>
+                <Button variant="outline" size="sm" asChild>
+                    <Link href={`/job-switch-helper/summary/${interview.id}`}>
+                        <Video className="mr-2 h-4 w-4" /> Review
+                    </Link>
+                </Button>
+            </div>
         </div>
     )
 }
@@ -61,6 +86,7 @@ export function InterviewPrep() {
                     getInterviewSessions(user.uid)
                 ]);
 
+                userPlans.sort((a,b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime());
                 setPlans(userPlans);
 
                 const completedSessions = userSessions.filter(s => s.status === 'completed');
@@ -81,6 +107,18 @@ export function InterviewPrep() {
         }
         fetchAllData();
     }, [user])
+
+    const sessionsByPlan = useMemo(() => {
+        return pastSessions.reduce((acc, session) => {
+            const planId = session.planId;
+            if (!acc[planId]) {
+                acc[planId] = [];
+            }
+            acc[planId].push(session);
+            return acc;
+        }, {} as Record<string, InterviewSession[]>);
+    }, [pastSessions]);
+
 
     const groupedPlans = useMemo(() => {
         return plans.reduce((acc, plan) => {
@@ -110,15 +148,55 @@ export function InterviewPrep() {
                 <CardContent>
                      {loading ? <LoadingState /> : (
                         Object.keys(groupedPlans).length > 0 ? (
-                            <Accordion type="multiple">
+                            <Accordion type="multiple" className="w-full space-y-4">
                                 {Object.entries(groupedPlans).map(([topic, topicPlans]) => (
-                                    <AccordionItem value={topic} key={topic}>
-                                        <AccordionTrigger className="text-lg font-semibold">{topic}</AccordionTrigger>
-                                        <AccordionContent className="pt-4 space-y-4">
-                                            {topicPlans.map(plan => (
-                                                <InterviewPlanCard key={plan.id} plan={plan} />
-                                            ))}
-                                        </AccordionContent>
+                                    <AccordionItem value={topic} key={topic} className="border-none">
+                                        <Card>
+                                            <AccordionTrigger className="text-lg font-semibold p-4 hover:no-underline">{topic}</AccordionTrigger>
+                                            <AccordionContent className="pt-0 p-4 space-y-4">
+                                                {topicPlans.map(plan => {
+                                                    const planSessions = sessionsByPlan[plan.id!] || [];
+                                                    const isCompleted = (plan.completedInterviews || 0) >= plan.totalInterviews;
+                                                    return (
+                                                        <Accordion key={plan.id} type="single" collapsible>
+                                                            <AccordionItem value={`plan-${plan.id}`} className="border-b-0">
+                                                                <Card className="overflow-hidden">
+                                                                    <AccordionTrigger className="hover:no-underline p-4 w-full text-left">
+                                                                        <div className="flex justify-between items-center w-full">
+                                                                            <div>
+                                                                                <p className="font-semibold">{plan.topic}</p>
+                                                                                <p className="text-sm text-muted-foreground">
+                                                                                    {plan.completedInterviews} / {plan.totalInterviews} interviews completed
+                                                                                </p>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                                                                                     <Link href={`/job-switch-helper/edit/${plan.id}`} onClick={(e) => e.stopPropagation()}>
+                                                                                        <Edit className="h-4 w-4" />
+                                                                                    </Link>
+                                                                                </Button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </AccordionTrigger>
+                                                                    <AccordionContent className="p-0">
+                                                                        <InterviewPlanCard plan={plan} />
+                                                                         {planSessions.length > 0 && (
+                                                                            <div className="px-4 pb-4 space-y-2">
+                                                                                <Separator className="my-4" />
+                                                                                <h4 className="font-semibold text-sm pt-2 flex items-center gap-2"><History className="h-4 w-4"/> Session History</h4>
+                                                                                {planSessions.map(session => (
+                                                                                    <PastInterviewRow key={session.id} interview={session} />
+                                                                                ))}
+                                                                            </div>
+                                                                         )}
+                                                                    </AccordionContent>
+                                                                </Card>
+                                                            </AccordionItem>
+                                                        </Accordion>
+                                                    )
+                                                })}
+                                            </AccordionContent>
+                                        </Card>
                                     </AccordionItem>
                                 ))}
                             </Accordion>
@@ -128,56 +206,6 @@ export function InterviewPrep() {
                     )}
                 </CardContent>
             </Card>
-            
-            <Card>
-                <CardHeader>
-                    <CardTitle>Past Interviews</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Interview #</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Score</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {pastSessions.map(interview => (
-                                    <TableRow key={interview.id}>
-                                        <TableCell>{interview.interviewNumber}</TableCell>
-                                        <TableCell>{interview.completedAt ? format(new Date(interview.completedAt), 'PPP') : 'N/A'}</TableCell>
-                                        <TableCell>{interview.overallScore ? interview.overallScore.toFixed(1) : 'N/A'}</TableCell>
-                                        <TableCell>{interview.status}</TableCell>
-                                        <TableCell className="text-right space-x-2">
-                                            <Button variant="outline" size="sm" disabled={interview.status !== 'completed'}><FileText className="mr-2 h-4 w-4" /> PDF</Button>
-                                            <Button variant="outline" size="sm" asChild>
-                                               <Link href={`/job-switch-helper/summary/${interview.id}`}>
-                                                    <Video className="mr-2 h-4 w-4" /> Review
-                                                </Link>
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                                 {pastSessions.length === 0 && !loading && (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24">No past interviews found.</TableCell>
-                                    </TableRow>
-                                )}
-                                 {loading && (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24"><Loader2 className="animate-spin mx-auto" /></TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
-            </Card>
-
         </div>
     );
 }

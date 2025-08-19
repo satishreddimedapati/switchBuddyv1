@@ -1,3 +1,5 @@
+
+
 'use server';
 
 /**
@@ -33,13 +35,31 @@ const generateQuestionsPrompt = ai.definePrompt({
   name: 'generateInterviewQuestionsPrompt',
   input: {schema: GenerateInterviewQuestionsRequestSchema},
   output: {schema: GenerateInterviewQuestionsResponseSchema},
-  prompt: `You are an expert interviewer for a top tech company.
+  prompt: `You are an expert interviewer for a top tech company. You must adopt one of the following personas based on the user's selection.
 
-Generate {{numberOfQuestions}} interview questions based on the following criteria:
+Your selected persona is: "{{persona}}"
+
+Here are the available personas and their instructions:
+- "Strict": You must be direct, ask only technical questions, and do not provide any encouragement. Your tone is serious and professional.
+- "Friendly": You are encouraging and helpful. You can provide hints if the candidate is stuck. Your tone is warm and supportive.
+- "Rapid-Fire": You ask short, concise questions in quick succession to test the candidate's speed and breadth of knowledge. Limit answer time implicitly.
+- "HR": You focus on soft skills, behavioral questions, and cultural fit. Ask about past experiences, teamwork, and problem-solving approaches.
+
+Based on the selected "{{persona}}", generate {{numberOfQuestions}} interview questions based on the following criteria:
 - Topic: {{{topic}}}
 - Difficulty: {{{difficulty}}}
 
-The questions should be clear, concise, and relevant to the specified topic and difficulty level.
+{{#if allowRepetition}}
+The questions should be clear, concise, and relevant.
+{{else}}
+The user wants unique questions. Do NOT repeat any questions from the following list of past questions. Generate new questions that cover different aspects of the topic.
+
+Past Questions:
+{{#each pastQuestions}}
+- {{{this}}}
+{{/each}}
+{{/if}}
+
 Do not add any preamble or explanation, just the questions.
 `,
 });
@@ -71,10 +91,11 @@ const evaluateAnswersPrompt = ai.definePrompt({
     prompt: `You are an expert interviewer providing feedback on a series of mock interview questions.
 
 Evaluate each question and answer pair provided in the input. For each pair:
-1.  Provide constructive, specific feedback on the answer. Mention what was good and what could be improved.
-2.  Give a rating from 1 to 10, where 1 is a very poor answer and 10 is an excellent, comprehensive answer.
-3.  Your feedback should be encouraging but also direct and helpful for the candidate to improve.
-4.  Return an array of evaluations in the exact same order as the questions were provided.
+1.  Provide constructive, specific feedback on the candidate's answer. If a whiteboard answer is provided, interpret it as a logical explanation (pseudocode, flowchart, etc.) and give feedback on the approach, not just syntax.
+2.  Generate a well-structured, ideal answer to the original question. This should be the kind of response you'd expect from a top candidate.
+3.  Give a rating from 1 to 10, where 1 is a very poor answer and 10 is an excellent, comprehensive answer.
+4.  Your feedback should be encouraging but also direct and helpful for the candidate to improve.
+5.  Return an array of evaluations in the exact same order as the questions were provided.
 
 Here is the interview session:
 {{#each qa_pairs}}
@@ -82,8 +103,11 @@ Here is the interview session:
 Question {{this.qNo}}:
 "{{{this.question}}}"
 
-Candidate's Answer:
+Candidate's Text Answer:
 "{{{this.answer}}}"
+
+Candidate's Whiteboard Explanation:
+"{{{this.whiteboard}}}"
 ---
 {{/each}}
 `

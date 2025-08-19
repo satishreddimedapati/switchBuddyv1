@@ -83,4 +83,17 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* CHAT THEMES */
+  [data-chat-theme="dark"] {
+    @apply bg-background;
+  }
+  [data-chat-theme="whatsapp"] {
+    @apply bg-[#e5ddd5];
+  }
+   [data-chat-theme="telegram"] {
+    @apply bg-[#a5c5dd];
+  }
 }
+
+    

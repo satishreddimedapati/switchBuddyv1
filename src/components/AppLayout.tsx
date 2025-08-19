@@ -52,6 +52,7 @@ const navItems = [
 ];
 
 const mobileNavItems = [
+    { href: '/', icon: Home, label: 'Dashboard' },
     { href: '/daily-tracker', icon: CalendarCheck, label: 'Daily Tracker' },
     { href: '/job-switch-helper', icon: Briefcase, label: 'JobSwitch Helper' },
     { href: '/ai-learning', icon: BrainCircuit, label: 'AI Learning' },

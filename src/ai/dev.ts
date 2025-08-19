@@ -29,3 +29,4 @@ import '@/ai/flows/generate-topic-history.ts';
 import '@/ai/flows/generate-channel-suggestions.ts';
 import '@/ai/flows/generate-chat-lesson.ts';
 import '@/ai/flows/generate-interactive-lesson.ts';
+import '@/ai/flows/generate-follow-up-question.ts';

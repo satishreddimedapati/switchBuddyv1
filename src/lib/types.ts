@@ -130,6 +130,8 @@ export type GenerateInterviewTopicScheduleOutput = z.infer<typeof GenerateInterv
 
 
 // MOCK INTERVIEW SCHEMAS
+export const InterviewerPersonaSchema = z.enum(['Friendly', 'Strict', 'Rapid-Fire', 'HR']);
+export type InterviewerPersona = z.infer<typeof InterviewerPersonaSchema>;
 
 // Firestore: interview_plans
 export const InterviewPlanSchema = z.object({
@@ -137,10 +139,12 @@ export const InterviewPlanSchema = z.object({
   userId: z.string(),
   topic: z.string(),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']),
+  persona: InterviewerPersonaSchema.default('Friendly'),
   durationMinutes: z.number().int(),
   numberOfQuestions: z.number().int(),
   totalInterviews: z.number().int(),
   completedInterviews: z.number().int(),
+  allowQuestionRepetition: z.boolean().default(true),
   createdAt: z.union([z.instanceof(Date), z.string()]), // Allow Date or ISO string
 });
 
@@ -161,7 +165,9 @@ export const InterviewSessionQuestionSchema = z.object({
     qNo: z.number(),
     question: z.string(),
     answer: z.string().optional(),
+    whiteboard: z.string().optional(),
     aiReview: z.string().optional(),
+    idealAnswer: z.string().optional(),
     rating: z.number().min(1).max(10).optional(),
 });
 export type InterviewSessionQuestion = z.infer<typeof InterviewSessionQuestionSchema>;
@@ -213,7 +219,10 @@ export type InterviewQuestionRequest = z.infer<typeof InterviewQuestionRequestSc
 export const GenerateInterviewQuestionsRequestSchema = z.object({
     topic: z.string(),
     difficulty: z.enum(['Easy', 'Medium', 'Hard']),
+    persona: InterviewerPersonaSchema.default('Friendly'),
     numberOfQuestions: z.number().int().min(1),
+    allowRepetition: z.boolean().default(true),
+    pastQuestions: z.array(z.string()).optional(),
 });
 export type GenerateInterviewQuestionsRequest = z.infer<typeof GenerateInterviewQuestionsRequestSchema>;
 
@@ -241,6 +250,7 @@ const QAPairSchema = z.object({
     qNo: z.number(),
     question: z.string(),
     answer: z.string(),
+    whiteboard: z.string().optional(),
 });
 
 export const EvaluateInterviewAnswersRequestSchema = z.object({
@@ -252,12 +262,25 @@ const EvaluationSchema = z.object({
     qNo: z.number(),
     feedback: z.string().describe("Constructive feedback on the answer."),
     rating: z.number().min(1).max(10).describe("A rating from 1 to 10."),
+    idealAnswer: z.string().describe("A well-structured, ideal answer to the question."),
 });
 
 export const EvaluateInterviewAnswersResponseSchema = z.object({
     evaluations: z.array(EvaluationSchema).describe("An array of evaluations for each question-answer pair."),
 });
 export type EvaluateInterviewAnswersResponse = z.infer<typeof EvaluateInterviewAnswersResponseSchema>;
+
+export const GenerateFollowUpQuestionRequestSchema = z.object({
+    question: z.string().describe("The original question asked."),
+    answer: z.string().describe("The user's answer to the original question."),
+});
+export type GenerateFollowUpQuestionRequest = z.infer<typeof GenerateFollowUpQuestionRequestSchema>;
+
+export const GenerateFollowUpQuestionResponseSchema = z.object({
+    followUpQuestion: z.string().describe("A short, relevant follow-up question based on the user's answer."),
+});
+export type GenerateFollowUpQuestionResponse = z.infer<typeof GenerateFollowUpQuestionResponseSchema>;
+
 
 // NETWORKING HUB SCHEMAS
 
@@ -533,6 +556,7 @@ export const LessonCardSchema = z.object({
 export type LessonCard = z.infer<typeof LessonCardSchema>;
 
 export const InteractiveLessonSchema = z.object({
+    id: z.string().optional(),
     title: z.string().describe("An engaging title for the lesson, matching the topic."),
     cards: z.array(LessonCardSchema).min(7).max(8).describe("A deck of exactly 7-8 micro-lesson cards in a logical sequence."),
 });
@@ -615,10 +639,40 @@ export type ChannelSuggestionOutput = z.infer<typeof ChannelSuggestionOutputSche
 
 // Chat Lessons
 export const ChatMessageSchema = z.object({
-  role: z.enum(['user', 'model', 'thinking']),
+  role: z.enum(['user', 'model']),
   content: z.string(),
 });
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
+
+const ChatSessionHistoryFieldSchema = z.array(ChatMessageSchema).optional();
+
+export const ChatSessionSchema = z.object({
+    id: z.string().optional(),
+    userId: z.string(),
+    topic: z.string(),
+    createdAt: z.any(),
+    lastMessageAt: z.any(),
+    lastMessageSnippet: z.string(),
+    history: ChatSessionHistoryFieldSchema,
+});
+export type ChatSession = z.infer<typeof ChatSessionSchema>;
+
+export function toSerializableChatSession(docData: any): ChatSession {
+    const { createdAt, lastMessageAt, history, ...rest } = docData;
+    const serializable: any = { ...rest };
+     if (createdAt?.toDate) {
+      serializable.createdAt = (createdAt as Timestamp).toDate().toISOString();
+    }
+     if (lastMessageAt?.toDate) {
+      serializable.lastMessageAt = (lastMessageAt as Timestamp).toDate().toISOString();
+    }
+    // The history array with Timestamps doesn't need special conversion
+    // if it's just being passed through, but if you need to display
+    // message-level timestamps, you'd convert them here too.
+    serializable.history = history || [];
+    return serializable as ChatSession;
+}
+
 
 export const GenerateChatLessonInputSchema = z.object({
   topic: z.string().describe('The topic for the chat lesson.'),
@@ -653,3 +707,5 @@ export const GetPersonalizedSalaryEstimateOutputSchema = z.object({
   commentary: z.string().describe("A brief explanation of how the user's profile affects this estimate."),
 });
 export type GetPersonalizedSalaryEstimateOutput = z.infer<typeof GetPersonalizedSalaryEstimateOutputSchema>;
+
+    

@@ -8,11 +8,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth";
 import { InterviewSession } from "@/lib/types";
 import { getInterviewSession } from "@/services/interview-sessions";
-import { Download, Loader2, Video } from "lucide-react";
+import { Download, Loader2, Video, CaseSensitive, PencilRuler } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 
 export default function InterviewSummaryPage() {
@@ -85,15 +86,35 @@ export default function InterviewSummaryPage() {
                                     <span className="font-semibold">{item.rating || 'N/A'}/10</span>
                                 </div>
                             </AccordionTrigger>
-                            <AccordionContent className="space-y-4">
-                                <div className="p-3 border rounded-md">
-                                    <p><strong>Your Answer:</strong></p>
-                                    <p className="text-muted-foreground">{item.answer || 'No answer provided.'}</p>
-                                </div>
-                                <div className="p-3 bg-muted/50 rounded-md">
-                                    <p><strong>AI Review:</strong></p>
-                                    <p className="text-muted-foreground">{item.aiReview || 'No review available.'}</p>
-                                </div>
+                            <AccordionContent className="space-y-4 p-2">
+                                <Tabs defaultValue="your-answer" className="w-full">
+                                    <TabsList className="grid w-full grid-cols-3">
+                                        <TabsTrigger value="your-answer">Your Answer</TabsTrigger>
+                                        <TabsTrigger value="ai-answer">AI Suggestion</TabsTrigger>
+                                        <TabsTrigger value="ai-feedback">AI Feedback</TabsTrigger>
+                                    </TabsList>
+                                    <TabsContent value="your-answer" className="mt-4">
+                                        {item.answer && (
+                                            <div className="p-4 border rounded-md mb-2">
+                                                <h4 className="font-semibold text-sm mb-2 flex items-center gap-2"><CaseSensitive/>Text Answer</h4>
+                                                <p className="text-muted-foreground whitespace-pre-wrap">{item.answer}</p>
+                                            </div>
+                                        )}
+                                        {item.whiteboard && (
+                                            <div className="p-4 border rounded-md">
+                                                <h4 className="font-semibold text-sm mb-2 flex items-center gap-2"><PencilRuler/>Whiteboard</h4>
+                                                <pre className="text-muted-foreground whitespace-pre-wrap bg-muted/50 p-2 rounded-sm font-mono text-xs">{item.whiteboard}</pre>
+                                            </div>
+                                        )}
+                                        {!item.answer && !item.whiteboard && <p className="text-muted-foreground p-4 border rounded-md">No answer provided.</p>}
+                                    </TabsContent>
+                                    <TabsContent value="ai-answer" className="mt-4 p-4 border rounded-md bg-muted/30">
+                                         <p className="text-muted-foreground whitespace-pre-wrap">{item.idealAnswer || 'No ideal answer generated.'}</p>
+                                    </TabsContent>
+                                    <TabsContent value="ai-feedback" className="mt-4 p-4 border rounded-md bg-muted/30">
+                                        <p className="text-muted-foreground whitespace-pre-wrap">{item.aiReview || 'No review available.'}</p>
+                                    </TabsContent>
+                                </Tabs>
                             </AccordionContent>
                         </AccordionItem>
                     ))}

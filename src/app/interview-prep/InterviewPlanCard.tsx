@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { generateInterviewQuestions } from "@/ai/flows/interview-practice";
-import { addInterviewSession } from "@/services/interview-sessions";
+import { addInterviewSession, getInterviewSessionsForPlan } from "@/services/interview-sessions";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 
@@ -25,18 +26,23 @@ export function InterviewPlanCard({ plan }: InterviewPlanCardProps) {
     const [isStarting, startTransition] = useTransition();
 
     const isCompleted = (plan.completedInterviews || 0) >= plan.totalInterviews;
-    const progress = (plan.completedInterviews / plan.totalInterviews) * 100;
+    const progress = plan.totalInterviews > 0 ? ((plan.completedInterviews || 0) / plan.totalInterviews) * 100 : 0;
 
     const handleStartNext = () => {
         if (!user || !plan.id) return;
         startTransition(async () => {
             try {
                 toast({ title: 'Starting new interview...', description: 'Generating questions now.' });
+                
+                const pastSessions = await getInterviewSessionsForPlan(plan.id!);
+                const pastQuestions = pastSessions.flatMap(s => s.questions.map(q => q.question));
 
                 const questionResult = await generateInterviewQuestions({
                     topic: plan.topic,
                     difficulty: plan.difficulty,
                     numberOfQuestions: plan.numberOfQuestions,
+                    allowRepetition: plan.allowQuestionRepetition,
+                    pastQuestions: pastQuestions,
                 });
 
                 if (!questionResult || questionResult.questions.length === 0) {
@@ -67,35 +73,22 @@ export function InterviewPlanCard({ plan }: InterviewPlanCardProps) {
     }
 
     return (
-        <Card className="border-l-4" style={{ borderColor: isCompleted ? 'hsl(var(--muted))' : 'hsl(var(--primary))' }}>
-            <CardHeader>
-                <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
-                    <div>
-                        <CardTitle className="text-xl">{plan.topic}</CardTitle>
-                        <CardDescription>Difficulty: {plan.difficulty} | Duration: {plan.durationMinutes} min</CardDescription>
-                    </div>
-                    <Button variant="ghost" size="sm" asChild className="shrink-0">
-                        <Link href={`/job-switch-helper/edit/${plan.id}`}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit
-                        </Link>
-                    </Button>
-                </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <Progress value={progress} />
-                    <p className="text-sm text-muted-foreground">
-                        {plan.completedInterviews} / {plan.totalInterviews} interviews completed.
-                    </p>
-                </div>
-                <div className="flex justify-end">
-                    <Button onClick={handleStartNext} disabled={isStarting || isCompleted}>
-                        {isStarting ? <Loader2 className="animate-spin" /> : <Video />}
-                        {isCompleted ? 'Plan Complete' : 'Start Next Interview'}
-                    </Button>
-                </div>
-            </CardContent>
-        </Card>
+         <CardContent className="space-y-4 p-4 pt-0">
+            <div className="text-sm text-muted-foreground">
+                <span className="font-semibold">Difficulty:</span> {plan.difficulty} | <span className="font-semibold">Duration:</span> {plan.durationMinutes} min
+            </div>
+            <div className="space-y-2">
+                <Progress value={progress} />
+                <p className="text-sm text-muted-foreground">
+                    {plan.completedInterviews} / {plan.totalInterviews} interviews completed.
+                </p>
+            </div>
+            <div className="flex justify-end">
+                <Button onClick={handleStartNext} disabled={isStarting || isCompleted}>
+                    {isStarting ? <Loader2 className="animate-spin" /> : <Video />}
+                    {isCompleted ? 'Plan Complete' : 'Start Next Interview'}
+                </Button>
+            </div>
+        </CardContent>
     )
 }

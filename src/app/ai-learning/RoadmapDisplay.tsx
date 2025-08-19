@@ -23,7 +23,7 @@ type ViewMode = 'list' | 'timeline' | 'history';
 export function RoadmapDisplay({ roadmap }: RoadmapDisplayProps) {
     const isMobile = useIsMobile();
     const [selectedWeek, setSelectedWeek] = useState<WeeklyPlan | undefined>(roadmap.roadmap.weeks[0]);
-    const [view, setView] = useState<ViewMode>('timeline');
+    const [view, setView] = useState<ViewMode>(isMobile ? 'list' : 'timeline');
 
     const MobileDisplay = () => (
          <Card>
@@ -115,7 +115,7 @@ export function RoadmapDisplay({ roadmap }: RoadmapDisplayProps) {
              return <TopicHistoryDisplay history={roadmap.history} topic={roadmap.topic} />;
         }
         if (isMobile) {
-            return view === 'timeline' ? <RoadmapTimeline roadmap={roadmap} /> : <MobileDisplay />;
+            return <MobileDisplay />;
         }
         return view === 'timeline' ? <RoadmapTimeline roadmap={roadmap} /> : <DesktopDisplay />;
     }
@@ -135,15 +135,17 @@ export function RoadmapDisplay({ roadmap }: RoadmapDisplayProps) {
                             <span className="ml-2 hidden sm:inline">History</span>
                         </Button>
                     )}
-                    <Button
-                        variant={view === 'timeline' ? 'secondary' : 'ghost'}
-                        size="sm"
-                        onClick={() => setView('timeline')}
-                        className="h-8"
-                    >
-                        <GitBranch className="h-4 w-4" />
-                        <span className="ml-2 hidden sm:inline">Timeline</span>
-                    </Button>
+                    {!isMobile && (
+                        <Button
+                            variant={view === 'timeline' ? 'secondary' : 'ghost'}
+                            size="sm"
+                            onClick={() => setView('timeline')}
+                            className="h-8"
+                        >
+                            <GitBranch className="h-4 w-4" />
+                            <span className="ml-2 hidden sm:inline">Timeline</span>
+                        </Button>
+                    )}
                     <Button
                         variant={view === 'list' ? 'secondary' : 'ghost'}
                         size="sm"

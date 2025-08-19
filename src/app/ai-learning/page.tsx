@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -47,7 +48,7 @@ export default function AiLearningPage() {
     const [isBuilding, setIsBuilding] = useState(false);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-    const fetchRoadmaps = async () => {
+    const fetchAllData = async () => {
         if (!user) {
             setLoading(false);
             return;
@@ -60,7 +61,7 @@ export default function AiLearningPage() {
 
     useEffect(() => {
         if(user) {
-          fetchRoadmaps();
+          fetchAllData();
         } else {
             setLoading(false);
         }
@@ -68,7 +69,7 @@ export default function AiLearningPage() {
 
     const handleRoadmapCreated = () => {
         setIsBuilding(false);
-        fetchRoadmaps();
+        fetchAllData();
     }
     
     const handleDelete = async (roadmapId: string) => {
@@ -77,7 +78,7 @@ export default function AiLearningPage() {
         try {
             await deleteLearningRoadmap(roadmapId, user.uid);
             toast({ title: "Success", description: "Roadmap deleted successfully." });
-            fetchRoadmaps(); // Refetch after deletion
+            fetchAllData(); // Refetch after deletion
         } catch (error) {
             toast({ title: "Error", description: "Failed to delete roadmap.", variant: "destructive" });
         } finally {
@@ -110,19 +111,19 @@ export default function AiLearningPage() {
                 </Button>
             </div>
             
-            {roadmaps.length > 0 ? (
+             {roadmaps.length > 0 ? (
                 <Accordion type="single" collapsible className="w-full space-y-4">
                     {roadmaps.map(roadmap => (
-                         <Card key={roadmap.id}>
+                        <Card key={roadmap.id}>
                             <AccordionItem value={roadmap.id!} className="border-b-0">
-                                <div className="p-6 flex justify-between items-center">
-                                    <AccordionTrigger className="p-0 hover:no-underline flex-1">
-                                        <CardHeader className="p-0 text-left">
+                                <div className="flex justify-between items-center p-4 sm:p-6">
+                                    <AccordionTrigger className="p-0 hover:no-underline flex-1 text-left">
+                                        <div className="pr-4">
                                             <CardTitle>{roadmap.topic}</CardTitle>
                                             <CardDescription>{roadmap.duration} day plan focusing on: {roadmap.goals.join(', ')}</CardDescription>
-                                        </CardHeader>
+                                        </div>
                                     </AccordionTrigger>
-                                    <div className="flex items-center gap-2 ml-4">
+                                    <div className="flex items-center gap-1 sm:gap-2 ml-2 sm:ml-4">
                                         <Button variant="ghost" size="icon" asChild>
                                             <Link href={`/ai-learning/edit/${roadmap.id}`}>
                                                 <Edit className="h-4 w-4" />
@@ -132,8 +133,8 @@ export default function AiLearningPage() {
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                                                     {isDeleting === roadmap.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4" />}
-                                                     <span className="sr-only">Delete</span>
+                                                    {isDeleting === roadmap.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4" />}
+                                                    <span className="sr-only">Delete</span>
                                                 </Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
@@ -156,8 +157,8 @@ export default function AiLearningPage() {
                                 <AccordionContent className="px-6 pb-6">
                                     <RoadmapDisplay roadmap={roadmap} />
                                 </AccordionContent>
-                             </AccordionItem>
-                         </Card>
+                            </AccordionItem>
+                        </Card>
                     ))}
                 </Accordion>
             ) : (
