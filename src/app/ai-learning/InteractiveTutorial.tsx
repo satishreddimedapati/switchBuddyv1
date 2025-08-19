@@ -65,20 +65,23 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   const [currentIndex, setCurrentIndex] = useState(0);
   
   const fetchLessons = useCallback(async () => {
-    if (!user || !isOpen) return;
+    if (!user || !isOpen) return { lessons: [], lessonToDisplay: null };
     setIsLoading(true);
     setError(null);
     try {
       const existingLessons = await getInteractiveLessonsForTopic(roadmapId, topic);
       setLessons(existingLessons);
-      if (existingLessons.length > 0) {
-        setCurrentLesson(existingLessons[0]);
+       const lessonToDisplay = existingLessons.length > 0 ? existingLessons[0] : null;
+      if (lessonToDisplay) {
+        setCurrentLesson(lessonToDisplay);
       } else {
         setCurrentLesson(null);
       }
+      return { lessons: existingLessons, lessonToDisplay };
     } catch (err) {
        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
        setError(`Failed to load existing lessons: ${errorMessage}`);
+       return { lessons: [], lessonToDisplay: null };
     } finally {
       setIsLoading(false);
     }
@@ -111,20 +114,19 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
           }
           await addInteractiveLesson(roadmapId, topic, result);
           
-          // Refetch after adding
-          await fetchLessons();
+          // Refetch after adding and get the new list
+          const { lessons: updatedLessons } = await fetchLessons();
 
-          toast({ title: "New lesson generated!", description: "A fresh perspective on the topic is ready." });
-          // The fetchLessons will set the new current lesson.
-          // Let's make sure we find and set it as active immediately.
-          const newLessonInState = lessons.find(l => l.title === result.title);
-          if(newLessonInState) {
-              setCurrentLesson(newLessonInState);
+          // Find the newly added lesson and set it as current
+          const newLesson = updatedLessons.find(l => l.title === result.title);
+          if (newLesson) {
+             setCurrentLesson(newLesson);
           } else {
-              // As a fallback, use the result directly
-              setCurrentLesson(result);
+             // Fallback to the result directly if not found (edge case)
+             setCurrentLesson(result);
           }
 
+          toast({ title: "New lesson generated!", description: "A fresh perspective on the topic is ready." });
           setCurrentIndex(0);
           setIsStarted(true);
 
