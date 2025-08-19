@@ -203,22 +203,22 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
     setHistory([]);
     setInput('');
   }, []);
-
-  const handleClose = () => {
-    if (!currentSession && history.length > 1) {
-        setShowSaveDialog(true);
+  
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+       if (!currentSession && history.length > 1) {
+            setShowSaveDialog(true);
+        } else {
+            onOpenChange(false);
+        }
     } else {
-        onOpenChange(false);
-        resetState();
-        setView('chat'); // Reset view on close
+        onOpenChange(true);
     }
   }
 
   const handleDiscard = () => {
     setShowSaveDialog(false);
     onOpenChange(false);
-    resetState();
-    setView('chat');
   }
 
   const handleSaveAndClose = () => {
@@ -231,8 +231,6 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
             onChatSaved();
             setShowSaveDialog(false);
             onOpenChange(false);
-            resetState();
-            setView('chat');
         } catch (error) {
             console.error("Failed to save chat session", error);
             toast({ title: "Error", description: "Could not save your chat.", variant: "destructive" });
@@ -283,30 +281,37 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
     setView('chat');
   }, [topic, startNewChat]);
   
-  const loadInitialSession = useCallback(async () => {
-      if (!user || !topic) return;
-      setIsLoading(true);
-      resetState();
-      try {
-        const existingSession = await getChatSessionForTopic(user.uid, topic);
-        if (existingSession) {
-            await loadSession(existingSession);
-        } else {
-            startNewChat(topic);
-        }
-      } catch (error) {
-          console.error("Error loading initial session", error);
-          toast({title: "Error", description: "Could not load chat session.", variant: "destructive"});
-      } finally {
-        setIsLoading(false);
-      }
-  }, [user, topic, resetState, loadSession, startNewChat, toast]);
-
   useEffect(() => {
-    if (isOpen && view === 'chat' && topic) {
-        loadInitialSession();
-    }
-  }, [isOpen, topic, view, loadInitialSession]);
+    const loadInitialSession = async () => {
+        if (!isOpen || !user || !topic) return;
+
+        // Reset state for the new topic every time the dialog opens
+        resetState();
+        setIsLoading(true);
+        setView('chat');
+
+        try {
+            const existingSession = await getChatSessionForTopic(user.uid, topic);
+            if (existingSession) {
+                setCurrentSession(existingSession);
+                const messages = await getMessagesForSession(existingSession.id!);
+                setHistory(messages);
+            } else {
+                startNewChat(topic);
+            }
+        } catch (error) {
+            console.error("Error loading initial session", error);
+            toast({ title: "Error", description: "Could not load chat session.", variant: "destructive" });
+            startNewChat(topic); // Fallback to new chat on error
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    loadInitialSession();
+
+  }, [isOpen, topic, user, resetState, toast]);
+
 
    useEffect(() => {
     if (scrollAreaRef.current) {
@@ -336,27 +341,29 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
     generateResponse(historyWithIntent, intent);
   }
   
-  useEffect(() => {
-    async function fetchHistory() {
-        if (view === 'history' && user) {
-            setIsLoading(true);
-            const sessions = await getChatSessionsForUser(user.uid);
-            sessions.sort((a,b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
-            setAllSessions(sessions);
-            setIsLoading(false);
-        }
+  const handleShowHistory = useCallback(async () => {
+    if (view === 'history' || !user) return;
+    setIsLoading(true);
+    setView('history');
+    try {
+        const sessions = await getChatSessionsForUser(user.uid);
+        sessions.sort((a,b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
+        setAllSessions(sessions);
+    } catch (error) {
+        console.error("Failed to fetch history:", error);
+        toast({ title: "Error", description: "Could not load chat history.", variant: "destructive" });
+    } finally {
+        setIsLoading(false);
     }
-    fetchHistory();
-  }, [view, user]);
-
+  }, [user, view, toast]);
 
   return (
     <>
-    <Dialog open={isOpen} onOpenChange={(open) => { if(!open) handleClose()}}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-3xl h-full md:h-[90vh] flex flex-col p-0 gap-0">
         <DialogHeader className="p-4 border-b flex-row flex justify-between items-center bg-card rounded-t-lg">
             <div className="flex items-center gap-2">
-                 <Button variant="ghost" size="icon" onClick={handleClose} className="md:hidden">
+                 <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="md:hidden">
                     <ArrowLeft />
                 </Button>
                 <Avatar className="hidden sm:flex">
@@ -371,10 +378,10 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
                 <Button variant="outline" size="sm" onClick={() => startNewChat()} disabled={view !== 'chat'}>
                    <PlusCircle className="mr-2 h-4 w-4"/> New Chat
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setView('history')} disabled={view === 'history'}>
+                <Button variant="outline" size="sm" onClick={handleShowHistory} disabled={view === 'history'}>
                    <History className="mr-2 h-4 w-4"/> History
                 </Button>
-                 <Button variant="ghost" size="icon" onClick={handleClose} className="hidden md:flex">
+                 <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="hidden md:flex">
                     <X />
                 </Button>
             </div>
