@@ -81,29 +81,30 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
     setCurrentIndex(0);
     setScreen('loading');
   }, []);
+
+  const fetchLessons = useCallback(async () => {
+    if (!user) return;
+    setScreen('loading');
+    try {
+        const existingLessons = await getInteractiveLessonsForTopic(roadmapId, topic);
+        setLessons(existingLessons);
+    } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+        setError(`Failed to load existing lessons: ${errorMessage}`);
+        setScreen('error');
+    } finally {
+        setScreen('intro');
+    }
+  }, [user, roadmapId, topic]);
   
- useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
-        const fetchLessons = async () => {
-            if (!user) return;
-            setScreen('loading');
-            try {
-                const existingLessons = await getInteractiveLessonsForTopic(roadmapId, topic);
-                setLessons(existingLessons);
-            } catch (err) {
-                const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
-                setError(`Failed to load existing lessons: ${errorMessage}`);
-                setScreen('error');
-            } finally {
-                setScreen('intro');
-            }
-        };
         fetchLessons();
     } else {
         // Use setTimeout to avoid flickering when closing
         setTimeout(resetState, 300);
     }
-  }, [isOpen, user, roadmapId, topic, resetState]);
+  }, [isOpen, fetchLessons, resetState]);
 
 
   const handleStart = () => {
@@ -131,15 +132,10 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
           if (!result || !result.title || !result.cards || result.cards.length < 5) {
                throw new Error("The AI returned an incomplete or invalid lesson structure. Please try again.");
           }
-          const newLessonId = await addInteractiveLesson(roadmapId, topic, result);
-          const newLessonWithId = { ...result, id: newLessonId };
+          await addInteractiveLesson(roadmapId, topic, result);
           
-          setLessons(prev => [...prev, newLessonWithId]);
-          setCurrentLesson(newLessonWithId);
-          setCurrentIndex(0);
-          setScreen('lesson');
-
-          toast({ title: "New lesson generated!", description: "A fresh perspective on the topic is ready." });
+          toast({ title: "New Lesson Generated!", description: `The lesson for "${topic}" is ready. You can start it from the menu.` });
+          await fetchLessons(); // Refetch lessons to include the new one and go to intro screen
 
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
@@ -159,7 +155,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   const handleNextCard = () => {
     if (!currentLesson) return;
     if (currentIndex < currentLesson.cards.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+      setCurrentIndex(prev => prev - 1);
     } else {
         onOpenChange(false);
         toast({ title: "Lesson Complete!", description: "Great job finishing the interactive tutorial."});
@@ -290,5 +286,3 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
     </Dialog>
   );
 }
-
-    
