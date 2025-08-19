@@ -23,7 +23,7 @@ export async function createChatSession(userId: string, topic: string, history: 
         createdAt: serverTimestamp(),
         lastMessageAt: serverTimestamp(),
         lastMessageSnippet: snippet,
-        history: history, // Store history directly without adding a new timestamp
+        history: history,
     });
 
     return sessionDocRef.id;
@@ -88,7 +88,7 @@ export async function addMessageToSession(sessionId: string, message: ChatMessag
     
     // Add the new message to the history array
     await updateDoc(sessionRef, {
-        history: arrayUnion(message), // Add the message without a new timestamp
+        history: arrayUnion(message),
         lastMessageAt: serverTimestamp(),
         lastMessageSnippet: message.content.substring(0, 50) + "..."
     });
@@ -106,7 +106,6 @@ export async function getMessagesForSession(sessionId: string): Promise<ChatMess
         }
 
         const data = docSnap.data();
-        // The array is already ordered by insertion, so we can just return it.
         return data.history || [];
 
     } catch (error) {
@@ -114,5 +113,3 @@ export async function getMessagesForSession(sessionId: string): Promise<ChatMess
         return [];
     }
 }
-
-    
