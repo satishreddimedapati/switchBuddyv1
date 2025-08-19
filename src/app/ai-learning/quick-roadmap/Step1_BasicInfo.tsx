@@ -24,7 +24,7 @@ export function Step1_BasicInfo({ data, onUpdate }: Step1Props) {
     useEffect(() => {
         const days = differenceInDays(data.interviewDate, new Date());
         onUpdate({ daysToPrepare: Math.max(1, days) }); // Ensure at least 1 day
-    }, [data.interviewDate, onUpdate]);
+    }, [data.interviewDate]);
 
     // When daysToPrepare changes, update interviewDate
     const handleDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {

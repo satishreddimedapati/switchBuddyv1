@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Step1_BasicInfo } from './Step1_BasicInfo';
 import { Step2_AdvancedInfo } from './Step2_AdvancedInfo';
@@ -41,9 +41,9 @@ export default function QuickRoadmapPage() {
     const [inputs, setInputs] = useState<QuickRoadmapInputs>(initialInputs);
     const [generatedRoadmap, setGeneratedRoadmap] = useState<LearningRoadmap | null>(null);
 
-    const updateInputs = (newValues: Partial<QuickRoadmapInputs>) => {
+    const updateInputs = useCallback((newValues: Partial<QuickRoadmapInputs>) => {
         setInputs(prev => ({ ...prev, ...newValues }));
-    };
+    }, []);
 
     const nextStep = () => setStep(s => s + 1);
     const prevStep = () => setStep(s => s - 1);
