@@ -193,8 +193,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session, onChatSaved }
   const activeTopic = currentSession?.topic || topic || "New Chat";
 
   const handleClose = () => {
-    // Only show save dialog if it's a new session that has messages
-    if (!session && history.length > 1) {
+    if (!currentSession && history.length > 1) { // Only show save dialog for new, unsaved chats
         setShowSaveDialog(true);
     } else {
         onOpenChange(false);
@@ -214,7 +213,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session, onChatSaved }
   }
 
   const handleSave = () => {
-    if (!user || !activeTopic) return;
+    if (!user || !activeTopic || history.length === 0) return;
     
     startSavingTransition(async () => {
         try {
@@ -231,14 +230,16 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session, onChatSaved }
     });
   }
 
-  const generateResponse = useCallback(async (currentHistory: ChatMessage[], currentSessionId?: string, intent?: string) => {
+  const generateResponse = useCallback(async (currentHistory: ChatMessage[], intent?: string) => {
       startGenerationTransition(async () => {
           try {
             const result = await generateChatLesson({ topic: activeTopic, history: currentHistory, intent });
             const modelMessage: ChatMessage = { role: 'model', content: result.response };
-            if(currentSessionId) {
-                await addMessageToSession(currentSessionId, modelMessage);
+            
+            if(currentSession?.id) {
+                await addMessageToSession(currentSession.id, modelMessage);
             }
+
             setHistory(prev => [...prev, modelMessage]);
           } catch (error) {
             console.error('Failed to generate chat lesson', error);
@@ -247,9 +248,11 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session, onChatSaved }
               description: 'Could not get a response. Please try again.',
               variant: 'destructive',
             });
+            // Remove the user's message if AI fails
+             setHistory(prev => prev.slice(0, -1));
           }
       });
-  }, [activeTopic, toast]);
+  }, [activeTopic, toast, currentSession]);
 
   const loadOrCreateSession = useCallback(async () => {
       if (!user || !isOpen) return;
@@ -261,10 +264,10 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session, onChatSaved }
         setCurrentSession(session);
         const messages = await getMessagesForSession(session.id);
         setHistory(messages);
-      } else if (topic) { // Starting a new session
+      } else if (topic) { // Starting a new session for a topic
           const initialUserMessage: ChatMessage = { role: 'user', content: `Can you explain "${topic}" like I'm talking to a friend?` };
           setHistory([initialUserMessage]);
-          generateResponse([initialUserMessage], undefined); // Pass undefined session ID for new chats
+          generateResponse([initialUserMessage]);
       }
       setIsLoadingHistory(false);
   }, [user, isOpen, session, topic, generateResponse, resetState]);
@@ -288,17 +291,18 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session, onChatSaved }
   }, [history, isGenerating]);
 
   const handleSend = () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isGenerating) return;
     
     const newUserMessage: ChatMessage = { role: 'user', content: input };
-    if(currentSession?.id) {
-        addMessageToSession(currentSession.id, newUserMessage);
-    }
-    
     const newHistory = [...history, newUserMessage];
     setHistory(newHistory);
     setInput('');
-    generateResponse(newHistory, currentSession?.id);
+    
+    if (currentSession?.id) {
+        addMessageToSession(currentSession.id, newUserMessage);
+    }
+    
+    generateResponse(newHistory);
   }
 
   const handleQuickFilter = (intent: string) => {
@@ -312,7 +316,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session, onChatSaved }
     const historyWithIntent = [...history, intentMessage];
     setHistory(historyWithIntent);
     
-    generateResponse(historyWithIntent, currentSession?.id, intent);
+    generateResponse(historyWithIntent, intent);
   }
 
   return (

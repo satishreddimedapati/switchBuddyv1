@@ -5,7 +5,7 @@
 import { db } from "@/lib/firebase";
 import type { ChatSession, ChatMessage } from "@/lib/types";
 import { toSerializableChatSession } from "@/lib/types";
-import { collection, getDocs, doc, updateDoc, addDoc, query, where, serverTimestamp, orderBy, limit, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, addDoc, query, where, serverTimestamp, orderBy, limit, getDoc, arrayUnion } from "firebase/firestore";
 
 const sessionsCollection = collection(db, "chat_sessions");
 
@@ -23,15 +23,8 @@ export async function createChatSession(userId: string, topic: string, history: 
         createdAt: serverTimestamp(),
         lastMessageAt: serverTimestamp(),
         lastMessageSnippet: snippet,
+        history: history.map(msg => ({...msg, createdAt: serverTimestamp()})), // Store history directly
     });
-
-    const messagesRef = collection(db, `chat_sessions/${sessionDocRef.id}/messages`);
-    const batch = [];
-    for (const message of history) {
-        const messageDoc = addDoc(messagesRef, { ...message, createdAt: serverTimestamp() });
-        batch.push(messageDoc);
-    }
-    await Promise.all(batch);
 
     return sessionDocRef.id;
 }
@@ -90,38 +83,30 @@ export async function getChatSessionForTopic(userId: string, topic: string): Pro
 }
 
 
-export async function addMessageToSession(sessionId: string, message: ChatMessage): Promise<string> {
-    const messagesRef = collection(db, `chat_sessions/${sessionId}/messages`);
-    
-    // Add the new message
-    const messageDocRef = await addDoc(messagesRef, {
-        ...message,
-        createdAt: serverTimestamp(),
-    });
-
-    // Update the parent session document
+export async function addMessageToSession(sessionId: string, message: ChatMessage): Promise<void> {
     const sessionRef = doc(db, "chat_sessions", sessionId);
+    
+    // Add the new message to the history array
     await updateDoc(sessionRef, {
+        history: arrayUnion({ ...message, createdAt: serverTimestamp() }),
         lastMessageAt: serverTimestamp(),
         lastMessageSnippet: message.content.substring(0, 50) + "..."
     });
-
-    return messageDocRef.id;
 }
 
 
 export async function getMessagesForSession(sessionId: string): Promise<ChatMessage[]> {
     try {
-        const messagesRef = collection(db, `chat_sessions/${sessionId}/messages`);
-        const q = query(messagesRef, orderBy("createdAt", "asc"));
-        const querySnapshot = await getDocs(q);
+        const sessionRef = doc(db, "chat_sessions", sessionId);
+        const docSnap = await getDoc(sessionRef);
 
-        return querySnapshot.docs.map(doc => {
-            const data = doc.data();
-            // Note: Timestamps are not converted here, but you could if needed.
-            // For simple display, Firestore's automatic handling is often fine.
-            return data as ChatMessage;
-        });
+        if (!docSnap.exists()) {
+            console.error("No such session document!");
+            return [];
+        }
+
+        const data = docSnap.data();
+        return (data.history || []).sort((a: any, b: any) => a.createdAt?.seconds - b.createdAt?.seconds);
 
     } catch (error) {
         console.error("Error fetching messages for session:", error);

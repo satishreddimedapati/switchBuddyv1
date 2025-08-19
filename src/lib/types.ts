@@ -622,6 +622,8 @@ export const ChatMessageSchema = z.object({
 });
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
+const ChatSessionHistoryFieldSchema = z.array(ChatMessageSchema).optional();
+
 export const ChatSessionSchema = z.object({
     id: z.string().optional(),
     userId: z.string(),
@@ -629,11 +631,12 @@ export const ChatSessionSchema = z.object({
     createdAt: z.any(),
     lastMessageAt: z.any(),
     lastMessageSnippet: z.string(),
+    history: ChatSessionHistoryFieldSchema,
 });
 export type ChatSession = z.infer<typeof ChatSessionSchema>;
 
 export function toSerializableChatSession(docData: any): ChatSession {
-    const { createdAt, lastMessageAt, ...rest } = docData;
+    const { createdAt, lastMessageAt, history, ...rest } = docData;
     const serializable: any = { ...rest };
      if (createdAt?.toDate) {
       serializable.createdAt = (createdAt as Timestamp).toDate().toISOString();
@@ -641,6 +644,10 @@ export function toSerializableChatSession(docData: any): ChatSession {
      if (lastMessageAt?.toDate) {
       serializable.lastMessageAt = (lastMessageAt as Timestamp).toDate().toISOString();
     }
+    // The history array with Timestamps doesn't need special conversion
+    // if it's just being passed through, but if you need to display
+    // message-level timestamps, you'd convert them here too.
+    serializable.history = history || [];
     return serializable as ChatSession;
 }
 
