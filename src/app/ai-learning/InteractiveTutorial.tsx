@@ -85,7 +85,6 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   const [showGeneratedDialog, setShowGeneratedDialog] = useState(false);
   
   const resetState = useCallback(() => {
-    setLessons([]);
     setCurrentLesson(null);
     setError(null);
     setCurrentIndex(0);
@@ -151,7 +150,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
           setLessons(prev => [...prev, newLessonWithId]);
           setCurrentLesson(newLessonWithId);
           setCurrentIndex(0);
-          setScreen('lesson');
+          setShowGeneratedDialog(true);
           
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
@@ -171,7 +170,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   const handleNextCard = () => {
     if (!currentLesson) return;
     if (currentIndex < currentLesson.cards.length - 1) {
-      setCurrentIndex(prev => prev - 1);
+      setCurrentIndex(prev => prev + 1);
     } else {
         onOpenChange(false);
         toast({ title: "Lesson Complete!", description: "Great job finishing the interactive tutorial."});
