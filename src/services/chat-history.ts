@@ -33,7 +33,6 @@ export async function createChatSession(userId: string, topic: string, history: 
 export async function getChatSessionsForUser(userId: string): Promise<ChatSession[]> {
     if (!userId) return [];
     try {
-        // Removed orderBy to prevent index requirement errors. Sorting will be handled client-side.
         const q = query(
             sessionsCollection, 
             where("userId", "==", userId)
@@ -42,7 +41,6 @@ export async function getChatSessionsForUser(userId: string): Promise<ChatSessio
         
         return querySnapshot.docs.map(doc => {
             const data = doc.data();
-            // Ensure the conversion function is correctly used
             return {
                 id: doc.id,
                 ...toSerializableChatSession(data),
@@ -79,7 +77,9 @@ export async function getChatSessionForTopic(userId: string, topic: string): Pro
 
     } catch (error) {
         console.error("Error fetching chat session for topic:", error);
-        return null;
+        // This query requires a composite index. Firestore usually provides a link to create it
+        // in the error message in the functions console.
+        throw error;
     }
 }
 

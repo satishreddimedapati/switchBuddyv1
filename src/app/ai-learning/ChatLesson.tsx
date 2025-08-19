@@ -266,11 +266,9 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
   const startNewChat = useCallback((newTopic?: string) => {
     const chatTopic = newTopic || activeTopic;
     resetState();
-    setIsLoading(true);
     const initialUserMessage: ChatMessage = { role: 'user', content: `Can you explain "${chatTopic}" like I'm talking to a friend?` };
     setHistory([initialUserMessage]);
     generateResponse([initialUserMessage]);
-    setIsLoading(false);
     setView('chat');
   }, [resetState, generateResponse, activeTopic]);
 
@@ -305,10 +303,10 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
   }, [user, topic, resetState, loadSession, startNewChat, toast]);
 
   useEffect(() => {
-    if (isOpen && view === 'chat') {
+    if (isOpen && view === 'chat' && topic) {
         loadInitialSession();
     }
-  }, [isOpen, topic]); // Rerun only when the dialog is opened for a specific topic
+  }, [isOpen, topic, view, loadInitialSession]);
 
    useEffect(() => {
     if (scrollAreaRef.current) {
@@ -338,13 +336,11 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
     generateResponse(historyWithIntent, intent);
   }
   
-  // This effect will fetch the chat history when the 'history' view is activated
   useEffect(() => {
     async function fetchHistory() {
         if (view === 'history' && user) {
             setIsLoading(true);
             const sessions = await getChatSessionsForUser(user.uid);
-            // Sort sessions by lastMessageAt descending
             sessions.sort((a,b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
             setAllSessions(sessions);
             setIsLoading(false);
@@ -470,5 +466,3 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
     </>
   );
 }
-
-    
