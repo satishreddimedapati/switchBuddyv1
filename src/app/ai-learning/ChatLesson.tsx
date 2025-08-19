@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useTransition, useRef, useCallback } from 'react';
@@ -343,6 +344,8 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
         if (view === 'history' && user) {
             setIsLoading(true);
             const sessions = await getChatSessionsForUser(user.uid);
+            // Sort sessions by lastMessageAt descending
+            sessions.sort((a,b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
             setAllSessions(sessions);
             setIsLoading(false);
         }

@@ -33,15 +33,16 @@ export async function createChatSession(userId: string, topic: string, history: 
 export async function getChatSessionsForUser(userId: string): Promise<ChatSession[]> {
     if (!userId) return [];
     try {
+        // Removed orderBy to prevent index requirement errors. Sorting will be handled client-side.
         const q = query(
             sessionsCollection, 
-            where("userId", "==", userId),
-            orderBy("lastMessageAt", "desc")
+            where("userId", "==", userId)
         );
         const querySnapshot = await getDocs(q);
         
         return querySnapshot.docs.map(doc => {
             const data = doc.data();
+            // Ensure the conversion function is correctly used
             return {
                 id: doc.id,
                 ...toSerializableChatSession(data),
