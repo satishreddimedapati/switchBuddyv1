@@ -144,7 +144,6 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
           const newLessonId = await addInteractiveLesson(roadmapId, topic, result);
           const newLessonWithId = { ...result, id: newLessonId };
           
-          // Manually update the state to reflect the new addition immediately
           setLessons(prev => [...prev, newLessonWithId]);
           setCurrentLesson(newLessonWithId);
           setCurrentIndex(0);
@@ -170,7 +169,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   const handleNextCard = () => {
     if (!currentLesson) return;
     if (currentIndex < currentLesson.cards.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+      setCurrentIndex(prev => prev - 1);
     } else {
         onOpenChange(false);
         toast({ title: "Lesson Complete!", description: "Great job finishing the interactive tutorial."});
@@ -288,18 +287,12 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl w-full h-full md:h-[90vh] md:w-[90vw] flex flex-col p-0 gap-0">
-        <DialogHeader className="p-4 border-b flex-row flex justify-between items-center">
-            <div>
-              <DialogTitle>Interactive Tutorial: {topic}</DialogTitle>
-              <DialogDescription>An interactive, card-based lesson.</DialogDescription>
-            </div>
-            <DialogClose asChild>
-                 <Button variant="ghost" size="icon">
-                    <X />
-                </Button>
-            </DialogClose>
-        </DialogHeader>
         {renderContent()}
+         <DialogClose asChild>
+            <Button variant="ghost" size="icon" className="absolute right-4 top-4">
+                <X />
+            </Button>
+        </DialogClose>
       </DialogContent>
     </Dialog>
   );
