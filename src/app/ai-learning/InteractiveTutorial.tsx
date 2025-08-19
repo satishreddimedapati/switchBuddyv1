@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useTransition, useMemo, useCallback } from 'react';
@@ -169,7 +168,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   const handleNextCard = () => {
     if (!currentLesson) return;
     if (currentIndex < currentLesson.cards.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+      setCurrentIndex(prev => prev - 1);
     } else {
         onOpenChange(false);
         toast({ title: "Lesson Complete!", description: "Great job finishing the interactive tutorial."});
@@ -292,16 +291,18 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
           <DialogDescription>
             {screen === 'lesson' && currentLesson ? currentLesson.title : 'An AI-powered, interactive learning experience.'}
           </DialogDescription>
+           <DialogClose asChild>
+              <Button variant="ghost" size="icon" className="absolute right-4 top-4">
+                  <X />
+              </Button>
+          </DialogClose>
         </DialogHeader>
         <div className="flex-grow overflow-hidden relative">
             {renderContent()}
         </div>
-         <DialogClose asChild>
-            <Button variant="ghost" size="icon" className="absolute right-4 top-4">
-                <X />
-            </Button>
-        </DialogClose>
       </DialogContent>
     </Dialog>
   );
 }
+
+    
