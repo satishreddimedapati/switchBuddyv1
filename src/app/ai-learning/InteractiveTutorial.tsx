@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle as CardTitleComponent } from '@/components/ui/card';
@@ -84,33 +83,33 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   }, []);
   
  useEffect(() => {
-    const fetchLessons = async () => {
-        if (!user || !isOpen) return;
+    if (!isOpen) {
+      // Use setTimeout to avoid flickering when closing
+      setTimeout(resetState, 300);
+      return;
+    }
 
+    const fetchLessons = async () => {
+        if (!user) return;
         setScreen('loading');
-        
         try {
             const existingLessons = await getInteractiveLessonsForTopic(roadmapId, topic);
             setLessons(existingLessons);
             if (existingLessons.length > 0) {
-                setCurrentLesson(existingLessons[0]);
+                // Set the first existing lesson as current for the intro screen.
+                setCurrentLesson(existingLessons[0]); 
             }
-            setScreen('intro');
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
             setError(`Failed to load existing lessons: ${errorMessage}`);
             setScreen('error');
+        } finally {
+            setScreen('intro');
         }
     };
     
-    if (isOpen) {
-      fetchLessons();
-    } else {
-      setTimeout(() => {
-        resetState();
-      }, 300);
-    }
-  }, [isOpen, user, roadmapId, topic, resetState]);
+    fetchLessons();
+  }, [isOpen, user, roadmapId, topic]);
 
 
   const handleStart = () => {
@@ -187,7 +186,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
     return () => {
         window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [screen, currentLesson, isGenerating, currentIndex, handleNextCard, handlePrevCard]);
+  }, [screen, currentLesson, isGenerating, currentIndex]);
 
 
   const handleCopyError = () => {
@@ -289,11 +288,6 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
           <DialogDescription>
             {screen === 'lesson' && currentLesson ? currentLesson.title : 'An AI-powered, interactive learning experience.'}
           </DialogDescription>
-           <DialogClose asChild>
-              <Button variant="ghost" size="icon" className="absolute right-4 top-4">
-                  <X />
-              </Button>
-          </DialogClose>
         </DialogHeader>
         <div className="flex-grow overflow-hidden relative">
             {renderContent()}
