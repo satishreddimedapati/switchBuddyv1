@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle as CardTitleComponent } from '@/components/ui/card';
@@ -301,11 +300,6 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
               <DialogTitle>Interactive Tutorial: {topic}</DialogTitle>
               <DialogDescription>An interactive, card-based lesson.</DialogDescription>
             </div>
-            <DialogClose asChild>
-                <Button variant="ghost" size="icon">
-                    <X className="h-4 w-4" />
-                </Button>
-            </DialogClose>
         </DialogHeader>
         {renderContent()}
       </DialogContent>
