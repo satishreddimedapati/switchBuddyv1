@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db } from "@/lib/firebase";
@@ -19,6 +20,22 @@ export async function getInterviewSessions(userId: string): Promise<InterviewSes
         });
     } catch (error) {
         console.error("Error fetching sessions:", error);
+        return [];
+    }
+}
+
+export async function getInterviewSessionsForPlan(planId: string): Promise<InterviewSession[]> {
+     if (!planId) return [];
+    try {
+        const q = query(sessionsCollection, where("planId", "==", planId), orderBy("interviewNumber", "asc"));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            const serializableData = toSerializableInterviewSession(data);
+            return { id: doc.id, ...serializableData } as InterviewSession
+        });
+    } catch (error) {
+        console.error("Error fetching sessions for plan:", error);
         return [];
     }
 }

@@ -17,6 +17,8 @@ import { useState } from 'react';
 import { Loader2, Video } from 'lucide-react';
 import { addInterviewSession } from '@/services/interview-sessions';
 import { generateInterviewQuestions } from '@/ai/flows/interview-practice';
+import { Switch } from '@/components/ui/switch';
+import { getInterviewSessionsForPlan } from '@/services/interview-sessions';
 
 const planSchema = z.object({
   topic: z.string().min(1, 'Topic is required.'),
@@ -24,6 +26,7 @@ const planSchema = z.object({
   durationMinutes: z.coerce.number().int().min(1),
   numberOfQuestions: z.coerce.number().int().min(1, 'You must have at least one question.'),
   totalInterviews: z.coerce.number().int().min(1, 'You must plan at least one interview.'),
+  allowQuestionRepetition: z.boolean(),
 });
 
 type PlanFormValues = z.infer<typeof planSchema>;
@@ -42,6 +45,7 @@ export default function NewInterviewPlanPage() {
             durationMinutes: 30,
             numberOfQuestions: 5,
             totalInterviews: 10,
+            allowQuestionRepetition: true,
         },
     });
 
@@ -62,6 +66,8 @@ export default function NewInterviewPlanPage() {
                 topic: data.topic,
                 difficulty: data.difficulty,
                 numberOfQuestions: data.numberOfQuestions,
+                allowRepetition: data.allowQuestionRepetition,
+                pastQuestions: [], // No past questions for the first session
             });
 
             if (!questionResult || questionResult.questions.length === 0) {
@@ -157,10 +163,26 @@ export default function NewInterviewPlanPage() {
                                 <Input id="numberOfQuestions" type="number" {...form.register('numberOfQuestions')} />
                                 {form.formState.errors.numberOfQuestions && <p className="text-destructive text-sm mt-1">{form.formState.errors.numberOfQuestions.message}</p>}
                             </div>
-                            <div className="lg:col-span-2">
+                            <div className="sm:col-span-2 lg:col-span-1">
                                 <Label htmlFor="totalInterviews">Total Interviews to Take</Label>
                                 <Input id="totalInterviews" type="number" {...form.register('totalInterviews')} />
                                 {form.formState.errors.totalInterviews && <p className="text-destructive text-sm mt-1">{form.formState.errors.totalInterviews.message}</p>}
+                            </div>
+                            <div className="flex items-end">
+                                <div className="flex items-center space-x-2">
+                                     <Controller
+                                        control={form.control}
+                                        name="allowQuestionRepetition"
+                                        render={({ field }) => (
+                                            <Switch
+                                                id="allowQuestionRepetition"
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        )}
+                                    />
+                                    <Label htmlFor="allowQuestionRepetition">Allow Question Repetition?</Label>
+                                </div>
                             </div>
                         </div>
 

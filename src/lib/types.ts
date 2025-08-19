@@ -141,6 +141,7 @@ export const InterviewPlanSchema = z.object({
   numberOfQuestions: z.number().int(),
   totalInterviews: z.number().int(),
   completedInterviews: z.number().int(),
+  allowQuestionRepetition: z.boolean().default(true),
   createdAt: z.union([z.instanceof(Date), z.string()]), // Allow Date or ISO string
 });
 
@@ -162,6 +163,7 @@ export const InterviewSessionQuestionSchema = z.object({
     question: z.string(),
     answer: z.string().optional(),
     aiReview: z.string().optional(),
+    idealAnswer: z.string().optional(),
     rating: z.number().min(1).max(10).optional(),
 });
 export type InterviewSessionQuestion = z.infer<typeof InterviewSessionQuestionSchema>;
@@ -214,6 +216,8 @@ export const GenerateInterviewQuestionsRequestSchema = z.object({
     topic: z.string(),
     difficulty: z.enum(['Easy', 'Medium', 'Hard']),
     numberOfQuestions: z.number().int().min(1),
+    allowRepetition: z.boolean().default(true),
+    pastQuestions: z.array(z.string()).optional(),
 });
 export type GenerateInterviewQuestionsRequest = z.infer<typeof GenerateInterviewQuestionsRequestSchema>;
 
@@ -252,6 +256,7 @@ const EvaluationSchema = z.object({
     qNo: z.number(),
     feedback: z.string().describe("Constructive feedback on the answer."),
     rating: z.number().min(1).max(10).describe("A rating from 1 to 10."),
+    idealAnswer: z.string().describe("A well-structured, ideal answer to the question."),
 });
 
 export const EvaluateInterviewAnswersResponseSchema = z.object({

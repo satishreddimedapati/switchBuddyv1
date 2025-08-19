@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -39,7 +40,17 @@ Generate {{numberOfQuestions}} interview questions based on the following criter
 - Topic: {{{topic}}}
 - Difficulty: {{{difficulty}}}
 
-The questions should be clear, concise, and relevant to the specified topic and difficulty level.
+{{#if allowRepetition}}
+The questions should be clear, concise, and relevant.
+{{else}}
+The user wants unique questions. Do NOT repeat any questions from the following list of past questions. Generate new questions that cover different aspects of the topic.
+
+Past Questions:
+{{#each pastQuestions}}
+- {{{this}}}
+{{/each}}
+{{/if}}
+
 Do not add any preamble or explanation, just the questions.
 `,
 });
@@ -71,10 +82,11 @@ const evaluateAnswersPrompt = ai.definePrompt({
     prompt: `You are an expert interviewer providing feedback on a series of mock interview questions.
 
 Evaluate each question and answer pair provided in the input. For each pair:
-1.  Provide constructive, specific feedback on the answer. Mention what was good and what could be improved.
-2.  Give a rating from 1 to 10, where 1 is a very poor answer and 10 is an excellent, comprehensive answer.
-3.  Your feedback should be encouraging but also direct and helpful for the candidate to improve.
-4.  Return an array of evaluations in the exact same order as the questions were provided.
+1.  Provide constructive, specific feedback on the candidate's answer. Mention what was good and what could be improved.
+2.  Generate a well-structured, ideal answer to the original question. This should be the kind of response you'd expect from a top candidate.
+3.  Give a rating from 1 to 10, where 1 is a very poor answer and 10 is an excellent, comprehensive answer.
+4.  Your feedback should be encouraging but also direct and helpful for the candidate to improve.
+5.  Return an array of evaluations in the exact same order as the questions were provided.
 
 Here is the interview session:
 {{#each qa_pairs}}

@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { generateInterviewQuestions } from "@/ai/flows/interview-practice";
-import { addInterviewSession } from "@/services/interview-sessions";
+import { addInterviewSession, getInterviewSessionsForPlan } from "@/services/interview-sessions";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 
@@ -32,11 +32,16 @@ export function InterviewPlanCard({ plan }: InterviewPlanCardProps) {
         startTransition(async () => {
             try {
                 toast({ title: 'Starting new interview...', description: 'Generating questions now.' });
+                
+                const pastSessions = await getInterviewSessionsForPlan(plan.id!);
+                const pastQuestions = pastSessions.flatMap(s => s.questions.map(q => q.question));
 
                 const questionResult = await generateInterviewQuestions({
                     topic: plan.topic,
                     difficulty: plan.difficulty,
                     numberOfQuestions: plan.numberOfQuestions,
+                    allowRepetition: plan.allowQuestionRepetition,
+                    pastQuestions: pastQuestions,
                 });
 
                 if (!questionResult || questionResult.questions.length === 0) {

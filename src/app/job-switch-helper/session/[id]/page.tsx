@@ -111,6 +111,7 @@ export default function InterviewSessionPage() {
                     ...q,
                     answer: answers[q.qNo],
                     aiReview: evaluationResult.evaluations[index].feedback,
+                    idealAnswer: evaluationResult.evaluations[index].idealAnswer,
                     rating: evaluationResult.evaluations[index].rating,
                 }));
 
