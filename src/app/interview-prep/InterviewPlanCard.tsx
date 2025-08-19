@@ -25,7 +25,7 @@ export function InterviewPlanCard({ plan }: InterviewPlanCardProps) {
     const [isStarting, startTransition] = useTransition();
 
     const isCompleted = (plan.completedInterviews || 0) >= plan.totalInterviews;
-    const progress = (plan.completedInterviews / plan.totalInterviews) * 100;
+    const progress = plan.totalInterviews > 0 ? (plan.completedInterviews / plan.totalInterviews) * 100 : 0;
 
     const handleStartNext = () => {
         if (!user || !plan.id) return;

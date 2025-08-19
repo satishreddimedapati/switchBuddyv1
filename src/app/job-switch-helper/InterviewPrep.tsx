@@ -110,15 +110,17 @@ export function InterviewPrep() {
                 <CardContent>
                      {loading ? <LoadingState /> : (
                         Object.keys(groupedPlans).length > 0 ? (
-                            <Accordion type="multiple">
+                            <Accordion type="multiple" className="w-full space-y-4">
                                 {Object.entries(groupedPlans).map(([topic, topicPlans]) => (
-                                    <AccordionItem value={topic} key={topic}>
-                                        <AccordionTrigger className="text-lg font-semibold">{topic}</AccordionTrigger>
-                                        <AccordionContent className="pt-4 space-y-4">
-                                            {topicPlans.map(plan => (
-                                                <InterviewPlanCard key={plan.id} plan={plan} />
-                                            ))}
-                                        </AccordionContent>
+                                    <AccordionItem value={topic} key={topic} className="border-none">
+                                        <Card>
+                                            <AccordionTrigger className="text-lg font-semibold p-4 hover:no-underline">{topic}</AccordionTrigger>
+                                            <AccordionContent className="pt-0 p-4 space-y-4">
+                                                {topicPlans.map(plan => (
+                                                    <InterviewPlanCard key={plan.id} plan={plan} />
+                                                ))}
+                                            </AccordionContent>
+                                        </Card>
                                     </AccordionItem>
                                 ))}
                             </Accordion>
@@ -141,7 +143,6 @@ export function InterviewPrep() {
                                     <TableHead>Interview #</TableHead>
                                     <TableHead>Date</TableHead>
                                     <TableHead>Score</TableHead>
-                                    <TableHead>Status</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -151,9 +152,7 @@ export function InterviewPrep() {
                                         <TableCell>{interview.interviewNumber}</TableCell>
                                         <TableCell>{interview.completedAt ? format(new Date(interview.completedAt), 'PPP') : 'N/A'}</TableCell>
                                         <TableCell>{interview.overallScore ? interview.overallScore.toFixed(1) : 'N/A'}</TableCell>
-                                        <TableCell>{interview.status}</TableCell>
                                         <TableCell className="text-right space-x-2">
-                                            <Button variant="outline" size="sm" disabled={interview.status !== 'completed'}><FileText className="mr-2 h-4 w-4" /> PDF</Button>
                                             <Button variant="outline" size="sm" asChild>
                                                <Link href={`/job-switch-helper/summary/${interview.id}`}>
                                                     <Video className="mr-2 h-4 w-4" /> Review
@@ -164,12 +163,12 @@ export function InterviewPrep() {
                                 ))}
                                  {pastSessions.length === 0 && !loading && (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24">No past interviews found.</TableCell>
+                                        <TableCell colSpan={4} className="text-center h-24">No past interviews found.</TableCell>
                                     </TableRow>
                                 )}
                                  {loading && (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24"><Loader2 className="animate-spin mx-auto" /></TableCell>
+                                        <TableCell colSpan={4} className="text-center h-24"><Loader2 className="animate-spin mx-auto" /></TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>

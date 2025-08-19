@@ -411,5 +411,3 @@ export function JobIntelligence() {
       </div>
     );
 }
-
-    

@@ -147,10 +147,11 @@ export function MarketIntelligence({}: MarketIntelligenceProps) {
                     <Accordion type="multiple" defaultValue={['personalized-salary', 'growth-path']} className="w-full space-y-2">
                         {salaryResult && (
                             <AccordionItem value="personalized-salary">
-                                <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base text-left">
+                                <Card>
+                                <AccordionTrigger className="p-3 text-base text-left">
                                     <span className="flex items-center gap-2"><Sparkles/> Your Personalized Salary Estimate</span>
                                 </AccordionTrigger>
-                                <AccordionContent className="p-4 border rounded-b-md">
+                                <AccordionContent className="p-4 border-t">
                                     <Alert>
                                         <AlertTitle className="text-xl font-bold text-primary">
                                             {salaryResult.estimatedSalaryRange}
@@ -160,15 +161,17 @@ export function MarketIntelligence({}: MarketIntelligenceProps) {
                                         </AlertDescription>
                                     </Alert>
                                 </AccordionContent>
+                                </Card>
                             </AccordionItem>
                         )}
                         {intelResult && (
                             <>
                                 <AccordionItem value="growth-path">
-                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base text-left">
+                                    <Card>
+                                    <AccordionTrigger className="p-3 text-base text-left">
                                         <span className="flex items-center gap-2"><GitBranch/> Growth Path & Salary</span>
                                     </AccordionTrigger>
-                                    <AccordionContent className="p-4 border rounded-b-md">
+                                    <AccordionContent className="p-4 border-t">
                                         <ul className="list-none space-y-2">
                                             {intelResult.growthPath.map((step, i) => (
                                                 <li key={i} className="flex justify-between items-center">
@@ -178,44 +181,52 @@ export function MarketIntelligence({}: MarketIntelligenceProps) {
                                             ))}
                                         </ul>
                                     </AccordionContent>
+                                    </Card>
                                 </AccordionItem>
                                 
                                 <AccordionItem value="skills">
-                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base text-left">
+                                    <Card>
+                                    <AccordionTrigger className="p-3 text-base text-left">
                                         <span className="flex items-center gap-2"><Star/> Skills in Demand</span>
                                     </AccordionTrigger>
-                                    <AccordionContent className="p-4 border rounded-b-md">
+                                    <AccordionContent className="p-4 border-t">
                                     <div className="flex flex-wrap gap-2">
                                             {intelResult.skillsInDemand.map((skill, i) => <Badge key={i}>{skill}</Badge>)}
                                     </div>
                                     </AccordionContent>
+                                    </Card>
                                 </AccordionItem>
 
                                 <AccordionItem value="location-comparison">
-                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base text-left">
+                                    <Card>
+                                    <AccordionTrigger className="p-3 text-base text-left">
                                         <span className="flex items-center gap-2"><Map/> Location Comparison</span>
                                     </AccordionTrigger>
-                                    <AccordionContent className="p-4 border rounded-b-md space-y-2">
+                                    <AccordionContent className="p-4 border-t space-y-2">
                                     <p className="text-muted-foreground">{intelResult.locationComparison.commentary}</p>
                                     </AccordionContent>
+                                    </Card>
                                 </AccordionItem>
                                 
                                 <AccordionItem value="top-companies">
-                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base text-left">
+                                    <Card>
+                                    <AccordionTrigger className="p-3 text-base text-left">
                                         <span className="flex items-center gap-2"><Building/> Top Companies Hiring</span>
                                     </AccordionTrigger>
-                                    <AccordionContent className="p-4 border rounded-b-md">
+                                    <AccordionContent className="p-4 border-t">
                                         <div className="flex flex-wrap gap-2">
                                             {intelResult.topCompaniesHiring.map((company, i) => <Badge variant="outline" key={i}>{company}</Badge>)}
                                     </div>
                                     </AccordionContent>
+                                    </Card>
                                 </AccordionItem>
 
                                 <AccordionItem value="alumni-insights">
-                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base text-left">
+                                    <Card>
+                                    <AccordionTrigger className="p-3 text-base text-left">
                                         <span className="flex items-center gap-2"><Users/> Alumni Career Switches</span>
                                     </AccordionTrigger>
-                                    <AccordionContent className="p-4 border rounded-b-md space-y-2">
+                                    <AccordionContent className="p-4 border-t space-y-2">
                                     <p><strong className="font-semibold">Average Tenure:</strong> {intelResult.alumniInsights.avgTenure}</p>
                                     <div>
                                         <strong className="font-semibold">Common Career Switches:</strong>
@@ -224,13 +235,15 @@ export function MarketIntelligence({}: MarketIntelligenceProps) {
                                         </ul>
                                     </div>
                                     </AccordionContent>
+                                    </Card>
                                 </AccordionItem>
                                 
                                 <AccordionItem value="interview-prep">
-                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base text-left">
+                                    <Card>
+                                    <AccordionTrigger className="p-3 text-base text-left">
                                         <span className="flex items-center gap-2"><BrainCircuit/> Interview Prep</span>
                                     </AccordionTrigger>
-                                    <AccordionContent className="p-4 border rounded-b-md space-y-2">
+                                    <AccordionContent className="p-4 border-t space-y-2">
                                         <p><strong className="font-semibold">Difficulty:</strong> {intelResult.interviewPrep.difficultyRating}</p>
                                         <div>
                                         <strong className="font-semibold">Common Question Categories:</strong>
@@ -239,13 +252,15 @@ export function MarketIntelligence({}: MarketIntelligenceProps) {
                                         </ul>
                                     </div>
                                     </AccordionContent>
+                                    </Card>
                                 </AccordionItem>
                                 
                                 <AccordionItem value="application-strategy">
-                                    <AccordionTrigger className="p-3 bg-muted/50 rounded-md text-base text-left">
+                                    <Card>
+                                    <AccordionTrigger className="p-3 text-base text-left">
                                         <span className="flex items-center gap-2"><CheckCircle/> Application Strategy</span>
                                     </AccordionTrigger>
-                                    <AccordionContent className="p-4 border rounded-b-md space-y-2">
+                                    <AccordionContent className="p-4 border-t space-y-2">
                                         <p><strong className="font-semibold">Best Time to Apply:</strong> {intelResult.applicationStrategy.bestTimeToApply}</p>
                                         <div>
                                         <strong className="font-semibold">Success Rates by Method:</strong>
@@ -259,6 +274,7 @@ export function MarketIntelligence({}: MarketIntelligenceProps) {
                                         </ul>
                                     </div>
                                     </AccordionContent>
+                                    </Card>
                                 </AccordionItem>
                             </>
                         )}
@@ -268,5 +284,3 @@ export function MarketIntelligence({}: MarketIntelligenceProps) {
         </div>
     )
 }
-
-    

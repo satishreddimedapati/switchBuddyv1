@@ -109,7 +109,7 @@ export default function NewInterviewPlanPage() {
                 <CardContent>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <div>
+                            <div className="sm:col-span-2 lg:col-span-1">
                                 <Label htmlFor="topic">Topic</Label>
                                 <Input id="topic" placeholder="e.g., React, System Design" {...form.register('topic')} />
                                 {form.formState.errors.topic && <p className="text-destructive text-sm mt-1">{form.formState.errors.topic.message}</p>}
