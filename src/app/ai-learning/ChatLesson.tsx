@@ -6,16 +6,19 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
-    AlertDialogDescription,
+    AlertDialogDescription as AlertDialogDescriptionComponent,
     AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
+    AlertDialogHeader as AlertDialogHeaderComponent,
+    AlertDialogTitle as AlertDialogTitleComponent,
 } from "@/components/ui/alert-dialog"
 import { generateChatLesson } from '@/ai/flows/generate-chat-lesson';
 import { useToast } from '@/hooks/use-toast';
@@ -340,7 +343,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
     <>
     <Dialog open={isOpen} onOpenChange={(open) => { if(!open) handleClose()}}>
       <DialogContent className="max-w-3xl h-full md:h-[90vh] flex flex-col p-0 gap-0">
-        <div className="p-4 border-b flex justify-between items-center bg-card rounded-t-lg">
+        <DialogHeader className="p-4 border-b flex-row flex justify-between items-center bg-card rounded-t-lg">
             <div className="flex items-center gap-2">
                  <Button variant="ghost" size="icon" onClick={handleClose} className="md:hidden">
                     <ArrowLeft />
@@ -349,8 +352,8 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
                     <AvatarFallback><Bot/></AvatarFallback>
                 </Avatar>
                 <div>
-                    <h2 className="font-semibold text-base">{activeTopic}</h2>
-                    <p className="text-xs text-muted-foreground">Your AI Tutor</p>
+                    <DialogTitle className="font-semibold text-base">{activeTopic}</DialogTitle>
+                    <DialogDescription className="text-xs text-muted-foreground">Your AI Tutor</DialogDescription>
                 </div>
             </div>
             <div className="flex items-center gap-2">
@@ -364,7 +367,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
                     <X />
                 </Button>
             </div>
-        </div>
+        </DialogHeader>
         
         <div className="flex-grow bg-muted/30 relative overflow-hidden">
              <AnimatePresence>
@@ -434,12 +437,12 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
 
     <AlertDialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
         <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Save This Chat Session?</AlertDialogTitle>
-                <AlertDialogDescription>
+            <AlertDialogHeaderComponent>
+                <AlertDialogTitleComponent>Save This Chat Session?</AlertDialogTitleComponent>
+                <AlertDialogDescriptionComponent>
                     Would you like to save this conversation to your chat history? You can review and continue it later.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
+                </AlertDialogDescriptionComponent>
+            </AlertDialogHeaderComponent>
             <AlertDialogFooter>
                 <AlertDialogCancel onClick={handleDiscard}>Discard</AlertDialogCancel>
                 <Button onClick={handleSaveAndClose} disabled={isSaving}>
