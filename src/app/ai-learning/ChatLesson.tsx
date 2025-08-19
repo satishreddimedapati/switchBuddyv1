@@ -40,7 +40,6 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getMessagesForSession, addMessageToSession, createChatSession, getChatSessionForTopic, getChatSessionsForUser } from '@/services/chat-history';
 import { ChatHistory } from './ChatHistory';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface ChatLessonProps {
   isOpen: boolean;
@@ -74,6 +73,13 @@ const toolFilters = [
     { label: 'Summarize', value: 'Summarize Key Points' },
 ]
 
+const themeOptions: { label: string; value: ChatTheme }[] = [
+    { label: 'Light', value: 'light' },
+    { label: 'Dark', value: 'dark' },
+    { label: 'WhatsApp', value: 'whatsapp' },
+    { label: 'Telegram', value: 'telegram' },
+];
+
 function LoadingState() {
   return (
     <div className="flex items-start gap-3 px-4">
@@ -96,11 +102,11 @@ function Message({ message, theme }: { message: ChatMessage, theme: ChatTheme })
     const themeClasses = {
         light: {
             user: 'bg-primary text-primary-foreground',
-            model: 'bg-muted'
+            model: 'bg-white text-black dark:bg-muted dark:text-white'
         },
         dark: {
             user: 'bg-primary text-primary-foreground',
-            model: 'bg-muted'
+            model: 'bg-gray-700 text-white'
         },
         whatsapp: {
             user: 'bg-[#dcf8c6] text-black',
@@ -143,7 +149,7 @@ function Message({ message, theme }: { message: ChatMessage, theme: ChatTheme })
     )
 }
 
-function QuickActionsPopover({ onQuickFilter, disabled }: { onQuickFilter: (intent: string) => void, disabled: boolean }) {
+function QuickActionsPopover({ onQuickFilter, onThemeChange, disabled }: { onQuickFilter: (intent: string) => void, onThemeChange: (theme: ChatTheme) => void, disabled: boolean }) {
     return (
         <Popover>
             <PopoverTrigger asChild>
@@ -154,10 +160,11 @@ function QuickActionsPopover({ onQuickFilter, disabled }: { onQuickFilter: (inte
             </PopoverTrigger>
             <PopoverContent className="w-96">
                  <Tabs defaultValue="explain" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
+                    <TabsList className="grid w-full grid-cols-4">
                         <TabsTrigger value="explain">Explain</TabsTrigger>
                         <TabsTrigger value="generate">Generate</TabsTrigger>
                         <TabsTrigger value="tools">Tools</TabsTrigger>
+                        <TabsTrigger value="themes">Themes</TabsTrigger>
                     </TabsList>
                     <TabsContent value="explain" className="pt-4">
                         <Label className="text-xs text-muted-foreground">Change how the AI explains the topic.</Label>
@@ -203,6 +210,16 @@ function QuickActionsPopover({ onQuickFilter, disabled }: { onQuickFilter: (inte
                                     <SelectItem value="Telugu">Telugu</SelectItem>
                                 </SelectContent>
                             </Select>
+                        </div>
+                    </TabsContent>
+                    <TabsContent value="themes" className="pt-4">
+                        <Label className="text-xs text-muted-foreground">Change the look of the chat.</Label>
+                        <div className="flex flex-wrap gap-1 pt-2">
+                            {themeOptions.map(theme => (
+                                <Badge key={theme.value} variant="outline" className="cursor-pointer" onClick={() => onThemeChange(theme.value)}>
+                                    {theme.label}
+                                </Badge>
+                            ))}
                         </div>
                     </TabsContent>
                 </Tabs>
@@ -384,7 +401,6 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
     setView('history');
     try {
         const sessions = await getChatSessionsForUser(user.uid);
-        sessions.sort((a,b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
         setAllSessions(sessions);
     } catch (error) {
         console.error("Failed to fetch history:", error);
@@ -415,19 +431,6 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
                 </div>
             </div>
             <div className="flex items-center gap-2">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                         <Button variant="outline" size="sm">
-                            <Palette className="mr-2 h-4 w-4"/> Themes
-                         </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => setTheme('light')}>Light</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setTheme('dark')}>Dark</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setTheme('whatsapp')}>WhatsApp</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setTheme('telegram')}>Telegram</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
                 <Button variant="outline" size="sm" onClick={() => startNewChat()} disabled={view !== 'chat' || !topic}>
                    <PlusCircle className="mr-2 h-4 w-4"/> New Chat
                 </Button>
@@ -442,7 +445,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
         
         <div className={cn("flex-grow relative overflow-hidden",
             theme === 'light' && "bg-muted/30",
-            theme === 'dark' && "bg-background",
+            (theme === 'dark' || theme === 'gemini' || theme === 'chatgpt') && "bg-background",
             theme === 'whatsapp' && "bg-[#e5ddd5]",
             theme === 'telegram' && "bg-[#a5c5dd]",
         )}>
@@ -500,7 +503,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
                     disabled={isGenerating || view === 'history'}
                     className="bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
-                <QuickActionsPopover onQuickFilter={handleQuickFilter} disabled={isGenerating || view === 'history'} />
+                <QuickActionsPopover onQuickFilter={handleQuickFilter} onThemeChange={setTheme} disabled={isGenerating || view === 'history'} />
                 <Button onClick={handleSend} disabled={isGenerating || !input.trim() || view === 'history'} className="rounded-full">
                     {isGenerating ? <Loader2 className="animate-spin" /> : <Send />}
                     <span className="sr-only">Send</span>
