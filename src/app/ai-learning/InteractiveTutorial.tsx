@@ -169,7 +169,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   const handleNextCard = () => {
     if (!currentLesson) return;
     if (currentIndex < currentLesson.cards.length - 1) {
-      setCurrentIndex(prev => prev - 1);
+      setCurrentIndex(prev => prev + 1);
     } else {
         onOpenChange(false);
         toast({ title: "Lesson Complete!", description: "Great job finishing the interactive tutorial."});
@@ -287,7 +287,15 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl w-full h-full md:h-[90vh] md:w-[90vw] flex flex-col p-0 gap-0">
-        {renderContent()}
+        <DialogHeader className="p-4 border-b">
+          <DialogTitle>Interactive Tutorial: {topic}</DialogTitle>
+          <DialogDescription>
+            {screen === 'lesson' && currentLesson ? currentLesson.title : 'An AI-powered, interactive learning experience.'}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex-grow overflow-hidden relative">
+            {renderContent()}
+        </div>
          <DialogClose asChild>
             <Button variant="ghost" size="icon" className="absolute right-4 top-4">
                 <X />
