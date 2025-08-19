@@ -14,6 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/auth';
+import { updateTaskCompletionInRoadmap } from '@/services/learning-roadmaps';
+import { useToast } from '@/hooks/use-toast';
 
 
 interface DailyTaskItemProps {
@@ -56,6 +58,7 @@ function ResourceTypeSelector({ onSelect, currentType, onClose }: { onSelect: (t
 
 export function DailyTaskItem({ task, preferredChannel, roadmapId }: DailyTaskItemProps) {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [isCompleted, setIsCompleted] = useState(task.completed || false);
   const [currentResourceType, setCurrentResourceType] = useState(task.resource_type);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -63,7 +66,22 @@ export function DailyTaskItem({ task, preferredChannel, roadmapId }: DailyTaskIt
   const [isResourceSelectorOpen, setIsResourceSelectorOpen] = useState(false);
   const [activeTopic, setActiveTopic] = useState<string | undefined>(undefined);
 
-  const handleToggle = () => setIsCompleted(!isCompleted);
+  const handleToggle = async (checked: boolean) => {
+    if (!user) {
+        toast({ title: "Error", description: "You must be logged in to update tasks.", variant: "destructive" });
+        return;
+    }
+    
+    setIsCompleted(checked); // Optimistic UI update
+    
+    try {
+        await updateTaskCompletionInRoadmap(roadmapId, task.topic, checked);
+    } catch (error) {
+        console.error("Failed to update task completion", error);
+        setIsCompleted(!checked); // Revert on error
+        toast({ title: "Error", description: "Could not save your progress. Please try again.", variant: "destructive" });
+    }
+  };
 
   const isVideo = currentResourceType === 'Video' || currentResourceType === 'Video Tutorials';
 
@@ -101,12 +119,12 @@ export function DailyTaskItem({ task, preferredChannel, roadmapId }: DailyTaskIt
       <Card className={cn("p-4 transition-all", isCompleted && "bg-muted/60")}>
         <div className="flex items-center gap-4">
           <div className="flex-shrink-0">
-            <Checkbox checked={isCompleted} onCheckedChange={handleToggle} id={`task-${task.day}-${task.topic}`} />
+            <Checkbox checked={isCompleted} onCheckedChange={handleToggle} id={`task-${task.date}-${task.topic}`} />
           </div>
 
           <div className="flex-grow">
             <label
-              htmlFor={`task-${task.day}-${task.topic}`}
+              htmlFor={`task-${task.date}-${task.topic}`}
               className={cn("font-semibold cursor-pointer", isCompleted && "line-through text-muted-foreground")}
             >
               {task.day}: {task.topic}
