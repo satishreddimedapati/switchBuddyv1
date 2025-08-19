@@ -23,7 +23,7 @@ export async function createChatSession(userId: string, topic: string, history: 
         createdAt: serverTimestamp(),
         lastMessageAt: serverTimestamp(),
         lastMessageSnippet: snippet,
-        history: history.map(msg => ({...msg, createdAt: serverTimestamp()})), // Store history directly
+        history: history, // Store history directly without adding a new timestamp
     });
 
     return sessionDocRef.id;
@@ -88,7 +88,7 @@ export async function addMessageToSession(sessionId: string, message: ChatMessag
     
     // Add the new message to the history array
     await updateDoc(sessionRef, {
-        history: arrayUnion({ ...message, createdAt: serverTimestamp() }),
+        history: arrayUnion(message), // Add the message without a new timestamp
         lastMessageAt: serverTimestamp(),
         lastMessageSnippet: message.content.substring(0, 50) + "..."
     });
@@ -106,7 +106,8 @@ export async function getMessagesForSession(sessionId: string): Promise<ChatMess
         }
 
         const data = docSnap.data();
-        return (data.history || []).sort((a: any, b: any) => a.createdAt?.seconds - b.createdAt?.seconds);
+        // The array is already ordered by insertion, so we can just return it.
+        return data.history || [];
 
     } catch (error) {
         console.error("Error fetching messages for session:", error);

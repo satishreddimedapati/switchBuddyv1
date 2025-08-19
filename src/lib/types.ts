@@ -618,7 +618,6 @@ export type ChannelSuggestionOutput = z.infer<typeof ChannelSuggestionOutputSche
 export const ChatMessageSchema = z.object({
   role: z.enum(['user', 'model']),
   content: z.string(),
-  createdAt: z.any().optional(),
 });
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
