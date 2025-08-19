@@ -29,11 +29,11 @@ interface InteractiveTutorialProps {
   roadmapId: string;
 }
 
-type Screen = 'intro' | 'loading' | 'lesson' | 'error';
+type Screen = 'loading' | 'intro' | 'lesson' | 'error';
 
 const MAX_LESSONS = 3;
 
-function IntroductionScreen({ onStart, isLoading, topic }: { onStart: () => void; isLoading: boolean; topic: string }) {
+function IntroductionScreen({ onStart, onGenerateNew, hasExistingLessons, isLoading, topic }: { onStart: () => void; onGenerateNew: () => void, hasExistingLessons: boolean, isLoading: boolean; topic: string }) {
   return (
     <div className="text-center p-4 flex flex-col items-center justify-center h-full">
       <div className="bg-primary/20 p-4 rounded-full mb-4">
@@ -43,14 +43,25 @@ function IntroductionScreen({ onStart, isLoading, topic }: { onStart: () => void
       <p className="text-muted-foreground mt-2 max-w-md mx-auto text-center">
         Learn step-by-step with a mix of visuals, examples, and questions. Each card is a new mini-experience!
       </p>
-      <Button
-        size="lg"
-        className="mt-8"
-        onClick={onStart}
-        disabled={isLoading}
-      >
-        {isLoading ? <Loader2 className="mr-2 animate-spin" /> : 'Start Learning'}
-      </Button>
+      <div className="flex flex-col sm:flex-row gap-4 mt-8">
+        <Button
+          size="lg"
+          onClick={onStart}
+          disabled={isLoading || !hasExistingLessons}
+        >
+          {isLoading ? <Loader2 className="mr-2 animate-spin" /> : 'Start Learning'}
+        </Button>
+         <Button
+          size="lg"
+          variant="outline"
+          onClick={onGenerateNew}
+          disabled={isLoading}
+        >
+          {isLoading ? <Loader2 className="mr-2 animate-spin" /> : <RefreshCw className="mr-2"/>}
+           New Lesson
+        </Button>
+      </div>
+       {!hasExistingLessons && <p className="text-xs text-muted-foreground mt-4">No lessons found. Click "New Lesson" to generate your first one!</p>}
     </div>
   );
 }
@@ -73,7 +84,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
     setScreen('loading');
   }, []);
   
-  useEffect(() => {
+ useEffect(() => {
     const fetchLessons = async () => {
         if (!user || !isOpen) return;
 
@@ -81,13 +92,11 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
         
         try {
             const existingLessons = await getInteractiveLessonsForTopic(roadmapId, topic);
+            setLessons(existingLessons);
             if (existingLessons.length > 0) {
-                setLessons(existingLessons);
                 setCurrentLesson(existingLessons[0]);
-                setScreen('intro'); // Show intro, user can start or generate new
-            } else {
-                setScreen('intro'); // No lessons, show intro to generate first one
             }
+            setScreen('intro'); // Always go to intro screen after loading
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
             setError(`Failed to load existing lessons: ${errorMessage}`);
@@ -103,7 +112,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
         resetState();
       }, 300);
     }
-  }, [isOpen, user, roadmapId, topic]);
+  }, [isOpen, user, roadmapId, topic, resetState]);
 
 
   const handleStart = () => {
@@ -112,12 +121,17 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
           setCurrentIndex(0);
           setScreen('lesson');
       } else {
+          // This should ideally not be hit if the button is disabled, but as a fallback:
           handleGenerateNew();
       }
   };
 
   const handleGenerateNew = () => {
       if (!user) return;
+      if (lessons.length >= MAX_LESSONS) {
+          toast({ title: "Lesson Limit Reached", description: `You can only have ${MAX_LESSONS} generated lessons per topic.`});
+          return;
+      }
       
       startGenerationTransition(async () => {
         setScreen('loading');
@@ -130,6 +144,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
           const newLessonId = await addInteractiveLesson(roadmapId, topic, result);
           const newLessonWithId = { ...result, id: newLessonId };
           
+          // Manually update the state to reflect the new addition immediately
           setLessons(prev => [...prev, newLessonWithId]);
           setCurrentLesson(newLessonWithId);
           setCurrentIndex(0);
@@ -155,7 +170,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   const handleNextCard = () => {
     if (!currentLesson) return;
     if (currentIndex < currentLesson.cards.length - 1) {
-      setCurrentIndex(prev => prev - 1);
+      setCurrentIndex(prev => prev + 1);
     } else {
         onOpenChange(false);
         toast({ title: "Lesson Complete!", description: "Great job finishing the interactive tutorial."});
@@ -176,7 +191,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
     return () => {
         window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [screen, currentLesson, isGenerating, currentIndex]);
+  }, [screen, currentLesson, isGenerating, currentIndex, handleNextCard, handlePrevCard]);
 
 
   const handleCopyError = () => {
@@ -202,7 +217,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
             </div>;
         
         case 'intro':
-            return <IntroductionScreen onStart={handleStart} isLoading={isGenerating} topic={topic} />;
+            return <IntroductionScreen onStart={handleStart} onGenerateNew={handleGenerateNew} hasExistingLessons={lessons.length > 0} isLoading={isGenerating} topic={topic} />;
 
         case 'error':
             return (
@@ -243,9 +258,9 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
                           <h3 className="font-semibold">{currentLesson.title}</h3>
                           <Progress value={progress} className="mt-2" />
                         </div>
-                         <Button variant="outline" size="sm" onClick={handleGenerateNew} disabled={isGenerating || !canGenerateMore}>
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            {isGenerating ? 'Generating...' : canGenerateMore ? `New (${lessons.length}/${MAX_LESSONS})` : `Limit Reached`}
+                         <Button variant="outline" size="sm" onClick={() => setScreen('intro')}>
+                            <ArrowLeft className="h-4 w-4 mr-2" />
+                            Back to Menu
                         </Button>
                     </div>
                     <div className="flex-grow flex items-center justify-center p-4 relative overflow-hidden">
