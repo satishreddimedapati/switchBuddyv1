@@ -161,8 +161,8 @@ export function InterviewPrep() {
                                                         <Accordion key={plan.id} type="single" collapsible>
                                                             <AccordionItem value={`plan-${plan.id}`} className="border-b-0">
                                                                 <Card className="overflow-hidden">
-                                                                    <AccordionTrigger className="hover:no-underline p-4 w-full text-left" asChild>
-                                                                        <div className="flex justify-between items-center">
+                                                                    <AccordionTrigger className="hover:no-underline p-4 w-full text-left">
+                                                                        <div className="flex justify-between items-center w-full">
                                                                             <div>
                                                                                 <p className="font-semibold">{plan.topic}</p>
                                                                                 <p className="text-sm text-muted-foreground">
