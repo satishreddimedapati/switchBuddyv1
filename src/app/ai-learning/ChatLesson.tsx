@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { generateChatLesson } from '@/ai/flows/generate-chat-lesson';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, User, Loader2, Send, Wand2, X, ArrowLeft, Save, History, PlusCircle } from 'lucide-react';
+import { Bot, User, Loader2, Send, Wand2, X, ArrowLeft, Save, History, PlusCircle, Palette } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -40,6 +40,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getMessagesForSession, addMessageToSession, createChatSession, getChatSessionForTopic, getChatSessionsForUser } from '@/services/chat-history';
 import { ChatHistory } from './ChatHistory';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface ChatLessonProps {
   isOpen: boolean;
@@ -48,7 +49,8 @@ interface ChatLessonProps {
   onChatSaved: () => void;
 }
 
-// ... (keep QuickActionsPopover and its filter arrays as they are)
+type ChatTheme = 'light' | 'dark' | 'whatsapp' | 'telegram' | 'gemini' | 'chatgpt';
+
 const explanationFilters = [
     { label: 'For Interview', value: 'Explain for interview' },
     { label: 'Real-World Example', value: 'Real-World Example' },
@@ -86,10 +88,37 @@ function LoadingState() {
   );
 }
 
-function Message({ message }: { message: ChatMessage }) {
+function Message({ message, theme }: { message: ChatMessage, theme: ChatTheme }) {
     const { user } = useAuth();
     const isUser = message.role === 'user';
     const userFallback = user?.email?.charAt(0).toUpperCase() || 'U';
+
+    const themeClasses = {
+        light: {
+            user: 'bg-primary text-primary-foreground',
+            model: 'bg-muted'
+        },
+        dark: {
+            user: 'bg-primary text-primary-foreground',
+            model: 'bg-muted'
+        },
+        whatsapp: {
+            user: 'bg-[#dcf8c6] text-black',
+            model: 'bg-white text-black'
+        },
+        telegram: {
+            user: 'bg-[#e1ffc7] text-black',
+            model: 'bg-white text-black'
+        },
+        gemini: {
+            user: 'bg-blue-600 text-white',
+            model: 'bg-gray-700 text-white'
+        },
+        chatgpt: {
+            user: 'bg-gray-800 text-white',
+            model: 'bg-gray-700 text-white'
+        }
+    }
 
     return (
         <div className={cn("flex items-start gap-3 w-full", isUser ? 'justify-end' : 'justify-start')}>
@@ -100,7 +129,8 @@ function Message({ message }: { message: ChatMessage }) {
             )}
             <div className={cn(
                 "rounded-2xl p-3 max-w-sm sm:max-w-md whitespace-pre-wrap font-body",
-                isUser ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-muted rounded-bl-none'
+                isUser ? 'rounded-br-none' : 'rounded-bl-none',
+                isUser ? themeClasses[theme].user : themeClasses[theme].model
             )}>
                 <p>{message.content}</p>
             </div>
@@ -195,6 +225,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<'chat' | 'history'>('chat');
   const [allSessions, setAllSessions] = useState<ChatSession[]>([]);
+  const [theme, setTheme] = useState<ChatTheme>('light');
 
   const activeTopic = currentSession?.topic || topic || "New Chat";
   
@@ -283,12 +314,18 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
   
   useEffect(() => {
     const loadInitialSession = async () => {
-        if (!isOpen || !user || !topic) return;
+        if (!isOpen || !user) return;
 
         // Reset state for the new topic every time the dialog opens
         resetState();
         setIsLoading(true);
         setView('chat');
+
+        if (!topic) {
+            await handleShowHistory(true); // show history if no topic
+            setIsLoading(false);
+            return;
+        }
 
         try {
             const existingSession = await getChatSessionForTopic(user.uid, topic);
@@ -341,8 +378,8 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
     generateResponse(historyWithIntent, intent);
   }
   
-  const handleShowHistory = useCallback(async () => {
-    if (view === 'history' || !user) return;
+  const handleShowHistory = useCallback(async (force = false) => {
+    if ((view === 'history' && !force) || !user) return;
     setIsLoading(true);
     setView('history');
     try {
@@ -360,7 +397,10 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
   return (
     <>
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-3xl h-full md:h-[90vh] flex flex-col p-0 gap-0">
+      <DialogContent 
+        className="max-w-3xl h-full md:h-[90vh] flex flex-col p-0 gap-0"
+        data-chat-theme={theme}
+      >
         <DialogHeader className="p-4 border-b flex-row flex justify-between items-center bg-card rounded-t-lg">
             <div className="flex items-center gap-2">
                  <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="md:hidden">
@@ -375,10 +415,23 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
                 </div>
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => startNewChat()} disabled={view !== 'chat'}>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                         <Button variant="outline" size="sm">
+                            <Palette className="mr-2 h-4 w-4"/> Themes
+                         </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => setTheme('light')}>Light</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setTheme('dark')}>Dark</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setTheme('whatsapp')}>WhatsApp</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setTheme('telegram')}>Telegram</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <Button variant="outline" size="sm" onClick={() => startNewChat()} disabled={view !== 'chat' || !topic}>
                    <PlusCircle className="mr-2 h-4 w-4"/> New Chat
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleShowHistory} disabled={view === 'history'}>
+                <Button variant="outline" size="sm" onClick={() => handleShowHistory()} disabled={view === 'history'}>
                    <History className="mr-2 h-4 w-4"/> History
                 </Button>
                  <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="hidden md:flex">
@@ -387,7 +440,12 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
             </div>
         </DialogHeader>
         
-        <div className="flex-grow bg-muted/30 relative overflow-hidden">
+        <div className={cn("flex-grow relative overflow-hidden",
+            theme === 'light' && "bg-muted/30",
+            theme === 'dark' && "bg-background",
+            theme === 'whatsapp' && "bg-[#e5ddd5]",
+            theme === 'telegram' && "bg-[#a5c5dd]",
+        )}>
              <AnimatePresence>
                 {view === 'chat' && (
                     <motion.div
@@ -404,7 +462,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
                                 <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin text-primary" /></div>
                                 ) : (
                                 <>
-                                    {history.map((msg, index) => <Message key={index} message={msg} />)}
+                                    {history.map((msg, index) => <Message key={index} message={msg} theme={theme} />)}
                                     {isGenerating && <LoadingState />}
                                 </>
                                 )}
@@ -473,3 +531,5 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
     </>
   );
 }
+
+    
