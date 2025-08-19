@@ -1,13 +1,11 @@
 
-
 'use client';
 
 import { useState, useEffect, useTransition, useRef, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from '@/components/ui/dialog';
 import {
     AlertDialog,
@@ -21,7 +19,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { generateChatLesson } from '@/ai/flows/generate-chat-lesson';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, User, Loader2, Send, Wand2, X, ArrowLeft, Save } from 'lucide-react';
+import { Bot, User, Loader2, Send, Wand2, X, ArrowLeft, Save, History, PlusCircle } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -36,16 +34,17 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getMessagesForSession, addMessageToSession, createChatSession } from '@/services/chat-history';
+import { getMessagesForSession, addMessageToSession, createChatSession, getChatSessionForTopic, getChatSessionsForUser } from '@/services/chat-history';
+import { ChatHistory } from './ChatHistory';
 
 interface ChatLessonProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   topic?: string;
-  session?: ChatSession;
   onChatSaved: () => void;
 }
 
+// ... (keep QuickActionsPopover and its filter arrays as they are)
 const explanationFilters = [
     { label: 'For Interview', value: 'Explain for interview' },
     { label: 'Real-World Example', value: 'Real-World Example' },
@@ -178,7 +177,8 @@ function QuickActionsPopover({ onQuickFilter, disabled }: { onQuickFilter: (inte
     )
 }
 
-export function ChatLesson({ isOpen, onOpenChange, topic, session, onChatSaved }: ChatLessonProps) {
+
+export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLessonProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
@@ -189,16 +189,10 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session, onChatSaved }
   const [isSaving, startSavingTransition] = useTransition();
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [view, setView] = useState<'chat' | 'history'>('chat');
+  const [allSessions, setAllSessions] = useState<ChatSession[]>([]);
 
   const activeTopic = currentSession?.topic || topic || "New Chat";
-
-  const handleClose = () => {
-    if (!currentSession && history.length > 1) { // Only show save dialog for new, unsaved chats
-        setShowSaveDialog(true);
-    } else {
-        onOpenChange(false);
-    }
-  }
   
   const resetState = useCallback(() => {
     setCurrentSession(null);
@@ -206,13 +200,24 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session, onChatSaved }
     setInput('');
   }, []);
 
+  const handleClose = () => {
+    if (!currentSession && history.length > 1) {
+        setShowSaveDialog(true);
+    } else {
+        onOpenChange(false);
+        resetState();
+        setView('chat'); // Reset view on close
+    }
+  }
+
   const handleDiscard = () => {
     setShowSaveDialog(false);
     onOpenChange(false);
     resetState();
+    setView('chat');
   }
 
-  const handleSave = () => {
+  const handleSaveAndClose = () => {
     if (!user || !activeTopic || history.length === 0) return;
     
     startSavingTransition(async () => {
@@ -223,6 +228,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session, onChatSaved }
             setShowSaveDialog(false);
             onOpenChange(false);
             resetState();
+            setView('chat');
         } catch (error) {
             console.error("Failed to save chat session", error);
             toast({ title: "Error", description: "Could not save your chat.", variant: "destructive" });
@@ -248,113 +254,162 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session, onChatSaved }
               description: 'Could not get a response. Please try again.',
               variant: 'destructive',
             });
-            // Remove the user's message if AI fails
-             setHistory(prev => prev.slice(0, -1));
+            setHistory(prev => prev.slice(0, -1));
           }
       });
   }, [activeTopic, toast, currentSession]);
 
-  const loadOrCreateSession = useCallback(async () => {
-      if (!user || !isOpen) return;
+  const startNewChat = useCallback((newTopic: string) => {
+    resetState();
+    setIsLoadingHistory(true);
+    const initialUserMessage: ChatMessage = { role: 'user', content: `Can you explain "${newTopic}" like I'm talking to a friend?` };
+    setHistory([initialUserMessage]);
+    generateResponse([initialUserMessage]);
+    setIsLoadingHistory(false);
+    setView('chat');
+  }, [resetState, generateResponse]);
 
+  const loadSession = useCallback(async (session: ChatSession | null) => {
+    if (!session) {
+      if(topic) startNewChat(topic);
+      return;
+    }
+    setCurrentSession(session);
+    const messages = await getMessagesForSession(session.id!);
+    setHistory(messages);
+    setView('chat');
+  }, [topic, startNewChat]);
+  
+  const loadInitialSession = useCallback(async () => {
+      if (!user || !topic) return;
       setIsLoadingHistory(true);
       resetState();
-
-      if (session?.id) { // Resuming an existing session
-        setCurrentSession(session);
-        const messages = await getMessagesForSession(session.id);
-        setHistory(messages);
-      } else if (topic) { // Starting a new session for a topic
-          const initialUserMessage: ChatMessage = { role: 'user', content: `Can you explain "${topic}" like I'm talking to a friend?` };
-          setHistory([initialUserMessage]);
-          generateResponse([initialUserMessage]);
+      const existingSession = await getChatSessionForTopic(user.uid, topic);
+      if (existingSession) {
+          loadSession(existingSession);
+      } else {
+          startNewChat(topic);
       }
       setIsLoadingHistory(false);
-  }, [user, isOpen, session, topic, generateResponse, resetState]);
-
+  }, [user, topic, resetState, loadSession, startNewChat]);
 
   useEffect(() => {
-    if (isOpen) {
-        loadOrCreateSession();
+    if (isOpen && view === 'chat') {
+        loadInitialSession();
     }
-  }, [isOpen, loadOrCreateSession]);
-  
+  }, [isOpen, topic]); // Rerun only when the dialog is opened for a specific topic
+
    useEffect(() => {
     if (scrollAreaRef.current) {
         const viewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
         if (viewport) {
-             setTimeout(() => {
-                viewport.scrollTop = viewport.scrollHeight;
-            }, 100);
+             setTimeout(() => viewport.scrollTop = viewport.scrollHeight, 100);
         }
     }
   }, [history, isGenerating]);
 
   const handleSend = () => {
     if (!input.trim() || isGenerating) return;
-    
     const newUserMessage: ChatMessage = { role: 'user', content: input };
     const newHistory = [...history, newUserMessage];
     setHistory(newHistory);
     setInput('');
-    
-    if (currentSession?.id) {
-        addMessageToSession(currentSession.id, newUserMessage);
-    }
-    
+    if (currentSession?.id) addMessageToSession(currentSession.id, newUserMessage);
     generateResponse(newHistory);
   }
 
   const handleQuickFilter = (intent: string) => {
     if(isGenerating) return;
-
     const intentMessage: ChatMessage = { role: 'user', content: `(Instruction: ${intent})` };
-     if(currentSession?.id) {
-        addMessageToSession(currentSession.id, intentMessage);
-    }
-    
+    if(currentSession?.id) addMessageToSession(currentSession.id, intentMessage);
     const historyWithIntent = [...history, intentMessage];
     setHistory(historyWithIntent);
-    
     generateResponse(historyWithIntent, intent);
+  }
+
+  const handleShowHistory = async () => {
+    if (!user) return;
+    setIsLoadingHistory(true);
+    const sessions = await getChatSessionsForUser(user.uid);
+    setAllSessions(sessions);
+    setIsLoadingHistory(false);
+    setView('history');
   }
 
   return (
     <>
     <Dialog open={isOpen} onOpenChange={(open) => { if(!open) handleClose()}}>
       <DialogContent className="max-w-3xl h-full md:h-[90vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="p-4 border-b flex-row flex justify-between items-center bg-card rounded-t-lg">
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={handleClose} className="md:hidden">
+        <div className="p-4 border-b flex justify-between items-center bg-card rounded-t-lg">
+            <div className="flex items-center gap-2">
+                 <Button variant="ghost" size="icon" onClick={handleClose} className="md:hidden">
                     <ArrowLeft />
                 </Button>
-                <div className="flex items-center gap-2">
-                    <Avatar className="hidden sm:flex">
-                        <AvatarFallback><Bot/></AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <DialogTitle className="font-semibold text-base">{activeTopic}</DialogTitle>
-                        <p className="text-xs text-muted-foreground">Your AI Tutor</p>
-                    </div>
+                <Avatar className="hidden sm:flex">
+                    <AvatarFallback><Bot/></AvatarFallback>
+                </Avatar>
+                <div>
+                    <h2 className="font-semibold text-base">{activeTopic}</h2>
+                    <p className="text-xs text-muted-foreground">Your AI Tutor</p>
                 </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleClose} className="hidden md:flex">
-                <X />
-            </Button>
-        </DialogHeader>
-        
-        <ScrollArea className="flex-grow bg-muted/30" ref={scrollAreaRef}>
-             <div className="p-4 space-y-6">
-                {isLoadingHistory ? (
-                  <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin text-primary" /></div>
-                ) : (
-                  <>
-                    {history.map((msg, index) => <Message key={index} message={msg} />)}
-                    {isGenerating && <LoadingState />}
-                  </>
-                )}
+            <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => startNewChat(activeTopic)} disabled={view !== 'chat'}>
+                   <PlusCircle className="mr-2 h-4 w-4"/> New Chat
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleShowHistory} disabled={view === 'history'}>
+                   <History className="mr-2 h-4 w-4"/> History
+                </Button>
+                 <Button variant="ghost" size="icon" onClick={handleClose} className="hidden md:flex">
+                    <X />
+                </Button>
             </div>
-        </ScrollArea>
+        </div>
+        
+        <div className="flex-grow bg-muted/30 relative overflow-hidden">
+             <AnimatePresence>
+                {view === 'chat' && (
+                    <motion.div
+                        key="chat"
+                        initial={{ x: view === 'chat' ? 0 : '-100%' }}
+                        animate={{ x: 0 }}
+                        exit={{ x: '-100%' }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="absolute inset-0"
+                    >
+                        <ScrollArea className="h-full" ref={scrollAreaRef}>
+                            <div className="p-4 space-y-6">
+                                {isLoadingHistory ? (
+                                <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin text-primary" /></div>
+                                ) : (
+                                <>
+                                    {history.map((msg, index) => <Message key={index} message={msg} />)}
+                                    {isGenerating && <LoadingState />}
+                                </>
+                                )}
+                            </div>
+                        </ScrollArea>
+                    </motion.div>
+                )}
+
+                {view === 'history' && (
+                     <motion.div
+                        key="history"
+                        initial={{ x: '100%' }}
+                        animate={{ x: 0 }}
+                        exit={{ x: '100%' }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="absolute inset-0 bg-background"
+                    >
+                        {isLoadingHistory ? (
+                            <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin text-primary" /></div>
+                        ) : (
+                            <ChatHistory sessions={allSessions} onSessionSelect={(session) => loadSession(session)} onBack={() => setView('chat')} />
+                        )}
+                     </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
         
         <div className="p-4 border-t bg-card rounded-b-lg">
             <div className="flex items-center gap-2 bg-muted rounded-full p-1">
@@ -363,11 +418,11 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session, onChatSaved }
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                    disabled={isGenerating}
+                    disabled={isGenerating || view === 'history'}
                     className="bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
-                <QuickActionsPopover onQuickFilter={handleQuickFilter} disabled={isGenerating} />
-                <Button onClick={handleSend} disabled={isGenerating || !input.trim()} className="rounded-full">
+                <QuickActionsPopover onQuickFilter={handleQuickFilter} disabled={isGenerating || view === 'history'} />
+                <Button onClick={handleSend} disabled={isGenerating || !input.trim() || view === 'history'} className="rounded-full">
                     {isGenerating ? <Loader2 className="animate-spin" /> : <Send />}
                     <span className="sr-only">Send</span>
                 </Button>
@@ -387,7 +442,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session, onChatSaved }
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel onClick={handleDiscard}>Discard</AlertDialogCancel>
-                <Button onClick={handleSave} disabled={isSaving}>
+                <Button onClick={handleSaveAndClose} disabled={isSaving}>
                     {isSaving ? <Loader2 className="mr-2 animate-spin" /> : <Save className="mr-2"/>}
                     Save Chat
                 </Button>
@@ -397,5 +452,3 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session, onChatSaved }
     </>
   );
 }
-
-    

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState } from 'react';
@@ -14,9 +13,7 @@ import { InteractiveTutorial } from './InteractiveTutorial';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Badge } from '@/components/ui/badge';
-import { getChatSessionForTopic, createChatSession } from '@/services/chat-history';
 import { useAuth } from '@/lib/auth';
-import type { ChatSession } from '@/lib/types';
 
 
 interface DailyTaskItemProps {
@@ -64,7 +61,7 @@ export function DailyTaskItem({ task, preferredChannel, roadmapId }: DailyTaskIt
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isInteractiveOpen, setIsInteractiveOpen] = useState(false);
   const [isResourceSelectorOpen, setIsResourceSelectorOpen] = useState(false);
-  const [activeChatSession, setActiveChatSession] = useState<ChatSession | undefined>(undefined);
+  const [activeTopic, setActiveTopic] = useState<string | undefined>(undefined);
 
   const handleToggle = () => setIsCompleted(!isCompleted);
 
@@ -85,8 +82,7 @@ export function DailyTaskItem({ task, preferredChannel, roadmapId }: DailyTaskIt
   const handleResourceButtonClick = async () => {
     if (currentResourceType === 'Chat Lessons') {
       if (!user) return;
-      // When opening chat, we pass the topic, and the ChatLesson component handles loading/creating the session.
-      setActiveChatSession(undefined); // Clear previous session
+      setActiveTopic(task.topic);
       setIsChatOpen(true);
     } else if (currentResourceType === 'Interactive Tutorial') {
       setIsInteractiveOpen(true);
@@ -162,8 +158,7 @@ export function DailyTaskItem({ task, preferredChannel, roadmapId }: DailyTaskIt
       <ChatLesson
         isOpen={isChatOpen}
         onOpenChange={setIsChatOpen}
-        topic={task.topic}
-        session={activeChatSession}
+        topic={activeTopic}
         onChatSaved={handleChatSaved}
       />
 
@@ -176,5 +171,3 @@ export function DailyTaskItem({ task, preferredChannel, roadmapId }: DailyTaskIt
     </>
   );
 }
-
-    
