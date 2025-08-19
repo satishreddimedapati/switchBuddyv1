@@ -95,7 +95,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
             if (existingLessons.length > 0) {
                 setCurrentLesson(existingLessons[0]);
             }
-            setScreen('intro'); // Always go to intro screen after loading
+            setScreen('intro');
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
             setError(`Failed to load existing lessons: ${errorMessage}`);
@@ -106,7 +106,6 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
     if (isOpen) {
       fetchLessons();
     } else {
-       // Reset state when dialog is fully closed
       setTimeout(() => {
         resetState();
       }, 300);
@@ -120,7 +119,6 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
           setCurrentIndex(0);
           setScreen('lesson');
       } else {
-          // This should ideally not be hit if the button is disabled, but as a fallback:
           handleGenerateNew();
       }
   };
@@ -168,7 +166,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   const handleNextCard = () => {
     if (!currentLesson) return;
     if (currentIndex < currentLesson.cards.length - 1) {
-      setCurrentIndex(prev => prev - 1);
+      setCurrentIndex(prev => prev + 1);
     } else {
         onOpenChange(false);
         toast({ title: "Lesson Complete!", description: "Great job finishing the interactive tutorial."});
@@ -304,5 +302,3 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
     </Dialog>
   );
 }
-
-    
