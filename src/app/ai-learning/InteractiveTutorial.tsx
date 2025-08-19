@@ -144,7 +144,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   const handleNextCard = () => {
     if (!currentLesson) return;
     if (currentIndex < currentLesson.cards.length - 1) {
-      setCurrentIndex(prev => prev - 1);
+      setCurrentIndex(prev => prev + 1);
     } else {
         onOpenChange(false);
         toast({ title: "Lesson Complete!", description: "Great job finishing the interactive tutorial."});
@@ -300,6 +300,11 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
               <DialogTitle>Interactive Tutorial: {topic}</DialogTitle>
               <DialogDescription>An interactive, card-based lesson.</DialogDescription>
             </div>
+            <DialogClose asChild>
+                 <Button variant="ghost" size="icon">
+                    <X />
+                </Button>
+            </DialogClose>
         </DialogHeader>
         {renderContent()}
       </DialogContent>
