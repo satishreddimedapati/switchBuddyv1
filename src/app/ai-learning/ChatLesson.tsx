@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useTransition, useRef, useCallback } from 'react';
@@ -428,12 +429,14 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
                     <DialogDescription className="text-xs text-muted-foreground">Your AI Tutor</DialogDescription>
                 </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
                 <Button variant="outline" size="sm" onClick={() => startNewChat()} disabled={view !== 'chat' || !topic}>
-                   <PlusCircle className="mr-2 h-4 w-4"/> New Chat
+                   <PlusCircle className="mr-0 sm:mr-2 h-4 w-4"/> 
+                   <span className='hidden sm:inline'>New Chat</span>
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => handleShowHistory()} disabled={view === 'history'}>
-                   <History className="mr-2 h-4 w-4"/> History
+                   <History className="mr-0 sm:mr-2 h-4 w-4"/> 
+                   <span className='hidden sm:inline'>History</span>
                 </Button>
                  <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="hidden md:flex">
                     <X />
@@ -534,5 +537,3 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
     </>
   );
 }
-
-    

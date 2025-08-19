@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -85,28 +86,26 @@ export function RoadmapTimeline({ roadmap }: RoadmapTimelineProps) {
 
                 {/* Mobile View: Vertical Snake */}
                 <div className="md:hidden">
-                    <div className="flex flex-col items-center space-y-2">
+                     <div className="relative flex flex-col items-center space-y-2">
+                        {/* The main vertical line */}
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-border -z-10"></div>
+                        
                         {roadmap.roadmap.weeks.map((week, weekIndex) => (
                              <React.Fragment key={week.week}>
                                 <WeekMilestone week={week} />
 
                                 {weekIndex < roadmap.roadmap.weeks.length - 1 && (
                                     <>
-                                    {/* Connector line from milestone to path */}
-                                    <div className="w-px h-6 bg-border"></div>
-
-                                    {/* Daily path */}
-                                    <div className={cn("flex w-full items-end justify-center", weekIndex % 2 !== 0 && "flex-row-reverse")}>
-                                        <div className="w-full h-1 bg-border relative flex items-end justify-evenly">
-                                            {week.daily_tasks.slice(0, dotsToShow).map((task, dayIndex) => (
-                                                <DailyCheckpoint key={dayIndex} task={task} roadmapId={roadmap.id!} preferredChannel={roadmap.preferredChannel} />
+                                    <div className="w-full h-12 flex justify-center">
+                                        <div className="flex flex-col items-center justify-evenly h-full w-full">
+                                            {week.daily_tasks.slice(0, 3).map((task, dayIndex) => (
+                                                <div key={dayIndex} className="w-full flex justify-center relative">
+                                                    <div className="w-16 h-px bg-border absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-[calc(100%+0.5rem)]"></div>
+                                                    <DailyCheckpoint key={dayIndex} task={task} roadmapId={roadmap.id!} preferredChannel={roadmap.preferredChannel} />
+                                                    <div className="w-16 h-px bg-border absolute right-1/2 top-1/2 -translate-y-1/2 translate-x-[calc(100%+0.5rem)]"></div>
+                                                </div>
                                             ))}
                                         </div>
-                                    </div>
-                                    
-                                    {/* Connector line from path to next milestone */}
-                                     <div className="w-full flex">
-                                        <div className={cn("w-px h-6 bg-border", weekIndex % 2 !== 0 ? "ml-auto" : "mr-auto")}></div>
                                     </div>
                                     </>
                                 )}

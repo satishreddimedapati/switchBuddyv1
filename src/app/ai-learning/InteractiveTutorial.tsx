@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useTransition, useMemo, useCallback } from 'react';
@@ -36,8 +37,8 @@ function IntroductionScreen({ onStart, isLoading, topic }: { onStart: () => void
       <div className="bg-primary/20 p-4 rounded-full mb-4">
         <Sparkles className="h-12 w-12 text-primary" />
       </div>
-      <h2 className="text-2xl font-bold">Interactive Lesson: {topic}</h2>
-      <p className="text-muted-foreground mt-2 max-w-md mx-auto">
+      <h2 className="text-2xl font-bold text-center">{topic}</h2>
+      <p className="text-muted-foreground mt-2 max-w-md mx-auto text-center">
         Learn step-by-step with a mix of visuals, examples, and questions. Each card is a new mini-experience!
       </p>
       <Button
@@ -144,7 +145,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   const handleNextCard = () => {
     if (!currentLesson) return;
     if (currentIndex < currentLesson.cards.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+      setCurrentIndex(prev => prev - 1);
     } else {
         onOpenChange(false);
         toast({ title: "Lesson Complete!", description: "Great job finishing the interactive tutorial."});

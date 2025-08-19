@@ -116,14 +116,14 @@ export default function AiLearningPage() {
                     {roadmaps.map(roadmap => (
                         <Card key={roadmap.id}>
                             <AccordionItem value={roadmap.id!} className="border-b-0">
-                                <div className="p-6 flex justify-between items-center">
-                                    <AccordionTrigger className="p-0 hover:no-underline flex-1">
-                                        <CardHeader className="p-0 text-left">
+                                <div className="flex justify-between items-center p-4 sm:p-6">
+                                    <AccordionTrigger className="p-0 hover:no-underline flex-1 text-left">
+                                        <div className="pr-4">
                                             <CardTitle>{roadmap.topic}</CardTitle>
                                             <CardDescription>{roadmap.duration} day plan focusing on: {roadmap.goals.join(', ')}</CardDescription>
-                                        </CardHeader>
+                                        </div>
                                     </AccordionTrigger>
-                                    <div className="flex items-center gap-2 ml-4">
+                                    <div className="flex items-center gap-1 sm:gap-2 ml-2 sm:ml-4">
                                         <Button variant="ghost" size="icon" asChild>
                                             <Link href={`/ai-learning/edit/${roadmap.id}`}>
                                                 <Edit className="h-4 w-4" />
@@ -171,5 +171,3 @@ export default function AiLearningPage() {
         </div>
     );
 }
-
-    
