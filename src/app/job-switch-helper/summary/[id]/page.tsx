@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth";
 import { InterviewSession } from "@/lib/types";
 import { getInterviewSession } from "@/services/interview-sessions";
-import { Download, Loader2, Video } from "lucide-react";
+import { Download, Loader2, Video, CaseSensitive, PencilRuler } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -93,8 +93,20 @@ export default function InterviewSummaryPage() {
                                         <TabsTrigger value="ai-answer">AI Suggestion</TabsTrigger>
                                         <TabsTrigger value="ai-feedback">AI Feedback</TabsTrigger>
                                     </TabsList>
-                                    <TabsContent value="your-answer" className="mt-4 p-4 border rounded-md">
-                                        <p className="text-muted-foreground whitespace-pre-wrap">{item.answer || 'No answer provided.'}</p>
+                                    <TabsContent value="your-answer" className="mt-4">
+                                        {item.answer && (
+                                            <div className="p-4 border rounded-md mb-2">
+                                                <h4 className="font-semibold text-sm mb-2 flex items-center gap-2"><CaseSensitive/>Text Answer</h4>
+                                                <p className="text-muted-foreground whitespace-pre-wrap">{item.answer}</p>
+                                            </div>
+                                        )}
+                                        {item.whiteboard && (
+                                            <div className="p-4 border rounded-md">
+                                                <h4 className="font-semibold text-sm mb-2 flex items-center gap-2"><PencilRuler/>Whiteboard</h4>
+                                                <pre className="text-muted-foreground whitespace-pre-wrap bg-muted/50 p-2 rounded-sm font-mono text-xs">{item.whiteboard}</pre>
+                                            </div>
+                                        )}
+                                        {!item.answer && !item.whiteboard && <p className="text-muted-foreground p-4 border rounded-md">No answer provided.</p>}
                                     </TabsContent>
                                     <TabsContent value="ai-answer" className="mt-4 p-4 border rounded-md bg-muted/30">
                                          <p className="text-muted-foreground whitespace-pre-wrap">{item.idealAnswer || 'No ideal answer generated.'}</p>

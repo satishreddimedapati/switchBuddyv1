@@ -14,15 +14,18 @@ import { useToast } from '@/hooks/use-toast';
 import { addInterviewPlan } from '@/services/interview-plans';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Loader2, Video } from 'lucide-react';
+import { Loader2, Video, User, ShieldQuestion, Zap, Smile } from 'lucide-react';
 import { addInterviewSession } from '@/services/interview-sessions';
 import { generateInterviewQuestions } from '@/ai/flows/interview-practice';
 import { Switch } from '@/components/ui/switch';
-import { getInterviewSessionsForPlan } from '@/services/interview-sessions';
+import { InterviewerPersona, InterviewerPersonaSchema } from '@/lib/types';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { cn } from '@/lib/utils';
 
 const planSchema = z.object({
   topic: z.string().min(1, 'Topic is required.'),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']),
+  persona: InterviewerPersonaSchema,
   durationMinutes: z.coerce.number().int().min(1),
   numberOfQuestions: z.coerce.number().int().min(1, 'You must have at least one question.'),
   totalInterviews: z.coerce.number().int().min(1, 'You must plan at least one interview.'),
@@ -30,6 +33,13 @@ const planSchema = z.object({
 });
 
 type PlanFormValues = z.infer<typeof planSchema>;
+
+const personas: { name: InterviewerPersona, icon: React.ElementType, description: string }[] = [
+    { name: 'Friendly', icon: Smile, description: 'Encouraging and helpful.' },
+    { name: 'Strict', icon: ShieldQuestion, description: 'Direct and technical.' },
+    { name: 'Rapid-Fire', icon: Zap, description: 'Quick questions, tests speed.' },
+    { name: 'HR', icon: User, description: 'Focus on behavioral skills.' },
+];
 
 export default function NewInterviewPlanPage() {
     const { user } = useAuth();
@@ -42,6 +52,7 @@ export default function NewInterviewPlanPage() {
         defaultValues: {
             topic: '',
             difficulty: 'Medium',
+            persona: 'Friendly',
             durationMinutes: 30,
             numberOfQuestions: 5,
             totalInterviews: 10,
@@ -65,6 +76,7 @@ export default function NewInterviewPlanPage() {
             const questionResult = await generateInterviewQuestions({
                 topic: data.topic,
                 difficulty: data.difficulty,
+                persona: data.persona,
                 numberOfQuestions: data.numberOfQuestions,
                 allowRepetition: data.allowQuestionRepetition,
                 pastQuestions: [], // No past questions for the first session
@@ -107,13 +119,13 @@ export default function NewInterviewPlanPage() {
                     Define your practice goals to start your first mock interview.
                 </p>
             </div>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Plan Details</CardTitle>
-                    <CardDescription>Set up the parameters for your mock interview sessions.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Plan Details</CardTitle>
+                        <CardDescription>Set up the parameters for your mock interview sessions.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
                         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             <div className="sm:col-span-2 lg:col-span-1">
                                 <Label htmlFor="topic">Topic</Label>
@@ -185,16 +197,50 @@ export default function NewInterviewPlanPage() {
                                 </div>
                             </div>
                         </div>
+                    </CardContent>
+                </Card>
 
-                        <div className="flex justify-end">
-                            <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? <Loader2 className="animate-spin" /> : <Video />}
-                                Start Plan
-                            </Button>
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>AI Interviewer Persona</CardTitle>
+                        <CardDescription>Choose the style of your AI interviewer.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <Controller
+                            control={form.control}
+                            name="persona"
+                            render={({ field }) => (
+                                <ToggleGroup
+                                    type="single"
+                                    value={field.value}
+                                    onValueChange={(value: InterviewerPersona) => value && field.onChange(value)}
+                                    className="grid grid-cols-2 md:grid-cols-4 gap-4"
+                                >
+                                    {personas.map((persona) => (
+                                        <ToggleGroupItem key={persona.name} value={persona.name} className="h-auto" asChild>
+                                           <div className={cn(
+                                                "p-4 border rounded-lg cursor-pointer transition-all text-center space-y-2",
+                                                field.value === persona.name && "ring-2 ring-primary bg-primary/10"
+                                            )}>
+                                                <persona.icon className="h-8 w-8 mx-auto" />
+                                                <p className="font-semibold">{persona.name}</p>
+                                                <p className="text-xs text-muted-foreground">{persona.description}</p>
+                                           </div>
+                                        </ToggleGroupItem>
+                                    ))}
+                                </ToggleGroup>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
+
+                 <div className="flex justify-end">
+                    <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? <Loader2 className="animate-spin" /> : <Video />}
+                        Create Plan & Start Interview
+                    </Button>
+                </div>
+            </form>
         </div>
     );
 }

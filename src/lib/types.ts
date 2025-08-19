@@ -130,6 +130,8 @@ export type GenerateInterviewTopicScheduleOutput = z.infer<typeof GenerateInterv
 
 
 // MOCK INTERVIEW SCHEMAS
+export const InterviewerPersonaSchema = z.enum(['Friendly', 'Strict', 'Rapid-Fire', 'HR']);
+export type InterviewerPersona = z.infer<typeof InterviewerPersonaSchema>;
 
 // Firestore: interview_plans
 export const InterviewPlanSchema = z.object({
@@ -137,6 +139,7 @@ export const InterviewPlanSchema = z.object({
   userId: z.string(),
   topic: z.string(),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']),
+  persona: InterviewerPersonaSchema.default('Friendly'),
   durationMinutes: z.number().int(),
   numberOfQuestions: z.number().int(),
   totalInterviews: z.number().int(),
@@ -162,6 +165,7 @@ export const InterviewSessionQuestionSchema = z.object({
     qNo: z.number(),
     question: z.string(),
     answer: z.string().optional(),
+    whiteboard: z.string().optional(),
     aiReview: z.string().optional(),
     idealAnswer: z.string().optional(),
     rating: z.number().min(1).max(10).optional(),
@@ -215,6 +219,7 @@ export type InterviewQuestionRequest = z.infer<typeof InterviewQuestionRequestSc
 export const GenerateInterviewQuestionsRequestSchema = z.object({
     topic: z.string(),
     difficulty: z.enum(['Easy', 'Medium', 'Hard']),
+    persona: InterviewerPersonaSchema.default('Friendly'),
     numberOfQuestions: z.number().int().min(1),
     allowRepetition: z.boolean().default(true),
     pastQuestions: z.array(z.string()).optional(),
@@ -245,6 +250,7 @@ const QAPairSchema = z.object({
     qNo: z.number(),
     question: z.string(),
     answer: z.string(),
+    whiteboard: z.string().optional(),
 });
 
 export const EvaluateInterviewAnswersRequestSchema = z.object({
@@ -263,6 +269,18 @@ export const EvaluateInterviewAnswersResponseSchema = z.object({
     evaluations: z.array(EvaluationSchema).describe("An array of evaluations for each question-answer pair."),
 });
 export type EvaluateInterviewAnswersResponse = z.infer<typeof EvaluateInterviewAnswersResponseSchema>;
+
+export const GenerateFollowUpQuestionRequestSchema = z.object({
+    question: z.string().describe("The original question asked."),
+    answer: z.string().describe("The user's answer to the original question."),
+});
+export type GenerateFollowUpQuestionRequest = z.infer<typeof GenerateFollowUpQuestionRequestSchema>;
+
+export const GenerateFollowUpQuestionResponseSchema = z.object({
+    followUpQuestion: z.string().describe("A short, relevant follow-up question based on the user's answer."),
+});
+export type GenerateFollowUpQuestionResponse = z.infer<typeof GenerateFollowUpQuestionResponseSchema>;
+
 
 // NETWORKING HUB SCHEMAS
 
