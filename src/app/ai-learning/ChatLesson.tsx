@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useTransition, useRef, useCallback } from 'react';
@@ -415,7 +414,6 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent 
         className="max-w-3xl h-full md:h-[90vh] flex flex-col p-0 gap-0"
-        data-chat-theme={theme}
       >
         <DialogHeader className="p-4 border-b flex-row flex justify-between items-center bg-card rounded-t-lg">
             <div className="flex items-center gap-2">
@@ -448,7 +446,9 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
             (theme === 'dark' || theme === 'gemini' || theme === 'chatgpt') && "bg-background",
             theme === 'whatsapp' && "bg-[#e5ddd5]",
             theme === 'telegram' && "bg-[#a5c5dd]",
-        )}>
+        )}
+        data-chat-theme={theme}
+        >
              <AnimatePresence>
                 {view === 'chat' && (
                     <motion.div
@@ -534,3 +534,5 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
     </>
   );
 }
+
+    
