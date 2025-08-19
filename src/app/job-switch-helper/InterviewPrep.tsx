@@ -16,6 +16,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { InterviewPlanCard } from "@/app/interview-prep/InterviewPlanCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 function NoActivePlan() {
     const router = useRouter();
@@ -40,10 +41,36 @@ function LoadingState() {
     )
 }
 
+function PastInterviewCard({ interview }: { interview: InterviewSession }) {
+    return (
+        <Card>
+            <CardContent className="p-4 space-y-3">
+                 <div className="flex justify-between items-start">
+                    <div>
+                        <p className="font-semibold">Interview #{interview.interviewNumber}</p>
+                        <p className="text-sm text-muted-foreground">
+                            {interview.completedAt ? format(new Date(interview.completedAt), 'PPP') : 'N/A'}
+                        </p>
+                    </div>
+                    <div className="text-right">
+                        <p className="font-bold text-lg">{interview.overallScore ? interview.overallScore.toFixed(1) : 'N/A'}</p>
+                        <p className="text-xs text-muted-foreground">Score</p>
+                    </div>
+                 </div>
+                 <Button variant="outline" size="sm" asChild className="w-full">
+                   <Link href={`/job-switch-helper/summary/${interview.id}`}>
+                        <Video className="mr-2 h-4 w-4" /> Review Session
+                    </Link>
+                </Button>
+            </CardContent>
+        </Card>
+    )
+}
 
 export function InterviewPrep() {
     const { user } = useAuth();
     const router = useRouter();
+    const isMobile = useIsMobile();
     const [plans, setPlans] = useState<InterviewPlan[]>([]);
     const [pastSessions, setPastSessions] = useState<InterviewSession[]>([]);
     const [loading, setLoading] = useState(true);
@@ -136,7 +163,17 @@ export function InterviewPrep() {
                     <CardTitle>Past Interviews</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="overflow-x-auto">
+                    {isMobile ? (
+                         <div className="space-y-4">
+                            {pastSessions.map(interview => (
+                                <PastInterviewCard key={interview.id} interview={interview} />
+                            ))}
+                            {pastSessions.length === 0 && !loading && (
+                                <div className="text-center h-24 flex items-center justify-center text-muted-foreground">No past interviews found.</div>
+                            )}
+                            {loading && <Skeleton className="h-24 w-full" />}
+                         </div>
+                    ) : (
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -173,7 +210,7 @@ export function InterviewPrep() {
                                 )}
                             </TableBody>
                         </Table>
-                    </div>
+                    )}
                 </CardContent>
             </Card>
 
