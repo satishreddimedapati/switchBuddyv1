@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/lib/auth";
 import type { InterviewPlan, InterviewSession } from "@/lib/types";
 import { getInterviewPlans } from "@/services/interview-plans";
-import { FileText, PlusCircle, Video, Loader2, History } from "lucide-react";
+import { FileText, PlusCircle, Video, Loader2, History, Edit } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import { getInterviewSessions } from "@/services/interview-sessions";
@@ -155,19 +156,33 @@ export function InterviewPrep() {
                                             <AccordionContent className="pt-0 p-4 space-y-4">
                                                 {topicPlans.map(plan => {
                                                     const planSessions = sessionsByPlan[plan.id!] || [];
+                                                    const isCompleted = (plan.completedInterviews || 0) >= plan.totalInterviews;
                                                     return (
                                                         <Accordion key={plan.id} type="single" collapsible>
-                                                            <AccordionItem value={`plan-${plan.id}`}>
+                                                            <AccordionItem value={`plan-${plan.id}`} className="border-b-0">
                                                                 <Card className="overflow-hidden">
-                                                                     <AccordionTrigger className="hover:no-underline p-0">
-                                                                        <div className="w-full">
-                                                                            <InterviewPlanCard plan={plan} />
+                                                                    <AccordionTrigger className="hover:no-underline p-4 w-full text-left" asChild>
+                                                                        <div className="flex justify-between items-center">
+                                                                            <div>
+                                                                                <p className="font-semibold">{plan.topic}</p>
+                                                                                <p className="text-sm text-muted-foreground">
+                                                                                    {plan.completedInterviews} / {plan.totalInterviews} interviews completed
+                                                                                </p>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                                                                                     <Link href={`/job-switch-helper/edit/${plan.id}`} onClick={(e) => e.stopPropagation()}>
+                                                                                        <Edit className="h-4 w-4" />
+                                                                                    </Link>
+                                                                                </Button>
+                                                                            </div>
                                                                         </div>
-                                                                     </AccordionTrigger>
-                                                                    <AccordionContent>
+                                                                    </AccordionTrigger>
+                                                                    <AccordionContent className="p-0">
+                                                                        <InterviewPlanCard plan={plan} />
                                                                          {planSessions.length > 0 && (
                                                                             <div className="px-4 pb-4 space-y-2">
-                                                                                <Separator />
+                                                                                <Separator className="my-4" />
                                                                                 <h4 className="font-semibold text-sm pt-2 flex items-center gap-2"><History className="h-4 w-4"/> Session History</h4>
                                                                                 {planSessions.map(session => (
                                                                                     <PastInterviewRow key={session.id} interview={session} />
