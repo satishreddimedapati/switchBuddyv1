@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -12,9 +13,10 @@ import { ChatLesson } from './ChatLesson';
 
 interface ChatHistoryProps {
     sessions: ChatSession[];
+    onSessionSelect: () => void;
 }
 
-export function ChatHistory({ sessions }: ChatHistoryProps) {
+export function ChatHistory({ sessions, onSessionSelect }: ChatHistoryProps) {
     const [selectedSession, setSelectedSession] = useState<ChatSession | undefined>(undefined);
     const [isChatOpen, setIsChatOpen] = useState(false);
 
@@ -71,7 +73,10 @@ export function ChatHistory({ sessions }: ChatHistoryProps) {
                 isOpen={isChatOpen}
                 onOpenChange={setIsChatOpen}
                 session={selectedSession}
+                onChatSaved={onSessionSelect}
             />
         </>
     );
 }
+
+    

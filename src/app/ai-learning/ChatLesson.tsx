@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useTransition, useRef, useCallback } from 'react';
@@ -8,9 +9,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { generateChatLesson } from '@/ai/flows/generate-chat-lesson';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, User, Loader2, Send, Wand2, X, ArrowLeft } from 'lucide-react';
+import { Bot, User, Loader2, Send, Wand2, X, ArrowLeft, Save } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -32,6 +43,7 @@ interface ChatLessonProps {
   onOpenChange: (open: boolean) => void;
   topic?: string;
   session?: ChatSession;
+  onChatSaved: () => void;
 }
 
 const explanationFilters = [
@@ -166,7 +178,7 @@ function QuickActionsPopover({ onQuickFilter, disabled }: { onQuickFilter: (inte
     )
 }
 
-export function ChatLesson({ isOpen, onOpenChange, topic, session }: ChatLessonProps) {
+export function ChatLesson({ isOpen, onOpenChange, topic, session, onChatSaved }: ChatLessonProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
@@ -174,26 +186,59 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session }: ChatLessonP
   const [input, setInput] = useState('');
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isGenerating, startGenerationTransition] = useTransition();
+  const [isSaving, startSavingTransition] = useTransition();
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const activeTopic = currentSession?.topic || topic || "New Chat";
-  
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      // Reset state when closing
-      setCurrentSession(null);
-      setHistory([]);
-      setInput('');
+
+  const handleClose = () => {
+    // Only show save dialog if it's a new session that has messages
+    if (!session && history.length > 1) {
+        setShowSaveDialog(true);
+    } else {
+        onOpenChange(false);
     }
-    onOpenChange(open);
-  };
+  }
   
-  const generateResponse = useCallback(async (sessionId: string, currentHistory: ChatMessage[], intent?: string) => {
+  const resetState = useCallback(() => {
+    setCurrentSession(null);
+    setHistory([]);
+    setInput('');
+  }, []);
+
+  const handleDiscard = () => {
+    setShowSaveDialog(false);
+    onOpenChange(false);
+    resetState();
+  }
+
+  const handleSave = () => {
+    if (!user || !activeTopic) return;
+    
+    startSavingTransition(async () => {
+        try {
+            await createChatSession(user.uid, activeTopic, history);
+            toast({ title: "Success!", description: "Your chat has been saved." });
+            onChatSaved();
+            setShowSaveDialog(false);
+            onOpenChange(false);
+            resetState();
+        } catch (error) {
+            console.error("Failed to save chat session", error);
+            toast({ title: "Error", description: "Could not save your chat.", variant: "destructive" });
+        }
+    });
+  }
+
+  const generateResponse = useCallback(async (currentHistory: ChatMessage[], currentSessionId?: string, intent?: string) => {
       startGenerationTransition(async () => {
           try {
             const result = await generateChatLesson({ topic: activeTopic, history: currentHistory, intent });
             const modelMessage: ChatMessage = { role: 'model', content: result.response };
-            await addMessageToSession(sessionId, modelMessage);
+            if(currentSessionId) {
+                await addMessageToSession(currentSessionId, modelMessage);
+            }
             setHistory(prev => [...prev, modelMessage]);
           } catch (error) {
             console.error('Failed to generate chat lesson', error);
@@ -202,8 +247,6 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session }: ChatLessonP
               description: 'Could not get a response. Please try again.',
               variant: 'destructive',
             });
-            // Remove the thinking indicator on error
-            setHistory(prev => prev.slice(0, -1));
           }
       });
   }, [activeTopic, toast]);
@@ -212,22 +255,19 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session }: ChatLessonP
       if (!user || !isOpen) return;
 
       setIsLoadingHistory(true);
+      resetState();
+
       if (session?.id) { // Resuming an existing session
         setCurrentSession(session);
         const messages = await getMessagesForSession(session.id);
         setHistory(messages);
       } else if (topic) { // Starting a new session
-          const newSessionId = await createChatSession(user.uid, topic);
-          setCurrentSession({ id: newSessionId, userId: user.uid, topic, createdAt: new Date().toISOString(), lastMessageAt: new Date().toISOString(), lastMessageSnippet: '...' });
-          
           const initialUserMessage: ChatMessage = { role: 'user', content: `Can you explain "${topic}" like I'm talking to a friend?` };
-          await addMessageToSession(newSessionId, initialUserMessage);
-          
           setHistory([initialUserMessage]);
-          generateResponse(newSessionId, [initialUserMessage]);
+          generateResponse([initialUserMessage], undefined); // Pass undefined session ID for new chats
       }
       setIsLoadingHistory(false);
-  }, [user, isOpen, session, topic, generateResponse]);
+  }, [user, isOpen, session, topic, generateResponse, resetState]);
 
 
   useEffect(() => {
@@ -248,35 +288,40 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session }: ChatLessonP
   }, [history, isGenerating]);
 
   const handleSend = () => {
-    if (!input.trim() || !currentSession?.id) return;
+    if (!input.trim()) return;
     
     const newUserMessage: ChatMessage = { role: 'user', content: input };
-    addMessageToSession(currentSession.id, newUserMessage);
-
+    if(currentSession?.id) {
+        addMessageToSession(currentSession.id, newUserMessage);
+    }
+    
     const newHistory = [...history, newUserMessage];
     setHistory(newHistory);
     setInput('');
-    generateResponse(currentSession.id, newHistory);
+    generateResponse(newHistory, currentSession?.id);
   }
 
   const handleQuickFilter = (intent: string) => {
-    if(isGenerating || !currentSession?.id) return;
+    if(isGenerating) return;
 
     const intentMessage: ChatMessage = { role: 'user', content: `(Instruction: ${intent})` };
-    addMessageToSession(currentSession.id, intentMessage);
+     if(currentSession?.id) {
+        addMessageToSession(currentSession.id, intentMessage);
+    }
     
     const historyWithIntent = [...history, intentMessage];
     setHistory(historyWithIntent);
     
-    generateResponse(currentSession.id, historyWithIntent, intent);
+    generateResponse(historyWithIntent, currentSession?.id, intent);
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <>
+    <Dialog open={isOpen} onOpenChange={(open) => { if(!open) handleClose()}}>
       <DialogContent className="max-w-3xl h-full md:h-[90vh] flex flex-col p-0 gap-0">
         <DialogHeader className="p-4 border-b flex-row flex justify-between items-center bg-card rounded-t-lg">
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => handleOpenChange(false)} className="md:hidden">
+                <Button variant="ghost" size="icon" onClick={handleClose} className="md:hidden">
                     <ArrowLeft />
                 </Button>
                 <div className="flex items-center gap-2">
@@ -289,7 +334,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session }: ChatLessonP
                     </div>
                 </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => handleOpenChange(false)} className="hidden md:flex">
+            <Button variant="ghost" size="icon" onClick={handleClose} className="hidden md:flex">
                 <X />
             </Button>
         </DialogHeader>
@@ -327,5 +372,26 @@ export function ChatLesson({ isOpen, onOpenChange, topic, session }: ChatLessonP
 
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Save This Chat Session?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Would you like to save this conversation to your chat history? You can review and continue it later.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={handleDiscard}>Discard</AlertDialogCancel>
+                <Button onClick={handleSave} disabled={isSaving}>
+                    {isSaving ? <Loader2 className="mr-2 animate-spin" /> : <Save className="mr-2"/>}
+                    Save Chat
+                </Button>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
+
+    

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { RoadmapGenerator } from './RoadmapGenerator';
 import { RoadmapDisplay } from './RoadmapDisplay';
-import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, BrainCircuit, MessageSquare } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,7 +29,6 @@ import Link from 'next/link';
 import { ChatHistory } from './ChatHistory';
 import { getChatSessionsForUser } from '@/services/chat-history';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BrainCircuit, MessageSquare } from 'lucide-react';
 
 function LoadingState() {
     return (
@@ -52,7 +52,7 @@ export default function AiLearningPage() {
     const [isBuilding, setIsBuilding] = useState(false);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-    const fetchRoadmaps = async () => {
+    const fetchAllData = async () => {
         if (!user) {
             setLoading(false);
             return;
@@ -69,7 +69,7 @@ export default function AiLearningPage() {
 
     useEffect(() => {
         if(user) {
-          fetchRoadmaps();
+          fetchAllData();
         } else {
             setLoading(false);
         }
@@ -77,7 +77,7 @@ export default function AiLearningPage() {
 
     const handleRoadmapCreated = () => {
         setIsBuilding(false);
-        fetchRoadmaps();
+        fetchAllData();
     }
     
     const handleDelete = async (roadmapId: string) => {
@@ -86,7 +86,7 @@ export default function AiLearningPage() {
         try {
             await deleteLearningRoadmap(roadmapId, user.uid);
             toast({ title: "Success", description: "Roadmap deleted successfully." });
-            fetchRoadmaps(); // Refetch after deletion
+            fetchAllData(); // Refetch after deletion
         } catch (error) {
             toast({ title: "Error", description: "Failed to delete roadmap.", variant: "destructive" });
         } finally {
@@ -183,10 +183,12 @@ export default function AiLearningPage() {
                     )}
                 </TabsContent>
                  <TabsContent value="chats" className="mt-4">
-                    <ChatHistory sessions={chatSessions} />
+                    <ChatHistory sessions={chatSessions} onSessionSelect={() => fetchAllData()} />
                  </TabsContent>
             </Tabs>
 
         </div>
     );
 }
+
+    

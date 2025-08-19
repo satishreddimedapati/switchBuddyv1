@@ -678,3 +678,5 @@ export const GetPersonalizedSalaryEstimateOutputSchema = z.object({
   commentary: z.string().describe("A brief explanation of how the user's profile affects this estimate."),
 });
 export type GetPersonalizedSalaryEstimateOutput = z.infer<typeof GetPersonalizedSalaryEstimateOutputSchema>;
+
+    

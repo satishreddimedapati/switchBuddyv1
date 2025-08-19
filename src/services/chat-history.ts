@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db } from "@/lib/firebase";
@@ -8,21 +9,33 @@ import { collection, getDocs, doc, updateDoc, addDoc, query, where, serverTimest
 
 const sessionsCollection = collection(db, "chat_sessions");
 
-export async function createChatSession(userId: string, topic: string): Promise<string> {
+export async function createChatSession(userId: string, topic: string, history: ChatMessage[]): Promise<string> {
     if (!userId) {
         throw new Error("Authentication required to create a chat session.");
     }
 
-    const docRef = await addDoc(sessionsCollection, {
+    const lastMessage = history[history.length - 1];
+    const snippet = lastMessage ? lastMessage.content.substring(0, 50) + "..." : `Started a new chat about ${topic}...`;
+
+    const sessionDocRef = await addDoc(sessionsCollection, {
         userId,
         topic,
         createdAt: serverTimestamp(),
         lastMessageAt: serverTimestamp(),
-        lastMessageSnippet: `Started a new chat about ${topic}...`
+        lastMessageSnippet: snippet,
     });
 
-    return docRef.id;
+    const messagesRef = collection(db, `chat_sessions/${sessionDocRef.id}/messages`);
+    const batch = [];
+    for (const message of history) {
+        const messageDoc = addDoc(messagesRef, { ...message, createdAt: serverTimestamp() });
+        batch.push(messageDoc);
+    }
+    await Promise.all(batch);
+
+    return sessionDocRef.id;
 }
+
 
 export async function getChatSessionsForUser(userId: string): Promise<ChatSession[]> {
     if (!userId) return [];
@@ -115,3 +128,5 @@ export async function getMessagesForSession(sessionId: string): Promise<ChatMess
         return [];
     }
 }
+
+    

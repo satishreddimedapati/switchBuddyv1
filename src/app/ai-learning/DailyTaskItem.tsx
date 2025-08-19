@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -93,6 +94,11 @@ export function DailyTaskItem({ task, preferredChannel, roadmapId }: DailyTaskIt
       window.open(resourceLink, '_blank', 'noopener,noreferrer');
     }
   };
+  
+  const handleChatSaved = () => {
+      // In a real app you might want to refresh some data here
+      // For now, we don't need to do anything specific.
+  }
 
   return (
     <>
@@ -158,6 +164,7 @@ export function DailyTaskItem({ task, preferredChannel, roadmapId }: DailyTaskIt
         onOpenChange={setIsChatOpen}
         topic={task.topic}
         session={activeChatSession}
+        onChatSaved={handleChatSaved}
       />
 
       <InteractiveTutorial
@@ -169,3 +176,5 @@ export function DailyTaskItem({ task, preferredChannel, roadmapId }: DailyTaskIt
     </>
   );
 }
+
+    
