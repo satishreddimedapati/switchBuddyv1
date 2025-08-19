@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
-import type { LearningRoadmap } from '@/lib/types';
+import type { LearningRoadmap, ChatSession } from '@/lib/types';
 import { getLearningRoadmapsForUser, deleteLearningRoadmap } from '@/services/learning-roadmaps';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,10 +21,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { ChatHistory } from './ChatHistory';
+import { getChatSessionsForUser } from '@/services/chat-history';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BrainCircuit, MessageSquare } from 'lucide-react';
 
 function LoadingState() {
     return (
@@ -43,6 +46,7 @@ export default function AiLearningPage() {
     const { user } = useAuth();
     const { toast } = useToast();
     const [roadmaps, setRoadmaps] = useState<LearningRoadmap[]>([]);
+    const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
     const [loading, setLoading] = useState(true);
     const [isBuilding, setIsBuilding] = useState(false);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -53,8 +57,12 @@ export default function AiLearningPage() {
             return;
         };
         setLoading(true);
-        const userRoadmaps = await getLearningRoadmapsForUser(user.uid);
+        const [userRoadmaps, userChatSessions] = await Promise.all([
+            getLearningRoadmapsForUser(user.uid),
+            getChatSessionsForUser(user.uid)
+        ]);
         setRoadmaps(userRoadmaps);
+        setChatSessions(userChatSessions);
         setLoading(false);
     }
 
@@ -110,62 +118,73 @@ export default function AiLearningPage() {
                 </Button>
             </div>
             
-            {roadmaps.length > 0 ? (
-                <Accordion type="single" collapsible className="w-full space-y-4">
-                    {roadmaps.map(roadmap => (
-                         <Card key={roadmap.id}>
-                            <AccordionItem value={roadmap.id!} className="border-b-0">
-                                <div className="p-6 flex justify-between items-center">
-                                    <AccordionTrigger className="p-0 hover:no-underline flex-1">
-                                        <CardHeader className="p-0 text-left">
-                                            <CardTitle>{roadmap.topic}</CardTitle>
-                                            <CardDescription>{roadmap.duration} day plan focusing on: {roadmap.goals.join(', ')}</CardDescription>
-                                        </CardHeader>
-                                    </AccordionTrigger>
-                                    <div className="flex items-center gap-2 ml-4">
-                                        <Button variant="ghost" size="icon" asChild>
-                                            <Link href={`/ai-learning/edit/${roadmap.id}`}>
-                                                <Edit className="h-4 w-4" />
-                                                <span className="sr-only">Edit</span>
-                                            </Link>
-                                        </Button>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                                                     {isDeleting === roadmap.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4" />}
-                                                     <span className="sr-only">Delete</span>
+            <Tabs defaultValue="roadmaps" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="roadmaps"><BrainCircuit className="mr-2"/> Roadmaps ({roadmaps.length})</TabsTrigger>
+                    <TabsTrigger value="chats"><MessageSquare className="mr-2" /> Chat Lessons ({chatSessions.length})</TabsTrigger>
+                </TabsList>
+                <TabsContent value="roadmaps" className="mt-4">
+                    {roadmaps.length > 0 ? (
+                        <Accordion type="single" collapsible className="w-full space-y-4">
+                            {roadmaps.map(roadmap => (
+                                <Card key={roadmap.id}>
+                                    <AccordionItem value={roadmap.id!} className="border-b-0">
+                                        <div className="p-6 flex justify-between items-center">
+                                            <AccordionTrigger className="p-0 hover:no-underline flex-1">
+                                                <CardHeader className="p-0 text-left">
+                                                    <CardTitle>{roadmap.topic}</CardTitle>
+                                                    <CardDescription>{roadmap.duration} day plan focusing on: {roadmap.goals.join(', ')}</CardDescription>
+                                                </CardHeader>
+                                            </AccordionTrigger>
+                                            <div className="flex items-center gap-2 ml-4">
+                                                <Button variant="ghost" size="icon" asChild>
+                                                    <Link href={`/ai-learning/edit/${roadmap.id}`}>
+                                                        <Edit className="h-4 w-4" />
+                                                        <span className="sr-only">Edit</span>
+                                                    </Link>
                                                 </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        This action cannot be undone. This will permanently delete your learning roadmap.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDelete(roadmap.id!)} className="bg-destructive hover:bg-destructive/90">
-                                                        Delete
-                                                    </AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    </div>
-                                </div>
-                                <AccordionContent className="px-6 pb-6">
-                                    <RoadmapDisplay roadmap={roadmap} />
-                                </AccordionContent>
-                             </AccordionItem>
-                         </Card>
-                    ))}
-                </Accordion>
-            ) : (
-                <Card className="text-center p-8 flex flex-col items-center gap-4 border-dashed">
-                    <CardTitle>No Learning Roadmaps Yet</CardTitle>
-                    <CardDescription>Click the button above to build your first personalized learning plan with AI.</CardDescription>
-                </Card>
-            )}
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                                                            {isDeleting === roadmap.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4" />}
+                                                            <span className="sr-only">Delete</span>
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                This action cannot be undone. This will permanently delete your learning roadmap.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDelete(roadmap.id!)} className="bg-destructive hover:bg-destructive/90">
+                                                                Delete
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </div>
+                                        </div>
+                                        <AccordionContent className="px-6 pb-6">
+                                            <RoadmapDisplay roadmap={roadmap} />
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                </Card>
+                            ))}
+                        </Accordion>
+                    ) : (
+                        <Card className="text-center p-8 flex flex-col items-center gap-4 border-dashed">
+                            <CardTitle>No Learning Roadmaps Yet</CardTitle>
+                            <CardDescription>Click the button above to build your first personalized learning plan with AI.</CardDescription>
+                        </Card>
+                    )}
+                </TabsContent>
+                 <TabsContent value="chats" className="mt-4">
+                    <ChatHistory sessions={chatSessions} />
+                 </TabsContent>
+            </Tabs>
 
         </div>
     );

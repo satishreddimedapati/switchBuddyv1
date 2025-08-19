@@ -13,6 +13,10 @@ import { InteractiveTutorial } from './InteractiveTutorial';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Badge } from '@/components/ui/badge';
+import { getChatSessionForTopic, createChatSession } from '@/services/chat-history';
+import { useAuth } from '@/lib/auth';
+import type { ChatSession } from '@/lib/types';
+
 
 interface DailyTaskItemProps {
   task: DailyTaskItemType;
@@ -53,11 +57,13 @@ function ResourceTypeSelector({ onSelect, currentType, onClose }: { onSelect: (t
 }
 
 export function DailyTaskItem({ task, preferredChannel, roadmapId }: DailyTaskItemProps) {
+  const { user } = useAuth();
   const [isCompleted, setIsCompleted] = useState(task.completed || false);
   const [currentResourceType, setCurrentResourceType] = useState(task.resource_type);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isInteractiveOpen, setIsInteractiveOpen] = useState(false);
   const [isResourceSelectorOpen, setIsResourceSelectorOpen] = useState(false);
+  const [activeChatSession, setActiveChatSession] = useState<ChatSession | undefined>(undefined);
 
   const handleToggle = () => setIsCompleted(!isCompleted);
 
@@ -75,8 +81,11 @@ export function DailyTaskItem({ task, preferredChannel, roadmapId }: DailyTaskIt
   const resourceLink = getResourceLink();
   const selectedResource = resourceTypes.find(rt => rt.value === currentResourceType) || resourceTypes[1];
 
-  const handleResourceButtonClick = () => {
+  const handleResourceButtonClick = async () => {
     if (currentResourceType === 'Chat Lessons') {
+      if (!user) return;
+      // When opening chat, we pass the topic, and the ChatLesson component handles loading/creating the session.
+      setActiveChatSession(undefined); // Clear previous session
       setIsChatOpen(true);
     } else if (currentResourceType === 'Interactive Tutorial') {
       setIsInteractiveOpen(true);
@@ -148,6 +157,7 @@ export function DailyTaskItem({ task, preferredChannel, roadmapId }: DailyTaskIt
         isOpen={isChatOpen}
         onOpenChange={setIsChatOpen}
         topic={task.topic}
+        session={activeChatSession}
       />
 
       <InteractiveTutorial

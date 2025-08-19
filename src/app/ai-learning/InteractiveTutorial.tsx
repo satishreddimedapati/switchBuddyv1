@@ -110,12 +110,23 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
           }
           await addInteractiveLesson(roadmapId, topic, result);
           
-          setLessons(prev => [...prev, result]);
-          setCurrentLesson(result);
-          setCurrentIndex(0);
-          setIsStarted(true); // Explicitly start the tutorial view
+          // Refetch after adding
+          await fetchLessons();
 
           toast({ title: "New lesson generated!", description: "A fresh perspective on the topic is ready." });
+          // The fetchLessons will set the new current lesson.
+          // Let's make sure we find and set it as active immediately.
+          const newLessonInState = lessons.find(l => l.title === result.title);
+          if(newLessonInState) {
+              setCurrentLesson(newLessonInState);
+          } else {
+              // As a fallback, use the result directly
+              setCurrentLesson(result);
+          }
+
+          setCurrentIndex(0);
+          setIsStarted(true);
+
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
           setError(errorMessage);
@@ -262,7 +273,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
             </div>
             <div className="flex-grow flex items-center justify-center p-4 relative overflow-hidden">
                 <TutorialCard
-                    key={`${currentLesson.title}-${currentIndex}`}
+                    key={`${currentLesson.id}-${currentIndex}`}
                     card={currentLesson.cards[currentIndex]}
                     onNext={handleNextCard}
                     onPrev={handlePrevCard}

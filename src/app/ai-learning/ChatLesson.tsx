@@ -1,22 +1,19 @@
 
 'use client';
 
-import { useState, useEffect, useTransition, useRef } from 'react';
+import { useState, useEffect, useTransition, useRef, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
-import { generateChatLesson, GenerateChatLessonOutput } from '@/ai/flows/generate-chat-lesson';
+import { generateChatLesson } from '@/ai/flows/generate-chat-lesson';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, User, Loader2, Send, Wand2, BookOpen, Lightbulb, Code, TestTube, Briefcase } from 'lucide-react';
+import { Bot, User, Loader2, Send, Wand2, X, ArrowLeft } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
-import type { ChatMessage } from '@/lib/types';
+import type { ChatMessage, ChatSession } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -26,12 +23,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
+import { getMessagesForSession, addMessageToSession, createChatSession } from '@/services/chat-history';
 
 interface ChatLessonProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  topic: string;
+  topic?: string;
+  session?: ChatSession;
 }
 
 const explanationFilters = [
@@ -59,9 +57,11 @@ const toolFilters = [
 
 function LoadingState() {
   return (
-    <div className="flex items-end gap-2">
-      <Skeleton className="h-10 w-10 rounded-full" />
-      <div className="space-y-2">
+    <div className="flex items-start gap-3 px-4">
+      <Avatar className="h-8 w-8">
+        <AvatarFallback><Bot size={20}/></AvatarFallback>
+      </Avatar>
+      <div className="space-y-2 pt-1">
         <Skeleton className="h-4 w-48" />
         <Skeleton className="h-4 w-64" />
       </div>
@@ -75,20 +75,20 @@ function Message({ message }: { message: ChatMessage }) {
     const userFallback = user?.email?.charAt(0).toUpperCase() || 'U';
 
     return (
-        <div className={cn("flex items-end gap-2", isUser ? 'justify-end' : 'justify-start')}>
+        <div className={cn("flex items-start gap-3 w-full", isUser ? 'justify-end' : 'justify-start')}>
             {!isUser && (
-                 <Avatar>
-                    <AvatarFallback><Bot /></AvatarFallback>
+                 <Avatar className="h-8 w-8">
+                    <AvatarFallback><Bot size={20}/></AvatarFallback>
                 </Avatar>
             )}
             <div className={cn(
-                "rounded-lg p-3 max-w-sm sm:max-w-md whitespace-pre-wrap font-body",
-                isUser ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                "rounded-2xl p-3 max-w-sm sm:max-w-md whitespace-pre-wrap font-body",
+                isUser ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-muted rounded-bl-none'
             )}>
                 <p>{message.content}</p>
             </div>
              {isUser && (
-                <Avatar>
+                <Avatar className="h-8 w-8">
                     <AvatarFallback>{userFallback}</AvatarFallback>
                 </Avatar>
              )}
@@ -100,7 +100,7 @@ function QuickActionsPopover({ onQuickFilter, disabled }: { onQuickFilter: (inte
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" disabled={disabled}>
+                <Button variant="ghost" size="icon" disabled={disabled} className="rounded-full">
                     <Wand2 />
                     <span className="sr-only">Quick Actions</span>
                 </Button>
@@ -164,20 +164,35 @@ function QuickActionsPopover({ onQuickFilter, disabled }: { onQuickFilter: (inte
     )
 }
 
-export function ChatLesson({ isOpen, onOpenChange, topic }: ChatLessonProps) {
+export function ChatLesson({ isOpen, onOpenChange, topic, session }: ChatLessonProps) {
+  const { user } = useAuth();
   const { toast } = useToast();
+  const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isGenerating, startGenerationTransition] = useTransition();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  
-  const initialPrompt = `Can you explain "${topic}" like I'm talking to a friend?`;
 
-  const generateResponse = (currentHistory: ChatMessage[], intent?: string) => {
+  const activeTopic = currentSession?.topic || topic || "New Chat";
+  
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      // Reset state when closing
+      setCurrentSession(null);
+      setHistory([]);
+      setInput('');
+    }
+    onOpenChange(open);
+  };
+  
+  const generateResponse = useCallback(async (sessionId: string, currentHistory: ChatMessage[], intent?: string) => {
       startGenerationTransition(async () => {
           try {
-            const result = await generateChatLesson({ topic, history: currentHistory, intent });
-            setHistory(prev => [...prev, { role: 'model', content: result.response }]);
+            const result = await generateChatLesson({ topic: activeTopic, history: currentHistory, intent });
+            const modelMessage: ChatMessage = { role: 'model', content: result.response };
+            await addMessageToSession(sessionId, modelMessage);
+            setHistory(prev => [...prev, modelMessage]);
           } catch (error) {
             console.error('Failed to generate chat lesson', error);
             toast({
@@ -185,22 +200,39 @@ export function ChatLesson({ isOpen, onOpenChange, topic }: ChatLessonProps) {
               description: 'Could not get a response. Please try again.',
               variant: 'destructive',
             });
-            setHistory(prev => prev.filter(m => m.role !== 'thinking'));
+            // Remove the thinking indicator on error
+            setHistory(prev => prev.slice(0, -1));
           }
       });
-  }
+  }, [activeTopic, toast]);
+
+  const loadOrCreateSession = useCallback(async () => {
+      if (!user || !isOpen) return;
+
+      setIsLoadingHistory(true);
+      if (session?.id) { // Resuming an existing session
+        setCurrentSession(session);
+        const messages = await getMessagesForSession(session.id);
+        setHistory(messages);
+      } else if (topic) { // Starting a new session
+          const newSessionId = await createChatSession(user.uid, topic);
+          setCurrentSession({ id: newSessionId, userId: user.uid, topic, createdAt: new Date().toISOString(), lastMessageAt: new Date().toISOString(), lastMessageSnippet: '...' });
+          
+          const initialUserMessage: ChatMessage = { role: 'user', content: `Can you explain "${topic}" like I'm talking to a friend?` };
+          await addMessageToSession(newSessionId, initialUserMessage);
+          
+          setHistory([initialUserMessage]);
+          generateResponse(newSessionId, [initialUserMessage]);
+      }
+      setIsLoadingHistory(false);
+  }, [user, isOpen, session, topic, generateResponse]);
+
 
   useEffect(() => {
-    if (isOpen && topic) {
-        const initialUserMessage: ChatMessage = { role: 'user', content: initialPrompt };
-        const initialThinkingMessage: ChatMessage = { role: 'thinking', content: '...' };
-        
-        setHistory([initialUserMessage, initialThinkingMessage]);
-        generateResponse([initialUserMessage]);
-    } else {
-        setHistory([]);
+    if (isOpen) {
+        loadOrCreateSession();
     }
-  }, [isOpen, topic]);
+  }, [isOpen, loadOrCreateSession]);
   
    useEffect(() => {
     if (scrollAreaRef.current) {
@@ -211,62 +243,80 @@ export function ChatLesson({ isOpen, onOpenChange, topic }: ChatLessonProps) {
             }, 100);
         }
     }
-  }, [history]);
+  }, [history, isGenerating]);
 
   const handleSend = () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !currentSession?.id) return;
+    
     const newUserMessage: ChatMessage = { role: 'user', content: input };
-    const thinkingMessage: ChatMessage = { role: 'thinking', content: '...' };
+    addMessageToSession(currentSession.id, newUserMessage);
+
     const newHistory = [...history, newUserMessage];
-    setHistory([...newHistory, thinkingMessage]);
+    setHistory(newHistory);
     setInput('');
-    generateResponse(newHistory);
+    generateResponse(currentSession.id, newHistory);
   }
 
   const handleQuickFilter = (intent: string) => {
-    const lastMessage = history[history.length - 1];
-    if(isGenerating || !lastMessage) return;
+    if(isGenerating || !currentSession?.id) return;
 
     const intentMessage: ChatMessage = { role: 'user', content: `(Instruction: ${intent})` };
-    const thinkingMessage: ChatMessage = { role: 'thinking', content: '...' };
+    addMessageToSession(currentSession.id, intentMessage);
     
     const historyWithIntent = [...history, intentMessage];
-    setHistory(prev => [...prev, thinkingMessage]);
+    setHistory(historyWithIntent);
     
-    generateResponse(historyWithIntent, intent);
+    generateResponse(currentSession.id, historyWithIntent, intent);
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Chat Lesson: {topic}</DialogTitle>
-           <DialogDescription>
-            Your AI tutor explains the topic in a conversational way. Ask it anything!
-          </DialogDescription>
-        </DialogHeader>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-3xl h-full md:h-[90vh] flex flex-col p-0 gap-0">
+        <div className="p-4 border-b flex justify-between items-center bg-card rounded-t-lg">
+            <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon" onClick={() => handleOpenChange(false)} className="md:hidden">
+                    <ArrowLeft />
+                </Button>
+                <div className="flex items-center gap-2">
+                    <Avatar className="hidden sm:flex">
+                        <AvatarFallback><Bot/></AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <h2 className="font-semibold">{activeTopic}</h2>
+                        <p className="text-xs text-muted-foreground">Your AI Tutor</p>
+                    </div>
+                </div>
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => handleOpenChange(false)} className="hidden md:flex">
+                <X />
+            </Button>
+        </div>
         
-        <ScrollArea className="flex-grow h-full" ref={scrollAreaRef}>
+        <ScrollArea className="flex-grow bg-muted/30" ref={scrollAreaRef}>
              <div className="p-4 space-y-6">
-                {history.map((msg, index) => (
-                    msg.role === 'thinking' 
-                        ? <LoadingState key={index} />
-                        : <Message key={index} message={msg} />
-                ))}
+                {isLoadingHistory ? (
+                  <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin text-primary" /></div>
+                ) : (
+                  <>
+                    {history.map((msg, index) => <Message key={index} message={msg} />)}
+                    {isGenerating && <LoadingState />}
+                  </>
+                )}
             </div>
         </ScrollArea>
         
-        <div className="p-4 border-t">
-            <div className="flex items-center gap-2">
+        <div className="p-4 border-t bg-card rounded-b-lg">
+            <div className="flex items-center gap-2 bg-muted rounded-full p-1">
                 <Input 
                     placeholder="Ask a follow-up question..."
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                     disabled={isGenerating}
+                    className="bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
                 <QuickActionsPopover onQuickFilter={handleQuickFilter} disabled={isGenerating} />
-                <Button onClick={handleSend} disabled={isGenerating || !input.trim()}>
+                <Button onClick={handleSend} disabled={isGenerating || !input.trim()} className="rounded-full">
                     {isGenerating ? <Loader2 className="animate-spin" /> : <Send />}
                     <span className="sr-only">Send</span>
                 </Button>

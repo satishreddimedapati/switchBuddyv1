@@ -533,6 +533,7 @@ export const LessonCardSchema = z.object({
 export type LessonCard = z.infer<typeof LessonCardSchema>;
 
 export const InteractiveLessonSchema = z.object({
+    id: z.string().optional(),
     title: z.string().describe("An engaging title for the lesson, matching the topic."),
     cards: z.array(LessonCardSchema).min(7).max(8).describe("A deck of exactly 7-8 micro-lesson cards in a logical sequence."),
 });
@@ -615,10 +616,34 @@ export type ChannelSuggestionOutput = z.infer<typeof ChannelSuggestionOutputSche
 
 // Chat Lessons
 export const ChatMessageSchema = z.object({
-  role: z.enum(['user', 'model', 'thinking']),
+  role: z.enum(['user', 'model']),
   content: z.string(),
+  createdAt: z.any().optional(),
 });
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
+
+export const ChatSessionSchema = z.object({
+    id: z.string().optional(),
+    userId: z.string(),
+    topic: z.string(),
+    createdAt: z.any(),
+    lastMessageAt: z.any(),
+    lastMessageSnippet: z.string(),
+});
+export type ChatSession = z.infer<typeof ChatSessionSchema>;
+
+export function toSerializableChatSession(docData: any): ChatSession {
+    const { createdAt, lastMessageAt, ...rest } = docData;
+    const serializable: any = { ...rest };
+     if (createdAt?.toDate) {
+      serializable.createdAt = (createdAt as Timestamp).toDate().toISOString();
+    }
+     if (lastMessageAt?.toDate) {
+      serializable.lastMessageAt = (lastMessageAt as Timestamp).toDate().toISOString();
+    }
+    return serializable as ChatSession;
+}
+
 
 export const GenerateChatLessonInputSchema = z.object({
   topic: z.string().describe('The topic for the chat lesson.'),

@@ -109,7 +109,10 @@ export async function getInteractiveLessonsForTopic(roadmapId: string, topic: st
         if (!roadmap || !roadmap.lessons) {
             return [];
         }
-        return roadmap.lessons[topic] || [];
+        return (roadmap.lessons[topic] || []).map(lesson => ({
+            ...lesson,
+            id: lesson.id || crypto.randomUUID(), // Assign a temporary ID if it's missing
+        }));
     } catch (error) {
         console.error(`Error fetching interactive lessons for topic "${topic}":`, error);
         return [];
@@ -117,7 +120,7 @@ export async function getInteractiveLessonsForTopic(roadmapId: string, topic: st
 }
 
 
-export async function addInteractiveLesson(roadmapId: string, topic: string, lesson: InteractiveLesson): Promise<void> {
+export async function addInteractiveLesson(roadmapId: string, topic: string, lesson: Omit<InteractiveLesson, 'id'>): Promise<void> {
     try {
         const roadmapRef = doc(db, "learning_roadmaps", roadmapId);
         const roadmapDoc = await getDoc(roadmapRef);
@@ -125,18 +128,20 @@ export async function addInteractiveLesson(roadmapId: string, topic: string, les
         if (!roadmapDoc.exists()) {
             throw new Error("Roadmap not found.");
         }
+        
+        const newLesson: InteractiveLesson = {
+            ...lesson,
+            id: crypto.randomUUID(),
+        };
 
         const roadmapData = roadmapDoc.data() as LearningRoadmap;
         const existingLessons = roadmapData.lessons || {};
         const topicLessons = existingLessons[topic] || [];
 
-        const newTopicLessons = [...topicLessons, lesson];
+        const newTopicLessons = [...topicLessons, newLesson];
 
         await updateDoc(roadmapRef, {
-            lessons: {
-                ...existingLessons,
-                [topic]: newTopicLessons
-            }
+            [`lessons.${topic}`]: newTopicLessons
         });
 
     } catch (error) {
