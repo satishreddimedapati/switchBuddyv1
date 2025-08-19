@@ -95,8 +95,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
       if (lessons.length > 0 && currentLesson) {
         setCurrentIndex(0);
         return;
-      };
-
+      }
       handleGenerateNew();
   };
 
@@ -136,7 +135,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
   const handleNextCard = () => {
     if (!currentLesson) return;
     if (currentIndex < currentLesson.cards.length - 1) {
-      setCurrentIndex(prev => prev - 1);
+      setCurrentIndex(prev => prev + 1);
     } else {
         onOpenChange(false);
         toast({ title: "Lesson Complete!", description: "Great job finishing the interactive tutorial."});
