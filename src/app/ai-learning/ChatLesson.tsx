@@ -187,7 +187,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, startGenerationTransition] = useTransition();
   const [isSaving, startSavingTransition] = useTransition();
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -262,15 +262,16 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
       });
   }, [activeTopic, toast, currentSession]);
 
-  const startNewChat = useCallback((newTopic: string) => {
+  const startNewChat = useCallback((newTopic?: string) => {
+    const chatTopic = newTopic || activeTopic;
     resetState();
-    setIsLoadingHistory(true);
-    const initialUserMessage: ChatMessage = { role: 'user', content: `Can you explain "${newTopic}" like I'm talking to a friend?` };
+    setIsLoading(true);
+    const initialUserMessage: ChatMessage = { role: 'user', content: `Can you explain "${chatTopic}" like I'm talking to a friend?` };
     setHistory([initialUserMessage]);
     generateResponse([initialUserMessage]);
-    setIsLoadingHistory(false);
+    setIsLoading(false);
     setView('chat');
-  }, [resetState, generateResponse]);
+  }, [resetState, generateResponse, activeTopic]);
 
   const loadSession = useCallback(async (session: ChatSession | null) => {
     if (!session) {
@@ -285,16 +286,22 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
   
   const loadInitialSession = useCallback(async () => {
       if (!user || !topic) return;
-      setIsLoadingHistory(true);
+      setIsLoading(true);
       resetState();
-      const existingSession = await getChatSessionForTopic(user.uid, topic);
-      if (existingSession) {
-          loadSession(existingSession);
-      } else {
-          startNewChat(topic);
+      try {
+        const existingSession = await getChatSessionForTopic(user.uid, topic);
+        if (existingSession) {
+            await loadSession(existingSession);
+        } else {
+            startNewChat(topic);
+        }
+      } catch (error) {
+          console.error("Error loading initial session", error);
+          toast({title: "Error", description: "Could not load chat session.", variant: "destructive"});
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoadingHistory(false);
-  }, [user, topic, resetState, loadSession, startNewChat]);
+  }, [user, topic, resetState, loadSession, startNewChat, toast]);
 
   useEffect(() => {
     if (isOpen && view === 'chat') {
@@ -329,15 +336,20 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
     setHistory(historyWithIntent);
     generateResponse(historyWithIntent, intent);
   }
+  
+  // This effect will fetch the chat history when the 'history' view is activated
+  useEffect(() => {
+    async function fetchHistory() {
+        if (view === 'history' && user) {
+            setIsLoading(true);
+            const sessions = await getChatSessionsForUser(user.uid);
+            setAllSessions(sessions);
+            setIsLoading(false);
+        }
+    }
+    fetchHistory();
+  }, [view, user]);
 
-  const handleShowHistory = async () => {
-    if (!user) return;
-    setIsLoadingHistory(true);
-    const sessions = await getChatSessionsForUser(user.uid);
-    setAllSessions(sessions);
-    setIsLoadingHistory(false);
-    setView('history');
-  }
 
   return (
     <>
@@ -357,10 +369,10 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
                 </div>
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => startNewChat(activeTopic)} disabled={view !== 'chat'}>
+                <Button variant="outline" size="sm" onClick={() => startNewChat()} disabled={view !== 'chat'}>
                    <PlusCircle className="mr-2 h-4 w-4"/> New Chat
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleShowHistory} disabled={view === 'history'}>
+                <Button variant="outline" size="sm" onClick={() => setView('history')} disabled={view === 'history'}>
                    <History className="mr-2 h-4 w-4"/> History
                 </Button>
                  <Button variant="ghost" size="icon" onClick={handleClose} className="hidden md:flex">
@@ -382,7 +394,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
                     >
                         <ScrollArea className="h-full" ref={scrollAreaRef}>
                             <div className="p-4 space-y-6">
-                                {isLoadingHistory ? (
+                                {isLoading ? (
                                 <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin text-primary" /></div>
                                 ) : (
                                 <>
@@ -404,7 +416,7 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
                         transition={{ duration: 0.3, ease: 'easeInOut' }}
                         className="absolute inset-0 bg-background"
                     >
-                        {isLoadingHistory ? (
+                        {isLoading ? (
                             <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin text-primary" /></div>
                         ) : (
                             <ChatHistory sessions={allSessions} onSessionSelect={(session) => loadSession(session)} onBack={() => setView('chat')} />
@@ -455,3 +467,5 @@ export function ChatLesson({ isOpen, onOpenChange, topic, onChatSaved }: ChatLes
     </>
   );
 }
+
+    
