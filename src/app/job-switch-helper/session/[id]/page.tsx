@@ -214,19 +214,23 @@ export default function InterviewSessionPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                            <Tabs defaultValue="text" className="w-full">
-                                <TabsList className="grid w-full grid-cols-3">
+                                <TabsList className="grid w-full grid-cols-2">
                                     <TabsTrigger value="text"><CaseSensitive className="mr-2"/>Text</TabsTrigger>
                                     <TabsTrigger value="whiteboard"><PencilRuler className="mr-2"/>Whiteboard</TabsTrigger>
-                                    <TabsTrigger value="voice" disabled><Mic className="mr-2"/>Voice (Coming Soon)</TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="text" className="mt-4">
+                                    <div className="relative">
                                      <Textarea 
                                         placeholder="Type your answer here..." 
-                                        className="h-32 md:h-48" 
+                                        className="h-32 md:h-48 pr-12" 
                                         value={answers[currentQuestion.qNo] || ''} 
                                         onChange={(e) => handleAnswerChange(e.target.value)}
                                         onBlur={handleGenerateFollowUp}
                                      />
+                                     <Button variant="ghost" size="icon" className="absolute bottom-2 right-2 text-muted-foreground" disabled>
+                                        <Mic />
+                                     </Button>
+                                     </div>
                                 </TabsContent>
                                  <TabsContent value="whiteboard" className="mt-4">
                                      <Textarea 
@@ -245,11 +249,11 @@ export default function InterviewSessionPage() {
                             <CardContent className="p-4">
                                 {isGeneratingFollowUp ? (
                                     <div className="flex items-center text-sm text-muted-foreground">
-                                        <Loader2 className="mr-2 animate-spin h-4 w-4" /> Thinking of a follow-up...
+                                        <Loader2 className="mr-2 animate-spin h-4 w-4" /> Thinking...
                                     </div>
                                 ) : (
                                     <p className="text-sm text-foreground italic">
-                                        <span className="font-semibold mr-2">Follow-up:</span>{followUp}
+                                        <span className="font-semibold mr-2">Hint:</span>{followUp}
                                     </p>
                                 )}
                             </CardContent>
@@ -263,10 +267,11 @@ export default function InterviewSessionPage() {
                  <Button variant="outline" onClick={() => setCurrentQuestionIndex(p => p - 1)} disabled={currentQuestionIndex === 0}><ArrowLeft className="mr-0 md:mr-2" /><span className="hidden md:inline">Previous</span></Button>
                  <div className="flex items-center gap-2">
                     <Switch id="counter-questions" checked={isCounterQuestionEnabled} onCheckedChange={setIsCounterQuestionEnabled} />
-                    <Label htmlFor="counter-questions" className="text-xs sm:text-sm">AI Counter-Questions</Label>
+                    <Label htmlFor="counter-questions" className="text-xs sm:text-sm">AI Hints</Label>
                  </div>
                  <Button onClick={() => setCurrentQuestionIndex(p => p + 1)} disabled={currentQuestionIndex === session.questions.length - 1}><span className="hidden md:inline">Next</span><ArrowRight className="ml-0 md:ml-2" /></Button>
             </div>
         </div>
     );
 }
+

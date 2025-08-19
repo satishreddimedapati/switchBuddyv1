@@ -23,13 +23,13 @@ const prompt = ai.definePrompt({
   name: 'generateFollowUpQuestionPrompt',
   input: {schema: GenerateFollowUpQuestionRequestSchema},
   output: {schema: GenerateFollowUpQuestionResponseSchema},
-  prompt: `You are an expert interviewer who asks insightful follow-up questions.
+  prompt: `You are an expert interviewer who provides subtle hints to encourage deeper thinking.
 
-Based on the user's answer to the original question, ask one short, relevant counter-question.
+Based on the user's answer to the original question, provide one short, encouraging hint or a "what if" scenario. Your goal is to prompt the user to think more deeply, not to ask another direct question.
 
-- If the answer seems correct, ask for optimization, an edge case, or an alternative approach.
-- If the answer seems vague, ask for a specific example or clarification.
-- If the answer seems partially wrong, gently probe the incorrect part by posing a "what if" scenario.
+- If the answer seems correct, suggest an edge case or an optimization to consider.
+- If the answer seems vague, gently prompt for more detail without asking "why" or "how".
+- If the answer seems partially wrong, pose a "what if" scenario that challenges the incorrect part.
 
 Original Question:
 "{{{question}}}"
@@ -37,7 +37,7 @@ Original Question:
 User's Answer:
 "{{{answer}}}"
 
-Your follow-up question should be concise and directly related to the user's response.
+Your response should be a hint, not a question. For example: "That's a good start. Now, consider how that approach would handle very large datasets." or "Interesting. What if the input array contained duplicate values?"
 `,
 });
 
@@ -52,3 +52,4 @@ const generateFollowUpQuestionFlow = ai.defineFlow(
     return output!;
   }
 );
+
