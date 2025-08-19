@@ -96,6 +96,11 @@ export default function InterviewSessionPage() {
         loadSessionData();
     }, [user, sessionId, router, toast]);
 
+    // When the question changes, reset the follow-up hint.
+    useEffect(() => {
+        setFollowUp(null);
+    }, [currentQuestionIndex]);
+
 
     const handleAnswerChange = (text: string) => {
         if (!currentQuestion) return;
@@ -227,7 +232,7 @@ export default function InterviewSessionPage() {
                                         onChange={(e) => handleAnswerChange(e.target.value)}
                                         onBlur={handleGenerateFollowUp}
                                      />
-                                     <Button variant="ghost" size="icon" className="absolute bottom-2 right-2 text-muted-foreground" disabled>
+                                     <Button variant="ghost" size="icon" className="absolute bottom-2 right-2 text-muted-foreground">
                                         <Mic />
                                      </Button>
                                      </div>
@@ -274,4 +279,3 @@ export default function InterviewSessionPage() {
         </div>
     );
 }
-
