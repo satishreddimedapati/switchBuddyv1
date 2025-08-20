@@ -19,7 +19,7 @@ export async function generateInteractiveLesson(input: GenerateInteractiveLesson
 
 const prompt = ai.definePrompt({
   name: 'generateInteractiveLessonPrompt',
-  model: 'googleai/gemini-2.5-flash-preview',
+  model: 'googleai/gemini-2.0-flash',
   input: { schema: GenerateInteractiveLessonInputSchema },
   // We remove the output schema here to get the raw text, which we will parse manually.
   prompt: `You are an expert curriculum designer creating engaging, interactive micro-learning experiences.
