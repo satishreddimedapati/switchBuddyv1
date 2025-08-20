@@ -37,7 +37,7 @@ export const ai = genkit({
       apiKey: getApiKey(), 
     }),
   ],
-  model: 'googleai/gemini-2.0-flash',
+  model: 'googleai/gemini-2.5-pro',
 });
 
 // -----------------------------
