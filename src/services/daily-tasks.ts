@@ -14,17 +14,27 @@ export async function getTasksForDate(date: string, userId: string): Promise<Dai
   if (!userId) return [];
 
   try {
-    const q = query(dailyTasksCollection, where("date", "==", date), where("userId", "==", userId));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as DailyTask));
+    // This query is simplified by fetching all tasks and filtering in code.
+    const allTasks = await getTasksForUser(userId);
+    return allTasks.filter(task => task.date === date);
   } catch (error) {
     console.error("Error fetching tasks for date: ", error);
     return [];
   }
 }
+
+async function getTasksForUser(userId: string): Promise<DailyTask[]> {
+    if (!userId) return [];
+    try {
+        const q = query(dailyTasksCollection, where("userId", "==", userId));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyTask));
+    } catch (error) {
+        console.error("Error fetching all tasks for user:", error);
+        throw new Error("Failed to fetch user tasks.");
+    }
+}
+
 
 export async function getTasksForWeek(startDate: string, endDate: string, userId: string): Promise<DailyTask[]> {
   if (!userId) return [];
