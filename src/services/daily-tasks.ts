@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase";
 import type { DailyTask, UserReward } from "@/lib/types";
 import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, where } from "firebase/firestore";
 import { format, subDays, isBefore, isWithinInterval } from "date-fns";
-import { calculateDayActivity } from "@/app/daily-tracker/utils";
+import { calculateDayActivity } from "@/app/profile/utils";
 
 const dailyTasksCollection = collection(db, "daily_tasks");
 
