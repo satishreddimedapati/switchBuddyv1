@@ -5,7 +5,7 @@
  * @fileOverview A flow to generate an interactive, card-based lesson dynamically.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, runFlowWithRetry } from '@/ai/genkit';
 import { z } from 'zod';
 import { GenerateInteractiveLessonInputSchema, InteractiveLessonSchema } from '@/lib/types';
 import { googleAI } from '@genkit-ai/googleai';
@@ -13,16 +13,13 @@ import { googleAI } from '@genkit-ai/googleai';
 export type GenerateInteractiveLessonInput = z.infer<typeof GenerateInteractiveLessonInputSchema>;
 export type InteractiveLesson = z.infer<typeof InteractiveLessonSchema>;
 
-export async function generateInteractiveLesson(input: GenerateInteractiveLessonInput): Promise<InteractiveLesson> {
-  return generateInteractiveLessonFlow(input);
-}
-
-const prompt = ai.definePrompt({
-  name: 'generateInteractiveLessonPrompt',
-  model: 'googleai/gemini-2.0-flash',
-  input: { schema: GenerateInteractiveLessonInputSchema },
-  // We remove the output schema here to get the raw text, which we will parse manually.
-  prompt: `You are an expert curriculum designer creating engaging, interactive micro-learning experiences.
+async function generateInteractiveLessonFlow(input: GenerateInteractiveLessonInput): Promise<InteractiveLesson> {
+  const prompt = ai.definePrompt({
+    name: 'generateInteractiveLessonPrompt',
+    model: 'googleai/gemini-2.0-flash',
+    input: { schema: GenerateInteractiveLessonInputSchema },
+    // We remove the output schema here to get the raw text, which we will parse manually.
+    prompt: `You are an expert curriculum designer creating engaging, interactive micro-learning experiences.
 
 Your task is to generate a complete, 7-8 card interactive learning deck for the given topic.
 
@@ -46,54 +43,50 @@ For EVERY card:
 - "card_type", "title", "content", and "visual" (a single emoji) are required.
 - Do not include any text, markdown, or formatting outside of the single, final JSON object.
 `,
-});
+  });
 
-const generateInteractiveLessonFlow = ai.defineFlow(
-  {
-    name: 'generateInteractiveLessonFlow',
-    inputSchema: GenerateInteractiveLessonInputSchema,
-    outputSchema: InteractiveLessonSchema,
-  },
-  async (input) => {
-    try {
-      // Get the raw text response from the prompt
-      const response = await prompt(input);
-      const rawText = response.text;
-      
-      // Find the start and end of the JSON object
-      const startIndex = rawText.indexOf('{');
-      const endIndex = rawText.lastIndexOf('}');
-      
-      if (startIndex === -1 || endIndex === -1) {
-        throw new Error("Could not find a valid JSON object in the AI response.");
-      }
-      
-      const jsonString = rawText.substring(startIndex, endIndex + 1);
-      
-      // Parse the extracted JSON string
-      const parsedJson = JSON.parse(jsonString);
-
-      // Validate the parsed JSON against our Zod schema
-      const validationResult = InteractiveLessonSchema.safeParse(parsedJson);
-
-      if (validationResult.success) {
-        // If the title is missing but cards are present, add a default title.
-        if (!validationResult.data.title && validationResult.data.cards) {
-            validationResult.data.title = `Interactive Lesson: ${input.topic}`;
-        }
-        return validationResult.data;
-      } else {
-        // Throw the Zod validation error if parsing failed
-        throw new Error(`Parsed JSON failed validation: ${validationResult.error.message}`);
-      }
-
-    } catch (e: any) {
-      console.error("Error in generateInteractiveLessonFlow:", e);
-      // Construct a helpful error message
-      const finalError = new Error(
-        `Failed to generate a valid lesson. The AI returned malformed JSON that could not be repaired. Original error: ${e.message}`
-      );
-      throw finalError;
+  try {
+    // Get the raw text response from the prompt
+    const response = await prompt(input);
+    const rawText = response.text;
+    
+    // Find the start and end of the JSON object
+    const startIndex = rawText.indexOf('{');
+    const endIndex = rawText.lastIndexOf('}');
+    
+    if (startIndex === -1 || endIndex === -1) {
+      throw new Error("Could not find a valid JSON object in the AI response.");
     }
+    
+    const jsonString = rawText.substring(startIndex, endIndex + 1);
+    
+    // Parse the extracted JSON string
+    const parsedJson = JSON.parse(jsonString);
+
+    // Validate the parsed JSON against our Zod schema
+    const validationResult = InteractiveLessonSchema.safeParse(parsedJson);
+
+    if (validationResult.success) {
+      // If the title is missing but cards are present, add a default title.
+      if (!validationResult.data.title && validationResult.data.cards) {
+          validationResult.data.title = `Interactive Lesson: ${input.topic}`;
+      }
+      return validationResult.data;
+    } else {
+      // Throw the Zod validation error if parsing failed
+      throw new Error(`Parsed JSON failed validation: ${validationResult.error.message}`);
+    }
+
+  } catch (e: any) {
+    console.error("Error in generateInteractiveLessonFlow:", e);
+    // Construct a helpful error message
+    const finalError = new Error(
+      `Failed to generate a valid lesson. The AI returned malformed JSON that could not be repaired. Original error: ${e.message}`
+    );
+    throw finalError;
   }
-);
+}
+
+export async function generateInteractiveLesson(input: GenerateInteractiveLessonInput): Promise<InteractiveLesson> {
+    return runFlowWithRetry(generateInteractiveLessonFlow, input);
+}

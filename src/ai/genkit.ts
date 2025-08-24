@@ -18,34 +18,52 @@ if (apiKeys.length === 0) {
   throw new Error("No Gemini API keys found. Please set at least GEMINI_API_KEY_1 in your environment.");
 }
 
-let keyIndex = 0;
-
-// Simple key rotation
-function getApiKey() {
-  const key = apiKeys[keyIndex];
-  keyIndex = (keyIndex + 1) % apiKeys.length;
-  return key;
-}
+// This flag will track if the primary key has failed.
+let primaryKeyFailed = false;
 
 // -----------------------------
-// 1) Static export: ai (uses a rotating key for each request)
+// Genkit AI Instance
 // -----------------------------
 export const ai = genkit({
   plugins: [
     googleAI({
-      // By invoking the function here, we ensure a valid key string is passed.
-      apiKey: getApiKey(), 
+      // Use an async function to dynamically select the API key.
+      apiKey: async () => {
+        // If the primary key has failed, use the secondary key if it exists.
+        if (primaryKeyFailed && apiKeys.length > 1) {
+          console.log("Primary key failed, using secondary API Key.");
+          return apiKeys[1];
+        }
+        // Otherwise, always use the primary key.
+        return apiKeys[0];
+      },
     }),
   ],
   model: 'googleai/gemini-2.0-flash',
 });
 
 // -----------------------------
-// 2) A simple prompt runner that also uses the rotating key
+// A robust flow runner with retry logic
 // -----------------------------
-export async function runPrompt(prompt: string) {
-  const result = await ai.generate({
-    prompt,
-  });
-  return result.output;
+export async function runFlowWithRetry<I, O>(
+  flow: (input: I) => Promise<O>,
+  input: I
+): Promise<O> {
+  try {
+    // First attempt
+    return await flow(input);
+  } catch (e: any) {
+    // Check if the error is a rate limit error (specific to Google AI)
+    const isRateLimitError =
+      e.cause?.status === 429 || (e.message && e.message.includes('429'));
+
+    if (isRateLimitError && !primaryKeyFailed) {
+      console.warn("Primary API key rate limited. Attempting to switch to secondary key.");
+      primaryKeyFailed = true; // Set the flag to use the next key
+      // Second attempt
+      return await flow(input);
+    }
+    // If it's another type of error or the retry already happened, throw it
+    throw e;
+  }
 }
