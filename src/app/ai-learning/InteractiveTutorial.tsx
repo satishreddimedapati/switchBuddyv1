@@ -152,7 +152,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
           setCurrentIndex(0);
           setShowGeneratedDialog(true);
           
-        } catch (err) => {
+        } catch (err: any) {
           const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
           setError(errorMessage);
           setScreen('error');
