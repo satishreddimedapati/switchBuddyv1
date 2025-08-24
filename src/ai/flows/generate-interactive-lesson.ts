@@ -5,7 +5,7 @@
  * @fileOverview A flow to generate an interactive, card-based lesson dynamically.
  */
 
-import { ai, runFlowWithRetry } from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { GenerateInteractiveLessonInputSchema, InteractiveLessonSchema } from '@/lib/types';
 import { googleAI } from '@genkit-ai/googleai';
@@ -88,8 +88,5 @@ For EVERY card:
 }
 
 export async function generateInteractiveLesson(input: GenerateInteractiveLessonInput): Promise<InteractiveLesson> {
-    // Note: The new runFlowWithRetry requires two flow functions if a fallback is desired.
-    // For now, we are just wrapping the primary flow. If key rotation becomes an issue
-    // for this specific flow, a secondary flow instance would be needed.
     return generateInteractiveLessonFlow(input);
 }

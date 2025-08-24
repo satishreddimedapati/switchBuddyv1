@@ -80,7 +80,6 @@ export async function getChatSessionForTopic(userId: string, topic: string): Pro
 
     } catch (error) {
         console.error("Error fetching chat session for topic:", error);
-        // This query requires a composite index if orderBy is used. By removing it, we avoid the error.
         throw error;
     }
 }
