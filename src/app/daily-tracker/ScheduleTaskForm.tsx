@@ -176,7 +176,7 @@ export function ScheduleTaskForm({ isOpen, onOpenChange, task, prefillData }: Sc
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4">
           <div>
             <Label htmlFor="title">Title</Label>
-            <Input id="title" {...register('title')} onBlur={handleGenerateDescription}/>
+            <Input id="title" {...register('title')} />
             {errors.title && <p className="text-destructive text-sm mt-1">{errors.title.message}</p>}
           </div>
 

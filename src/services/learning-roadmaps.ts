@@ -13,18 +13,24 @@ export async function getLearningRoadmapsForUser(userId: string): Promise<Learni
     if (!userId) return [];
 
     try {
-        const q = query(roadmapsCollection, where("userId", "==", userId), orderBy("createdAt", "desc"));
+        // Removed orderBy to avoid needing a composite index
+        const q = query(roadmapsCollection, where("userId", "==", userId));
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
             return [];
         }
         
-        return querySnapshot.docs.map(doc => {
+        const roadmaps = querySnapshot.docs.map(doc => {
             const data = doc.data();
             const serializableData = toSerializableLearningRoadmap(data);
             return { id: doc.id, ...serializableData } as LearningRoadmap;
         });
+
+        // Sort in code after fetching
+        roadmaps.sort((a,b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime());
+        
+        return roadmaps;
 
     } catch (error) {
         console.error("Error fetching learning roadmaps:", error);

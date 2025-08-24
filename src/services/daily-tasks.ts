@@ -4,7 +4,7 @@
 import { db } from "@/lib/firebase";
 import type { DailyTask, UserReward } from "@/lib/types";
 import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, where } from "firebase/firestore";
-import { format, subDays } from "date-fns";
+import { format, subDays, isBefore } from "date-fns";
 import { calculateDayActivity } from "@/app/daily-tracker/utils";
 
 const dailyTasksCollection = collection(db, "daily_tasks");
@@ -30,20 +30,25 @@ export async function getMissedTasks(userId: string): Promise<DailyTask[]> {
 
     try {
         const sevenDaysAgo = format(subDays(new Date(), 7), 'yyyy-MM-dd');
-        const today = format(new Date(), 'yyyy-MM-dd');
+        const today = new Date();
 
-        // Get all tasks from the last 7 days up to yesterday
+        // Fetch all tasks for the user to filter in code
         const q = query(
             dailyTasksCollection,
-            where("userId", "==", userId),
-            where("date", ">=", sevenDaysAgo),
-            where("date", "<", today)
+            where("userId", "==", userId)
         );
+        
         const querySnapshot = await getDocs(q);
         const tasks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyTask));
         
-        // Filter for tasks that are incomplete AND not already rescheduled
-        return tasks.filter(task => !task.completed && !task.rescheduled);
+        // Filter for tasks that are incomplete, from the last 7 days (but before today), AND not already rescheduled
+        return tasks.filter(task => {
+            const taskDate = new Date(task.date);
+            return !task.completed && 
+                   !task.rescheduled && 
+                   isBefore(taskDate, today) && 
+                   task.date >= sevenDaysAgo;
+        });
 
     } catch (error) {
         console.error("Error fetching missed tasks:", error);
@@ -140,4 +145,3 @@ export async function getFocusCoinBalance(userId: string): Promise<number> {
 
     return totalNetChange - totalCostOfRedeemed;
 }
-
