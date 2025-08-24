@@ -8,11 +8,10 @@ import { useAuth } from "@/lib/auth";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { DailyTask, UserReward } from "@/lib/types";
 import { toSerializableUserReward } from "@/lib/types";
-import { getMissedTasks } from "@/services/daily-tasks";
 import { Skeleton } from "@/components/ui/skeleton";
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { format, subDays } from 'date-fns';
+import { format, subDays, isBefore, startOfToday } from 'date-fns';
 import { FocusWalletHistory } from "./FocusWalletHistory";
 import { Button } from "@/components/ui/button";
 import { Coins } from "lucide-react";
@@ -49,43 +48,12 @@ function FocusWalletFAB({ balance, tasks, rewards, loading }: { balance: number,
 
 export default function DailyTrackerPage() {
     const { user } = useAuth();
-    const [missedTasks, setMissedTasks] = useState<DailyTask[]>([]);
     const [recentTasks, setRecentTasks] = useState<DailyTask[]>([]); // Will hold last 30 days of tasks
     const [rewards, setRewards] = useState<UserReward[]>([]);
     const [balance, setBalance] = useState(0);
 
     const [loading, setLoading] = useState(true);
-    const [gateLoading, setGateLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-    const fetchMissedTasks = useCallback(async () => {
-        if (!user) {
-            setGateLoading(false);
-            return;
-        }
-        
-        setGateLoading(true);
-        setError(null);
-        
-        try {
-            const incompleteTasks = await getMissedTasks(user.uid);
-            incompleteTasks.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-            setMissedTasks(incompleteTasks);
-        } catch (error: any) {
-            console.error("Failed to fetch missed tasks:", error);
-            if (error.code === 'failed-precondition') {
-                setError("A database index is required. Please check the server console logs for a link to create it.");
-            } else {
-                setError(`An unexpected error occurred while fetching tasks. Code: ${error.code || 'N/A'}`);
-            }
-        } finally {
-            setGateLoading(false);
-        }
-    }, [user]);
-
-    useEffect(() => {
-        fetchMissedTasks();
-    }, [fetchMissedTasks]);
 
     useEffect(() => {
         if (!user) {
@@ -111,6 +79,7 @@ export default function DailyTrackerPage() {
             setLoading(false);
         }, (error) => {
             console.error("Error fetching recent tasks: ", error);
+            setError("Failed to load your tasks. Please try again later.");
             setLoading(false);
         });
 
@@ -141,13 +110,24 @@ export default function DailyTrackerPage() {
         const todayStr = format(new Date(), 'yyyy-MM-dd');
         return recentTasks.filter(task => task.date === todayStr);
     }, [recentTasks]);
-
+    
+    const missedTasksForGate = useMemo(() => {
+        const today = startOfToday();
+        return recentTasks.filter(task => {
+            const taskDate = new Date(task.date);
+            return !task.completed && !task.rescheduled && isBefore(taskDate, today);
+        }).sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    }, [recentTasks]);
 
     const handleGateCleared = () => {
-        fetchMissedTasks();
+        // The gate is now controlled by the `missedTasksForGate` state, which is derived
+        // from `recentTasks`. When a task is handled (rescheduled), it will get the `rescheduled`
+        // flag in Firestore, the onSnapshot listener will fire, `recentTasks` will update,
+        // and `missedTasksForGate` will re-compute, automatically removing the handled task.
+        // No explicit refetch is needed here.
     };
     
-    if (gateLoading) {
+    if (loading) {
         return (
              <div className="flex flex-col gap-8 h-full">
                 <Skeleton className="h-20 w-full" />
@@ -169,8 +149,8 @@ export default function DailyTrackerPage() {
 
     return (
         <div className="flex flex-col gap-8 h-full">
-            {missedTasks.length > 0 ? (
-                <MissedTasksGate initialTasks={missedTasks} onGateCleared={handleGateCleared} />
+            {missedTasksForGate.length > 0 ? (
+                <MissedTasksGate initialTasks={missedTasksForGate} onGateCleared={handleGateCleared} />
             ) : (
                 <>
                 <div>

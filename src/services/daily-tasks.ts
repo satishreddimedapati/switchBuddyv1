@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db } from "@/lib/firebase";
@@ -24,39 +25,6 @@ export async function getTasksForDate(date: string, userId: string): Promise<Dai
     return [];
   }
 }
-
-export async function getMissedTasks(userId: string): Promise<DailyTask[]> {
-    if (!userId) return [];
-
-    try {
-        const sevenDaysAgo = format(subDays(new Date(), 7), 'yyyy-MM-dd');
-        const today = new Date();
-
-        // Fetch all tasks for the user to filter in code
-        const q = query(
-            dailyTasksCollection,
-            where("userId", "==", userId)
-        );
-        
-        const querySnapshot = await getDocs(q);
-        const tasks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyTask));
-        
-        // Filter for tasks that are incomplete, from the last 7 days (but before today), AND not already rescheduled
-        return tasks.filter(task => {
-            const taskDate = new Date(task.date);
-            return !task.completed && 
-                   !task.rescheduled && 
-                   isBefore(taskDate, today) && 
-                   task.date >= sevenDaysAgo;
-        });
-
-    } catch (error) {
-        console.error("Error fetching missed tasks:", error);
-        // This will likely fail with an index error first. The user needs to create the index.
-        throw error;
-    }
-}
-
 
 export async function getTasksForWeek(startDate: string, endDate: string, userId: string): Promise<DailyTask[]> {
   if (!userId) return [];
