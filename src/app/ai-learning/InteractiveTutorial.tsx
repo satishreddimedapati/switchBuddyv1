@@ -152,7 +152,7 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
           setCurrentIndex(0);
           setShowGeneratedDialog(true);
           
-        } catch (err) {
+        } catch (err: any) {
           const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
           setError(errorMessage);
           setScreen('error');
@@ -229,8 +229,8 @@ export function InteractiveTutorial({ isOpen, onOpenChange, topic, roadmapId }: 
                         <CardContent className="space-y-4">
                             <p className="text-xs text-muted-foreground whitespace-pre-wrap">{error}</p>
                             <div className='flex gap-2 justify-center'>
-                                 <Button variant="destructive" onClick={handleGenerateNew} disabled={!canGenerateMore}>
-                                    {canGenerateMore ? "Try Again" : "Limit Reached"}
+                                 <Button variant="destructive" onClick={handleGenerateNew} disabled={!canGenerateMore || isGenerating}>
+                                    {isGenerating ? <Loader2 className="mr-2 animate-spin"/> : (canGenerateMore ? "Try Again" : "Limit Reached")}
                                 </Button>
                                 <Button variant="outline" onClick={handleCopyError}>
                                     <Copy className="mr-2 h-4 w-4" />

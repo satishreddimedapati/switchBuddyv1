@@ -7,45 +7,58 @@ import { googleAI } from '@genkit-ai/googleai';
 // -----------------------------
 const primaryApiKey = process.env.GEMINI_API_KEY_1;
 const secondaryApiKey = process.env.GEMINI_API_KEY;
-const tertiaryApiKey = process.env.GEMINI_API_KEY_2;
 
-const apiKeys: string[] = [primaryApiKey, secondaryApiKey, tertiaryApiKey].filter(
-  (key): key is string => typeof key === 'string' && key.length > 0
-);
-
-
-if (apiKeys.length === 0) {
-  throw new Error("No Gemini API keys found. Please set at least GEMINI_API_KEY_1 in your environment.");
-}
-
-let keyIndex = 0;
-
-// Simple key rotation
-function getApiKey() {
-  const key = apiKeys[keyIndex];
-  keyIndex = (keyIndex + 1) % apiKeys.length;
-  return key;
+if (!primaryApiKey) {
+  throw new Error("Primary Gemini API key not found. Please set GEMINI_API_KEY_1 in your environment.");
 }
 
 // -----------------------------
-// 1) Static export: ai (uses a rotating key for each request)
+// Genkit AI Instances
 // -----------------------------
+
+// Primary AI instance
 export const ai = genkit({
   plugins: [
-    googleAI({
-      // By invoking the function here, we ensure a valid key string is passed.
-      apiKey: getApiKey(), 
-    }),
+    googleAI({ apiKey: primaryApiKey }),
   ],
   model: 'googleai/gemini-2.5-pro',
 });
 
-// -----------------------------
-// 2) A simple prompt runner that also uses the rotating key
-// -----------------------------
-export async function runPrompt(prompt: string) {
-  const result = await ai.generate({
-    prompt,
+// Fallback AI instance - only configured if a secondary key exists
+let fallbackAi: typeof ai | null = null;
+if (secondaryApiKey) {
+  fallbackAi = genkit({
+    plugins: [
+      googleAI({ apiKey: secondaryApiKey }),
+    ],
+    model: 'googleai/gemini-2.0-flash',
   });
-  return result.output;
+}
+
+// -----------------------------
+// A robust flow runner with retry logic
+// -----------------------------
+export async function runFlowWithRetry<I, O>(
+  primaryFlow: (input: I) => Promise<O>,
+  fallbackFlow: (input: I) => Promise<O> | null,
+  input: I
+): Promise<O> {
+  try {
+    // First attempt with the primary AI instance
+    return await primaryFlow(input);
+  } catch (e: any) {
+    const isRateLimitError =
+      (e.cause?.status === 429 || (e.message && e.message.includes('429'))) && e.message.includes('google');
+
+    if (isRateLimitError && fallbackFlow) {
+      console.warn("Primary API key rate limited. Attempting to switch to secondary key.");
+      // Second attempt with the fallback AI instance
+      const fallbackResult = fallbackFlow(input);
+      if (fallbackResult) {
+        return await fallbackResult;
+      }
+    }
+    // If it's another type of error or no fallback is available, throw it
+    throw e;
+  }
 }
