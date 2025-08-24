@@ -5,7 +5,7 @@
 import { db } from "@/lib/firebase";
 import type { DailyTask, UserReward } from "@/lib/types";
 import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, where } from "firebase/firestore";
-import { format, subDays, isBefore } from "date-fns";
+import { format, subDays, isBefore, isWithinInterval } from "date-fns";
 import { calculateDayActivity } from "@/app/daily-tracker/utils";
 
 const dailyTasksCollection = collection(db, "daily_tasks");
@@ -14,9 +14,9 @@ export async function getTasksForDate(date: string, userId: string): Promise<Dai
   if (!userId) return [];
 
   try {
-    // This query is simplified by fetching all tasks and filtering in code.
-    const allTasks = await getTasksForUser(userId);
-    return allTasks.filter(task => task.date === date);
+    const q = query(dailyTasksCollection, where("userId", "==", userId), where("date", "==", date));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyTask));
   } catch (error) {
     console.error("Error fetching tasks for date: ", error);
     return [];
@@ -36,16 +36,17 @@ async function getTasksForUser(userId: string): Promise<DailyTask[]> {
 }
 
 
-export async function getTasksForWeek(startDate: string, endDate: string, userId: string): Promise<DailyTask[]> {
+export async function getTasksForWeek(startDate: Date, endDate: Date, userId: string): Promise<DailyTask[]> {
   if (!userId) return [];
 
   try {
-    const q = query(dailyTasksCollection, where("userId", "==", userId), where("date", ">=", startDate), where("date", "<=", endDate));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as DailyTask));
+    // Fetch all tasks for the user and filter in code to avoid composite index
+    const allTasks = await getTasksForUser(userId);
+    const weeklyTasks = allTasks.filter(task => {
+        const taskDate = new Date(task.date);
+        return isWithinInterval(taskDate, { start: startDate, end: endDate });
+    });
+    return weeklyTasks;
   } catch (error) {
     console.error("Error fetching tasks for week: ", error);
     return [];
@@ -73,19 +74,6 @@ export async function deleteTask(taskId: string, userId: string) {
     await deleteDoc(doc(db, "daily_tasks", taskId));
 }
 
-// This function is no longer user-specific and should be used with caution
-export async function getSampleDailyTasks(date: string): Promise<DailyTask[]> {
-  if (date === format(new Date(), 'yyyy-MM-dd')) {
-    return [
-      { id: 'task1', time: '09:00', title: 'Update resume with latest project', description: 'Focus on the new React project.', type: 'schedule', date, completed: true, userId: 'sample' },
-      { id: 'task2', time: '11:00', title: 'Apply to 3 new jobs', description: 'Look for remote-first companies.', type: 'schedule', date, completed: true, userId: 'sample' },
-      { id: 'task3', time: '14:00', title: 'Interview with Acme Corp', description: 'Technical interview with the engineering team.', type: 'interview', date, completed: false, userId: 'sample' },
-      { id: 'task4', time: '16:00', title: 'Practice STAR method for interviews', type: 'schedule', date, completed: false, userId: 'sample' },
-      { id: 'task5', time: '18:30', title: 'Connect with 1 new person on LinkedIn', type: 'schedule', date, completed: true, userId: 'sample' },
-    ];
-  }
-  return [];
-}
 
 export async function getFocusCoinBalance(userId: string): Promise<number> {
     if (!userId) return 0;

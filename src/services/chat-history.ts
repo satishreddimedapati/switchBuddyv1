@@ -63,6 +63,7 @@ export async function getChatSessionForTopic(userId: string, topic: string): Pro
             sessionsCollection,
             where("userId", "==", userId),
             where("topic", "==", topic),
+            orderBy("lastMessageAt", "desc"),
             limit(1)
         );
         const querySnapshot = await getDocs(q);
@@ -72,8 +73,6 @@ export async function getChatSessionForTopic(userId: string, topic: string): Pro
         }
 
         const doc = querySnapshot.docs[0];
-        // In case of multiple sessions for the same topic, we can't reliably get the "last" one without an index.
-        // This logic is now simplified to just get *a* session for the topic.
         return {
             id: doc.id,
             ...toSerializableChatSession(doc.data()),

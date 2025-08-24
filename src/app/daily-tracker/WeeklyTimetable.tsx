@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import * as React from "react"
@@ -8,8 +9,7 @@ import { ScheduleTaskForm } from "./ScheduleTaskForm";
 import { format, startOfWeek, addDays, endOfWeek, subWeeks, addWeeks, parse, isWithinInterval, isToday } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getTasksForWeek } from "@/services/daily-tasks";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -90,7 +90,7 @@ function MobileWeeklyView({ weekDays, tasks, onEdit, onCellClick }: { weekDays: 
 export function WeeklyTimetable() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
-  const [allTasks, setAllTasks] = useState<DailyTask[]>([]);
+  const [tasksForCurrentWeek, setTasksForCurrentWeek] = useState<DailyTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<DailyTask | undefined>(undefined);
@@ -106,36 +106,19 @@ export function WeeklyTimetable() {
   
   useEffect(() => {
     if (!user) {
-        setAllTasks([]);
+        setTasksForCurrentWeek([]);
         setLoading(false);
         return;
     };
     
     setLoading(true);
     
-    const q = query(
-        collection(db, "daily_tasks"), 
-        where("userId", "==", user.uid)
-    );
-
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const fetchedTasks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyTask));
-        setAllTasks(fetchedTasks);
-        setLoading(false);
-    }, (error) => {
-        console.error("Error fetching tasks: ", error);
+    getTasksForWeek(weekStart, weekEnd, user.uid).then(tasks => {
+        setTasksForCurrentWeek(tasks);
         setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, [user]);
-
-  const tasksForCurrentWeek = useMemo(() => {
-      return allTasks.filter(task => {
-          const taskDate = new Date(task.date);
-          return isWithinInterval(taskDate, { start: weekStart, end: weekEnd });
-      });
-  }, [allTasks, weekStart, weekEnd]);
+  }, [user, weekStart, weekEnd]);
   
   const handleEdit = (task: DailyTask) => {
     setEditingTask(task);
