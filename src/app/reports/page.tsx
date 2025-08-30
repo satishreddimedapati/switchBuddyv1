@@ -11,24 +11,27 @@ import { FileDown, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
-
-// Mock data fetching functions - replace with actual service calls
-async function getDailyTrackerData() { return { summary: "Completed 5/8 tasks", tasks: [{ id: '1', title: 'Task 1'}] }; }
-async function getJobTrackerData() { return [{ id: '1', title: 'SE at Google' }]; }
-async function getInterviewPrepData() { return [{ id: '1', title: 'React Interview Plan' }]; }
-async function getAILearningData() { return [{ id: '1', title: 'Learning .NET' }]; }
+import { useAuth } from '@/lib/auth';
+import { getTasksForDateRange } from '@/services/daily-tasks';
+import { getJobApplications } from "@/services/job-applications";
+import { getInterviewPlans } from "@/services/interview-plans";
+import { getLearningRoadmapsForUser } from '@/services/learning-roadmaps';
+import { getUserRewards } from '@/services/user-rewards';
+import { format, subDays } from 'date-fns';
+import { calculateDayActivity } from '@/app/profile/utils';
 
 export default function ReportsPage() {
+    const { user } = useAuth();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     
-    // State for all checkbox options
     const [reportOptions, setReportOptions] = useState({
         dailyTracker: {
             include: true,
             summary: true,
             fullList: true,
-            aiDebriefs: false,
+            focusWalletSummary: true,
+            activityLog: false,
         },
         jobTracker: {
             include: true,
@@ -43,7 +46,7 @@ export default function ReportsPage() {
         aiLearning: {
             include: true,
             fullPlan: true,
-            includeChallenges: true,
+            includeChallenges: false,
         },
     });
 
@@ -57,40 +60,119 @@ export default function ReportsPage() {
         }));
     };
     
-    const handleGenerateReport = async (format: 'pdf' | 'excel') => {
+    const handleGenerateReport = async (formatType: 'pdf' | 'excel') => {
+        if (!user) {
+            toast({ title: "Error", description: "You must be logged in.", variant: "destructive" });
+            return;
+        }
+
         setIsLoading(true);
-        toast({ title: "Generating Report...", description: `Your ${format.toUpperCase()} file is being prepared.` });
+        toast({ title: "Generating Report...", description: `Your ${formatType.toUpperCase()} file is being prepared.` });
         
         try {
-            // In a real app, you would fetch data based on the selected options
-            const dailyData = reportOptions.dailyTracker.include ? await getDailyTrackerData() : null;
-            const jobData = reportOptions.jobTracker.include ? await getJobTrackerData() : null;
-            const prepData = reportOptions.interviewPrep.include ? await getInterviewPrepData() : null;
-            const learningData = reportOptions.aiLearning.include ? await getAILearningData() : null;
+            const endDate = new Date();
+            const startDate = subDays(endDate, 30); // Default to last 30 days for now
 
-            if (format === 'excel') {
+            // Fetch all data concurrently
+            const [dailyTasks, rewards, jobApps, interviewPlans, learningRoadmaps] = await Promise.all([
+                reportOptions.dailyTracker.include ? getTasksForDateRange(startDate, endDate, user.uid) : Promise.resolve([]),
+                reportOptions.dailyTracker.include ? getUserRewards(user.uid) : Promise.resolve([]),
+                reportOptions.jobTracker.include ? getJobApplications(user.uid) : Promise.resolve([]),
+                reportOptions.interviewPrep.include ? getInterviewPlans(user.uid) : Promise.resolve([]),
+                reportOptions.aiLearning.include ? getLearningRoadmapsForUser(user.uid) : Promise.resolve([]),
+            ]);
+
+            // --- Excel Generation ---
+            if (formatType === 'excel') {
                 const wb = XLSX.utils.book_new();
-                if (dailyData) {
-                    const ws = XLSX.utils.json_to_sheet([{ summary: dailyData.summary, tasks: dailyData.tasks.length }]);
+
+                if (reportOptions.dailyTracker.include) {
+                    const dailyData = [];
+                    if (reportOptions.dailyTracker.summary) {
+                         const completed = dailyTasks.filter(t => t.completed).length;
+                         dailyData.push({ Section: "Summary", Item: "Tasks Completed", Value: `${completed} / ${dailyTasks.length}` });
+                    }
+                    if (reportOptions.dailyTracker.fullList) {
+                        dailyTasks.forEach(t => dailyData.push({ Section: "Task List", Date: t.date, Time: t.time, Title: t.title, Status: t.completed ? 'Completed' : 'Incomplete' }));
+                    }
+
+                    if (reportOptions.dailyTracker.focusWalletSummary || reportOptions.dailyTracker.activityLog) {
+                        const activity = processDailyActivity(dailyTasks, rewards);
+                        if (reportOptions.dailyTracker.focusWalletSummary) {
+                            dailyData.push({ Section: "Focus Wallet", Item: "Total Coins Earned", Value: activity.totalCredits });
+                            dailyData.push({ Section: "Focus Wallet", Item: "Total Coins Spent", Value: activity.totalDebits });
+                            dailyData.push({ Section: "Focus Wallet", Item: "Net Coin Change", Value: activity.netChange });
+                        }
+                        if (reportOptions.dailyTracker.activityLog) {
+                            activity.log.forEach(day => {
+                                dailyData.push({ Section: "Activity Log", Date: day.date, Earned: day.credits, Spent: day.debits, Net: day.netChange });
+                            })
+                        }
+                    }
+                    const ws = XLSX.utils.json_to_sheet(dailyData);
                     XLSX.utils.book_append_sheet(wb, ws, "Daily Tracker");
                 }
-                if (jobData) {
-                    const ws = XLSX.utils.json_to_sheet(jobData);
+
+                 if (reportOptions.jobTracker.include && jobApps.length > 0) {
+                    const ws = XLSX.utils.json_to_sheet(jobApps.map(j => ({ Company: j.company, Title: j.title, Stage: j.stage })));
                     XLSX.utils.book_append_sheet(wb, ws, "Job Tracker");
                 }
-                XLSX.writeFile(wb, "SwitchBuddy_Report.xlsx");
-            } else {
+
+                XLSX.writeFile(wb, `SwitchBuddy_Report_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+            } 
+            
+            // --- PDF Generation ---
+            else {
                 const doc = new jsPDF();
-                doc.text("SwitchBuddy Report", 10, 10);
-                if (dailyData) {
-                     doc.text("Daily Tracker Summary", 10, 20);
-                     doc.text(dailyData.summary, 10, 30);
+                let yPos = 20;
+                doc.setFontSize(18);
+                doc.text("SwitchBuddy Report", 10, yPos);
+                yPos += 10;
+
+                if (reportOptions.dailyTracker.include) {
+                    doc.setFontSize(14);
+                    doc.text("Daily Tracker", 10, yPos);
+                    yPos += 8;
+                    doc.setFontSize(10);
+                    
+                    const activity = processDailyActivity(dailyTasks, rewards);
+                    if (reportOptions.dailyTracker.summary) {
+                         const completed = dailyTasks.filter(t => t.completed).length;
+                         doc.text(`- Summary: ${completed} of ${dailyTasks.length} tasks completed.`, 14, yPos);
+                         yPos += 6;
+                    }
+                    if (reportOptions.dailyTracker.focusWalletSummary) {
+                        doc.text(`- Focus Wallet: ${activity.netChange} net coins (${activity.totalCredits} earned, ${activity.totalDebits} spent).`, 14, yPos);
+                        yPos += 6;
+                    }
+                    if (reportOptions.dailyTracker.fullList) {
+                        doc.text(`- Full Task List: (${dailyTasks.length} tasks)`, 14, yPos);
+                        yPos += 6;
+                    }
+                     if (reportOptions.dailyTracker.activityLog) {
+                        doc.text(`- Activity Log: (${activity.log.length} active days)`, 14, yPos);
+                        yPos += 6;
+                    }
+                    yPos += 10;
                 }
-                 if (jobData) {
-                     doc.text("Job Applications", 10, 40);
-                     jobData.forEach((job, i) => doc.text(job.title, 10, 50 + (i*10)));
+
+                if (reportOptions.jobTracker.include && jobApps.length > 0) {
+                    doc.setFontSize(14);
+                    doc.text("Job Applications", 10, yPos);
+                    yPos += 8;
+                    doc.setFontSize(10);
+                    jobApps.slice(0, 5).forEach(job => {
+                        doc.text(`- ${job.title} at ${job.company} (${job.stage})`, 14, yPos);
+                        yPos += 6;
+                    });
+                     if (jobApps.length > 5) {
+                        doc.text(`...and ${jobApps.length - 5} more.`, 14, yPos);
+                        yPos+= 6;
+                    }
+                    yPos += 10;
                 }
-                doc.save("SwitchBuddy_Report.pdf");
+
+                doc.save(`SwitchBuddy_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
             }
             
             toast({ title: "Success!", description: "Your report has been downloaded." });
@@ -102,6 +184,40 @@ export default function ReportsPage() {
             setIsLoading(false);
         }
     };
+    
+    // Helper to process daily activity for reports
+    const processDailyActivity = (tasks, rewards) => {
+        const groupedByDate = tasks.reduce((acc, task) => {
+            if (!acc[task.date]) acc[task.date] = [];
+            acc[task.date].push(task);
+            return acc;
+        }, {});
+        
+        const rewardsGroupedByDate = rewards.reduce((acc, reward) => {
+            const date = format(new Date(reward.redeemedAt), 'yyyy-MM-dd');
+            if (!acc[date]) acc[date] = [];
+            acc[date].push(reward);
+            return acc;
+        }, {});
+
+        const allDates = [...new Set([...Object.keys(groupedByDate), ...Object.keys(rewardsGroupedByDate)])];
+        
+        const log = allDates.map(date => {
+            const dayActivity = calculateDayActivity(groupedByDate[date] || [], tasks, rewardsGroupedByDate[date] || []);
+            return { date, ...dayActivity };
+        });
+
+        const totalCredits = log.reduce((sum, day) => sum + day.credits, 0);
+        const totalDebits = log.reduce((sum, day) => sum + day.debits, 0);
+
+        return {
+            log,
+            totalCredits,
+            totalDebits,
+            netChange: totalCredits - totalDebits
+        };
+    }
+
 
     return (
         <div className="flex flex-col gap-8">
@@ -115,19 +231,18 @@ export default function ReportsPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Daily Tracker Card */}
                 <ReportCard
                     title="Daily Tracker"
                     description="Export your tasks and productivity stats."
                     onToggleSection={() => handleCheckboxChange('dailyTracker', 'include')}
                     isIncluded={reportOptions.dailyTracker.include}
                 >
-                    <CheckboxOption id="dt-summary" label="Include Summary" checked={reportOptions.dailyTracker.summary} onCheckedChange={() => handleCheckboxChange('dailyTracker', 'summary')} />
-                    <CheckboxOption id="dt-full-list" label="Full Task List" checked={reportOptions.dailyTracker.fullList} onCheckedChange={() => handleCheckboxChange('dailyTracker', 'fullList')} />
-                    <CheckboxOption id="dt-ai-debriefs" label="AI Debriefs" checked={reportOptions.dailyTracker.aiDebriefs} onCheckedChange={() => handleCheckboxChange('dailyTracker', 'aiDebriefs')} disabled />
+                    <CheckboxOption id="dt-summary" label="Include Task Summary" checked={reportOptions.dailyTracker.summary} onCheckedChange={() => handleCheckboxChange('dailyTracker', 'summary')} />
+                    <CheckboxOption id="dt-full-list" label="Include Full Task List" checked={reportOptions.dailyTracker.fullList} onCheckedChange={() => handleCheckboxChange('dailyTracker', 'fullList')} />
+                    <CheckboxOption id="dt-wallet-summary" label="Include Focus Wallet Summary" checked={reportOptions.dailyTracker.focusWalletSummary} onCheckedChange={() => handleCheckboxChange('dailyTracker', 'focusWalletSummary')} />
+                    <CheckboxOption id="dt-activity-log" label="Include Full Activity Log" checked={reportOptions.dailyTracker.activityLog} onCheckedChange={() => handleCheckboxChange('dailyTracker', 'activityLog')} />
                 </ReportCard>
                 
-                {/* Job Tracker Card */}
                 <ReportCard
                     title="Job Tracker"
                     description="Export your job application pipeline."
@@ -138,7 +253,6 @@ export default function ReportsPage() {
                     <CheckboxOption id="jt-detailed" label="Detailed View (with notes)" checked={reportOptions.jobTracker.detailedView} onCheckedChange={() => handleCheckboxChange('jobTracker', 'detailedView')} disabled />
                 </ReportCard>
 
-                {/* Interview Prep Card */}
                 <ReportCard
                     title="Interview Prep"
                     description="Export your practice plans and session results."
@@ -146,10 +260,9 @@ export default function ReportsPage() {
                     isIncluded={reportOptions.interviewPrep.include}
                 >
                     <CheckboxOption id="ip-overview" label="Plan Overviews" checked={reportOptions.interviewPrep.planOverview} onCheckedChange={() => handleCheckboxChange('interviewPrep', 'planOverview')} />
-                    <CheckboxOption id="ip-history" label="Full Session History" checked={reportOptions.interviewPrep.sessionHistory} onCheckedChange={() => handleCheckboxChange('interviewPrep', 'sessionHistory')} />
+                    <CheckboxOption id="ip-history" label="Full Session History" checked={reportOptions.interviewPrep.sessionHistory} onCheckedChange={() => handleCheckboxChange('interviewPrep', 'sessionHistory')} disabled/>
                 </ReportCard>
                 
-                {/* AI Learning Card */}
                 <ReportCard
                     title="AI Learning Roadmaps"
                     description="Export your personalized learning plans."
@@ -178,7 +291,6 @@ export default function ReportsPage() {
     );
 }
 
-// Helper Components
 interface ReportCardProps {
     title: string;
     description: string;
@@ -225,3 +337,9 @@ function CheckboxOption({ id, label, checked, onCheckedChange, disabled = false 
         </div>
     );
 }
+
+const getTasksForDateRange = async (startDate: Date, endDate: Date, userId: string) => {
+    // This is a simplified fetch, a real implementation might paginate or be more complex
+    const allTasks = await getTasksForDateRange(startDate, endDate, userId);
+    return allTasks;
+};
