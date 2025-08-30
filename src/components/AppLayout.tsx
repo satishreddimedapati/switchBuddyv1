@@ -34,6 +34,7 @@ import {
   User,
   Settings,
   BrainCircuit,
+  Download,
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { useAuth } from '@/lib/auth';
@@ -49,6 +50,7 @@ const navItems = [
   { href: '/job-switch-helper', icon: Briefcase, label: 'JobSwitch Helper' },
   { href: '/ai-learning', icon: BrainCircuit, label: 'AI Learning' },
   { href: '/profile', icon: User, label: 'Profile & Rewards' },
+  { href: '/reports', icon: Download, label: 'Download Reports' },
 ];
 
 const mobileNavItems = [
@@ -57,6 +59,7 @@ const mobileNavItems = [
     { href: '/job-switch-helper', icon: Briefcase, label: 'JobSwitch Helper' },
     { href: '/ai-learning', icon: BrainCircuit, label: 'AI Learning' },
     { href: '/profile', icon: User, label: 'Profile & Rewards' },
+    { href: '/reports', icon: Download, label: 'Download Reports' },
 ];
 
 function AppHeader() {
