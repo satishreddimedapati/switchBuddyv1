@@ -3,10 +3,9 @@
 'use server';
 
 import { db } from "@/lib/firebase";
-import type { DailyTask, UserReward } from "@/lib/types";
+import type { DailyTask } from "@/lib/types";
 import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, where } from "firebase/firestore";
-import { format, subDays, isBefore, isWithinInterval } from "date-fns";
-import { calculateDayActivity } from "@/app/profile/utils";
+import { isWithinInterval } from "date-fns";
 
 const dailyTasksCollection = collection(db, "daily_tasks");
 
@@ -72,42 +71,4 @@ export async function deleteTask(taskId: string, userId: string) {
     if (!userId) throw new Error("Authentication required");
      // In a real app, you'd check ownership here.
     await deleteDoc(doc(db, "daily_tasks", taskId));
-}
-
-
-export async function getFocusCoinBalance(userId: string): Promise<number> {
-    if (!userId) return 0;
-
-    const tasksCollection = collection(db, "daily_tasks");
-    const tasksQuery = query(tasksCollection, where("userId", "==", userId));
-    
-    const rewardsCollection = collection(db, "redeemed_rewards");
-    const rewardsQuery = query(rewardsCollection, where("userId", "==", userId));
-
-    const [tasksSnapshot, rewardsSnapshot] = await Promise.all([
-        getDocs(tasksQuery),
-        getDocs(rewardsQuery)
-    ]);
-    
-    const allTasks = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyTask));
-    const allRewards = rewardsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserReward));
-
-
-    const groupedByDate = allTasks.reduce((acc, task) => {
-        const date = task.date;
-        if (!acc[date]) {
-            acc[date] = [];
-        }
-        acc[date].push(task);
-        return acc;
-    }, {} as Record<string, DailyTask[]>);
-
-    const totalNetChange = Object.values(groupedByDate).reduce((total, tasksForDay) => {
-        const dayActivity = calculateDayActivity(tasksForDay, allTasks);
-        return total + dayActivity.netChange;
-    }, 0);
-
-    const totalCostOfRedeemed = allRewards.reduce((total, reward) => total + reward.cost, 0);
-
-    return totalNetChange - totalCostOfRedeemed;
 }
