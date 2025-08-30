@@ -35,6 +35,7 @@ import {
   Settings,
   BrainCircuit,
   Download,
+  Landmark,
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { useAuth } from '@/lib/auth';
@@ -51,6 +52,7 @@ const navItems = [
   { href: '/ai-learning', icon: BrainCircuit, label: 'AI Learning' },
   { href: '/profile', icon: User, label: 'Profile & Rewards' },
   { href: '/reports', icon: Download, label: 'Download Reports' },
+  { href: '/budget-tracker', icon: Landmark, label: 'Budget Tracker' },
 ];
 
 const mobileNavItems = [
@@ -60,6 +62,7 @@ const mobileNavItems = [
     { href: '/ai-learning', icon: BrainCircuit, label: 'AI Learning' },
     { href: '/profile', icon: User, label: 'Profile & Rewards' },
     { href: '/reports', icon: Download, label: 'Download Reports' },
+    { href: '/budget-tracker', icon: Landmark, label: 'Budget Tracker' },
 ];
 
 function AppHeader() {
