@@ -15,6 +15,7 @@ export type JobApplication = {
 export type KanbanColumnId =
   | 'Wishlist'
   | 'Applying'
+  | 'Applied but no response'
   | 'Interview'
   | 'Offer'
   | 'Rejected';

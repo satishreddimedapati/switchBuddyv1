@@ -16,7 +16,7 @@ interface KanbanBoardProps {
   onBoardChange: (data: JobApplication[]) => void;
 }
 
-const COLUMN_ORDER: KanbanColumnId[] = ['Wishlist', 'Applying', 'Interview', 'Offer', 'Rejected'];
+const COLUMN_ORDER: KanbanColumnId[] = ['Wishlist', 'Applying', 'Applied but no response', 'Interview', 'Offer', 'Rejected'];
 
 export function KanbanBoard({ initialData, onBoardChange }: KanbanBoardProps) {
   const [columns, setColumns] = useState<Map<KanbanColumnId, JobApplication[]>>(new Map());

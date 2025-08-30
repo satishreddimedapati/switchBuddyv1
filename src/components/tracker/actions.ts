@@ -8,7 +8,7 @@ import { KanbanColumnId } from "@/lib/types";
 const AddJobApplicationSchema = z.object({
   company: z.string().min(1, "Company name cannot be empty."),
   title: z.string().min(1, "Job title cannot be empty."),
-  stage: z.enum(['Wishlist', 'Applying', 'Interview', 'Offer', 'Rejected']),
+  stage: z.enum(['Wishlist', 'Applying', 'Applied but no response', 'Interview', 'Offer', 'Rejected']),
 });
 
 export type FormState = {

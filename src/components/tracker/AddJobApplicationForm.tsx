@@ -46,7 +46,7 @@ function SubmitButton() {
     )
 }
 
-const columnOptions: KanbanColumnId[] = ['Wishlist', 'Applying', 'Interview', 'Offer', 'Rejected'];
+const columnOptions: KanbanColumnId[] = ['Wishlist', 'Applying', 'Applied but no response', 'Interview', 'Offer', 'Rejected'];
 
 interface AddJobApplicationFormProps {
     onApplicationAdded: () => void;

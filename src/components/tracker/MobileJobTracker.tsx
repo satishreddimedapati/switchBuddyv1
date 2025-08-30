@@ -28,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 const COLUMN_ORDER: KanbanColumnId[] = [
   'Wishlist',
   'Applying',
+  'Applied but no response',
   'Interview',
   'Offer',
   'Rejected',

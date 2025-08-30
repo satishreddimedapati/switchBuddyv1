@@ -14,6 +14,7 @@ interface KanbanColumnProps {
 const columnColors: { [key: string]: string } = {
   Wishlist: "border-t-gray-400",
   Applying: "border-t-blue-400",
+  "Applied but no response": "border-t-orange-400",
   Interview: "border-t-yellow-400",
   Offer: "border-t-green-400",
   Rejected: "border-t-red-400",
