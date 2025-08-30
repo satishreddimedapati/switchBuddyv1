@@ -186,14 +186,14 @@ export default function ReportsPage() {
     };
     
     // Helper to process daily activity for reports
-    const processDailyActivity = (tasks, rewards) => {
-        const groupedByDate = tasks.reduce((acc, task) => {
+    const processDailyActivity = (tasks: any[], rewards: any[]) => {
+        const groupedByDate = tasks.reduce((acc: { [x: string]: any[]; }, task: { date: string | number; }) => {
             if (!acc[task.date]) acc[task.date] = [];
             acc[task.date].push(task);
             return acc;
         }, {});
         
-        const rewardsGroupedByDate = rewards.reduce((acc, reward) => {
+        const rewardsGroupedByDate = rewards.reduce((acc: { [x: string]: any[]; }, reward: { redeemedAt: string | number | Date; }) => {
             const date = format(new Date(reward.redeemedAt), 'yyyy-MM-dd');
             if (!acc[date]) acc[date] = [];
             acc[date].push(reward);
@@ -337,9 +337,3 @@ function CheckboxOption({ id, label, checked, onCheckedChange, disabled = false 
         </div>
     );
 }
-
-const getTasksForDateRange = async (startDate: Date, endDate: Date, userId: string) => {
-    // This is a simplified fetch, a real implementation might paginate or be more complex
-    const allTasks = await getTasksForDateRange(startDate, endDate, userId);
-    return allTasks;
-};
