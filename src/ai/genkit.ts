@@ -5,7 +5,7 @@ import { googleAI } from '@genkit-ai/googleai';
 // -----------------------------
 // Load API Keys
 // -----------------------------
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = "AIzaSyD-xTG54wOmrQWpIJ3cigoyngbzwqG759c";
 
 if (!apiKey) {
   throw new Error("Gemini API key not found. Please set GEMINI_API_KEY in your environment.");
@@ -20,5 +20,5 @@ export const ai = genkit({
   plugins: [
     googleAI({ apiKey: apiKey }),
   ],
-  model: 'googleai/gemini-2.0-flash',
+  model: 'googleai/gemini-1.5-flash-latest',
 });
