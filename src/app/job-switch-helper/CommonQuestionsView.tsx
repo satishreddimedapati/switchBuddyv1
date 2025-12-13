@@ -32,11 +32,14 @@ export function CommonQuestionsView({ experiences }: CommonQuestionsViewProps) {
 
         experiences.forEach(exp => {
             exp.questions.forEach(q => {
-                const normalizedText = q.questionText.trim().toLowerCase();
+                // Improved normalization: lowercase, remove punctuation, and trim whitespace
+                const normalizedText = q.questionText.toLowerCase().replace(/[^\w\s]|_/g, "").replace(/\s+/g, " ").trim();
                 
+                if (!normalizedText) return; // Skip empty questions
+
                 if (!questionMap.has(normalizedText)) {
                     questionMap.set(normalizedText, {
-                        questionText: q.questionText,
+                        questionText: q.questionText, // Keep the original text for display
                         occurrences: [],
                     });
                 }
