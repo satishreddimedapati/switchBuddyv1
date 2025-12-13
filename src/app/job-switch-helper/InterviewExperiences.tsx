@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -6,13 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/lib/auth";
 import type { InterviewExperience } from "@/lib/types";
 import { getInterviewExperiences } from "@/services/interview-experiences";
-import { FileText, PlusCircle, Loader2, Star } from "lucide-react";
+import { FileText, PlusCircle, Loader2, Star, List, Repeat } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
+import { CommonQuestionsView } from "./CommonQuestionsView";
 
 
 function LoadingState() {
@@ -48,6 +50,7 @@ export function InterviewExperiences() {
     const router = useRouter();
     const [experiences, setExperiences] = useState<InterviewExperience[]>([]);
     const [loading, setLoading] = useState(true);
+    const [view, setView] = useState<'all' | 'common'>('all');
 
     useEffect(() => {
         async function fetchExperiences() {
@@ -75,7 +78,27 @@ export function InterviewExperiences() {
 
     return (
         <div className="flex flex-col gap-8 pt-6">
-            <div className="flex justify-end">
+            <div className="flex justify-between items-center">
+                 <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
+                     <Button
+                        variant={view === 'all' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        onClick={() => setView('all')}
+                        className="h-8"
+                    >
+                        <List className="h-4 w-4" />
+                        <span className="ml-2 hidden sm:inline">All Experiences</span>
+                    </Button>
+                    <Button
+                        variant={view === 'common' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        onClick={() => setView('common')}
+                        className="h-8"
+                    >
+                        <Repeat className="h-4 w-4" />
+                        <span className="ml-2 hidden sm:inline">Common Questions</span>
+                    </Button>
+                 </div>
                  <Button asChild>
                     <Link href="/job-switch-helper/interview-experiences/new">
                         <PlusCircle className="mr-2"/>
@@ -85,26 +108,30 @@ export function InterviewExperiences() {
             </div>
 
             {experiences.length === 0 ? <NoExperiences /> : (
-                <div className="space-y-4">
-                    {experiences.map(exp => (
-                        <Card key={exp.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => router.push(`/job-switch-helper/interview-experiences/${exp.id}`)}>
-                            <CardHeader>
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <CardTitle>{exp.companyName} - {exp.role}</CardTitle>
-                                        <CardDescription>
-                                            {format(parseISO(exp.interviewDate), 'PPP')} - {exp.roundType} Round
-                                        </CardDescription>
+                view === 'all' ? (
+                    <div className="space-y-4">
+                        {experiences.map(exp => (
+                            <Card key={exp.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => router.push(`/job-switch-helper/interview-experiences/${exp.id}`)}>
+                                <CardHeader>
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <CardTitle>{exp.companyName} - {exp.role}</CardTitle>
+                                            <CardDescription>
+                                                {format(parseISO(exp.interviewDate), 'PPP')} - {exp.roundType} Round
+                                            </CardDescription>
+                                        </div>
+                                        <Badge variant="outline" className="flex items-center gap-1 text-base">
+                                            <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                                            {exp.overallRating}/10
+                                        </Badge>
                                     </div>
-                                    <Badge variant="outline" className="flex items-center gap-1 text-base">
-                                        <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                                        {exp.overallRating}/10
-                                    </Badge>
-                                </div>
-                            </CardHeader>
-                        </Card>
-                    ))}
-                </div>
+                                </CardHeader>
+                            </Card>
+                        ))}
+                    </div>
+                ) : (
+                    <CommonQuestionsView experiences={experiences} />
+                )
             )}
         </div>
     )
