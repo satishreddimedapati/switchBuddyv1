@@ -1,52 +1,41 @@
 
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Users can read and write their own user document.
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    match /job-applications/{jobId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-    }
-    
-    match /daily_tasks/{taskId} {
-       allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    // Allows read/write access to job applications
+    match /job-applications/{document=**} {
+      allow read, write: if true;
     }
 
-    match /interview_plans/{planId} {
-       allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    // Allows read/write access to daily tasks
+    match /daily_tasks/{document=**} {
+      allow read, write: if true;
     }
     
-    match /interview_sessions/{sessionId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      match /interview_plans/{document=**} {
+      allow read, write: if true;
     }
     
-    match /learning_roadmaps/{roadmapId} {
-       allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+     match /interview_sessions/{document=**} {
+      allow read, write: if true;
     }
     
-    match /redeemed_rewards/{rewardId} {
-       allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+     match /redeemed_rewards/{document=**} {
+      allow read, write: if true;
+    }
+    
+     match /learning_roadmaps/{document=**} {
+      allow read, write: if true;
+    }
+    
+    match /chat_sessions/{document=**} {
+      allow read, write: if true;
     }
 
-    match /interview-experiences/{experienceId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    match /interview-experiences/{document=**} {
+      allow read, write: if true;
     }
-
-    match /chat_sessions/{sessionId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-    }
+    
+    
   }
 }
