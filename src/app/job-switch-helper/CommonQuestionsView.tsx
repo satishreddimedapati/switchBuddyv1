@@ -9,12 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { format, parseISO } from "date-fns";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, BrainCircuit } from "lucide-react";
 
-interface CommonQuestion {
-    questionText: string;
+interface CommonTopic {
+    topic: string;
     occurrences: {
         experienceId: string;
+        questionText: string;
         companyName: string;
         interviewDate: string;
         userRating: number;
@@ -27,25 +28,23 @@ interface CommonQuestionsViewProps {
 }
 
 export function CommonQuestionsView({ experiences }: CommonQuestionsViewProps) {
-    const commonQuestions = useMemo(() => {
-        const questionMap = new Map<string, CommonQuestion>();
+    const commonTopics = useMemo(() => {
+        const topicMap = new Map<string, CommonTopic>();
 
         experiences.forEach(exp => {
             exp.questions.forEach(q => {
-                // Improved normalization: lowercase, remove punctuation, and trim whitespace
-                const normalizedText = q.questionText.toLowerCase().replace(/[^\w\s]|_/g, "").replace(/\s+/g, " ").trim();
+                const topic = q.topic || 'Uncategorized';
                 
-                if (!normalizedText) return; // Skip empty questions
-
-                if (!questionMap.has(normalizedText)) {
-                    questionMap.set(normalizedText, {
-                        questionText: q.questionText, // Keep the original text for display
+                if (!topicMap.has(topic)) {
+                    topicMap.set(topic, {
+                        topic: topic,
                         occurrences: [],
                     });
                 }
 
-                questionMap.get(normalizedText)!.occurrences.push({
+                topicMap.get(topic)!.occurrences.push({
                     experienceId: exp.id!,
+                    questionText: q.questionText,
                     companyName: exp.companyName,
                     interviewDate: exp.interviewDate,
                     userRating: q.userRating,
@@ -54,8 +53,8 @@ export function CommonQuestionsView({ experiences }: CommonQuestionsViewProps) {
             });
         });
 
-        const filtered = Array.from(questionMap.values())
-            .filter(q => q.occurrences.length > 1);
+        const filtered = Array.from(topicMap.values())
+            .filter(t => t.occurrences.length > 1);
             
         // Sort by most frequent first
         filtered.sort((a, b) => b.occurrences.length - a.occurrences.length);
@@ -63,12 +62,12 @@ export function CommonQuestionsView({ experiences }: CommonQuestionsViewProps) {
         return filtered;
     }, [experiences]);
 
-    if (commonQuestions.length === 0) {
+    if (commonTopics.length === 0) {
         return (
             <div className="text-center p-8 border-dashed border-2 rounded-lg">
-                <h3 className="text-xl font-semibold">No Common Questions Yet</h3>
+                <h3 className="text-xl font-semibold">No Common Topics Yet</h3>
                 <p className="text-muted-foreground mt-2">
-                    Once you log multiple interviews with similar questions, they will appear here.
+                    Once you log multiple interviews with questions from the same topic, they will appear here.
                 </p>
             </div>
         );
@@ -77,29 +76,32 @@ export function CommonQuestionsView({ experiences }: CommonQuestionsViewProps) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Frequently Asked Questions</CardTitle>
+                <CardTitle>Frequently Asked Topics</CardTitle>
                 <CardDescription>
-                    These questions have appeared in multiple interviews. Focus your prep here!
+                    These topics have appeared in multiple interviews. Focus your prep here!
                 </CardDescription>
             </CardHeader>
             <CardContent>
                  <Accordion type="single" collapsible className="w-full space-y-4">
-                    {commonQuestions.map((commonQ, index) => (
+                    {commonTopics.map((commonTopic, index) => (
                         <AccordionItem value={`item-${index}`} key={index}>
                             <Card>
                                 <AccordionTrigger className="p-4 text-left hover:no-underline">
                                      <div className="flex justify-between items-center w-full">
-                                        <p className="font-semibold flex-1 pr-4">{commonQ.questionText}</p>
-                                        <Badge>{commonQ.occurrences.length} times</Badge>
+                                        <div className="flex items-center gap-3">
+                                            <BrainCircuit className="h-6 w-6 text-primary" />
+                                            <p className="font-semibold flex-1 pr-4 text-lg">{commonTopic.topic}</p>
+                                        </div>
+                                        <Badge>{commonTopic.occurrences.length} questions</Badge>
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent className="p-4 pt-0">
                                     <div className="space-y-2">
-                                        {commonQ.occurrences.map((occ, i) => (
+                                        {commonTopic.occurrences.map((occ, i) => (
                                             <div key={i} className="flex justify-between items-center p-3 rounded-md bg-muted/50">
                                                 <div>
-                                                    <p className="font-semibold text-sm">{occ.companyName}</p>
-                                                    <p className="text-xs text-muted-foreground">{format(parseISO(occ.interviewDate), 'PPP')}</p>
+                                                    <p className="font-semibold text-sm truncate">{occ.questionText}</p>
+                                                    <p className="text-xs text-muted-foreground">{occ.companyName} - {format(parseISO(occ.interviewDate), 'PPP')}</p>
                                                 </div>
                                                 <div className="flex items-center gap-4">
                                                      <div className="text-right">
