@@ -1,4 +1,5 @@
 
+
 import {z} from 'zod';
 import type { Timestamp } from 'firebase/firestore';
 
@@ -558,7 +559,7 @@ export type LessonCard = z.infer<typeof LessonCardSchema>;
 export const InteractiveLessonSchema = z.object({
     id: z.string().optional(),
     title: z.string().describe("An engaging title for the lesson, matching the topic."),
-    cards: z.array(LessonCardSchema).min(7).max(8).describe("A deck of exactly 7-8 micro-lesson cards in a logical sequence."),
+    cards: z.array(LessonCardSchema).min(7).max(8).describe("A deck of exactly 7-8 micro-lesson cards in a logical learning sequence."),
 });
 export type InteractiveLesson = z.infer<typeof InteractiveLessonSchema>;
 
@@ -750,12 +751,14 @@ export type AnswerAnalysisInput = z.infer<typeof AnswerAnalysisInputSchema>;
 export const AnswerAnalysisOutputSchema = z.object({
     aiRating: z.number().min(1).max(10).describe("The AI's rating of the user's answer."),
     idealAnswer: z.string().describe("A concise, smart, and interview-ready answer to the question."),
+    shortcut: z.string().describe("A very short, memorable phrase or shortcut to remember the core concept."),
 });
 export type AnswerAnalysisOutput = z.infer<typeof AnswerAnalysisOutputSchema>;
 
 export const InterviewQuestionAnalysisSchema = z.object({
   aiRating: z.number().min(1).max(10),
   idealAnswer: z.string(),
+  shortcut: z.string(),
 });
 export type InterviewQuestionAnalysis = z.infer<typeof InterviewQuestionAnalysisSchema>;
 

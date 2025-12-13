@@ -69,6 +69,7 @@ export async function addInterviewExperience(experience: NewExperienceData) {
                 analysis: {
                     aiRating: analysisResult.aiRating,
                     idealAnswer: analysisResult.idealAnswer,
+                    shortcut: analysisResult.shortcut,
                 },
             };
         })
@@ -106,6 +107,7 @@ export async function updateInterviewExperience(experienceId: string, updates: N
                 analysis: {
                     aiRating: analysisResult.aiRating,
                     idealAnswer: analysisResult.idealAnswer,
+                    shortcut: analysisResult.shortcut,
                 },
             };
         })

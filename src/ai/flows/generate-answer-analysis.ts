@@ -33,6 +33,7 @@ User's Answer:
 Based on this, you must generate:
 1.  **aiRating**: A numerical rating from 1 to 10 of the user's answer, considering technical accuracy, clarity, and depth.
 2.  **idealAnswer**: A concise, well-structured, and "smart" answer to the original question. This should be the kind of response expected from a top candidate. It should be practical and ready for a real-world interview.
+3.  **shortcut**: A very short, memorable phrase or shortcut to remember the core concept of the ideal answer. (e.g., "Async/await is syntactic sugar over Promises.")
 `,
 });
 
