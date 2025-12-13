@@ -12,11 +12,30 @@ import { AnswerAnalysisInputSchema, AnswerAnalysisOutputSchema } from '@/lib/typ
 export type AnswerAnalysisInput = z.infer<typeof AnswerAnalysisInputSchema>;
 export type AnswerAnalysisOutput = z.infer<typeof AnswerAnalysisOutputSchema>;
 
+
+// New schema for bulk analysis
+const BulkAnalysisInputSchema = z.object({
+  questions: z.array(AnswerAnalysisInputSchema),
+});
+
+const BulkAnalysisOutputSchema = z.object({
+  analyses: z.array(AnswerAnalysisOutputSchema),
+});
+
+
 export async function generateAnswerAnalysis(input: AnswerAnalysisInput): Promise<AnswerAnalysisOutput> {
   return generateAnswerAnalysisFlow(input);
 }
 
-const prompt = ai.definePrompt({
+// New exported function for bulk analysis
+export async function generateBulkAnswerAnalysis(input: z.infer<typeof BulkAnalysisInputSchema>): Promise<z.infer<typeof BulkAnalysisOutputSchema>> {
+  return generateBulkAnswerAnalysisFlow(input);
+}
+
+
+// --- Single Analysis Flow ---
+
+const singleAnalysisPrompt = ai.definePrompt({
   name: 'generateAnswerAnalysisPrompt',
   input: { schema: AnswerAnalysisInputSchema },
   output: { schema: AnswerAnalysisOutputSchema },
@@ -49,7 +68,46 @@ const generateAnswerAnalysisFlow = ai.defineFlow(
     outputSchema: AnswerAnalysisOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
+    const { output } = await singleAnalysisPrompt(input);
+    return output!;
+  }
+);
+
+
+// --- Bulk Analysis Flow ---
+
+const bulkAnalysisPrompt = ai.definePrompt({
+    name: 'generateBulkAnswerAnalysisPrompt',
+    input: { schema: BulkAnalysisInputSchema },
+    output: { schema: BulkAnalysisOutputSchema },
+    prompt: `You are an expert technical interviewer. You will be given a list of interview questions, user answers, and an evaluation mode for each.
+
+Your task is to analyze each item in the list and return a corresponding list of analyses. Each analysis must contain an 'aiRating', an 'idealAnswer', and a 'shortcut'.
+
+Follow the rules for each evaluation mode as described:
+- "Strict": Be critical. A 10/10 is rare. An average answer gets 4-5.
+- "Friendly" or "Easy": Be encouraging. An average answer gets 6-7.
+- Default to "Friendly" if no mode is provided.
+
+Here is the list of questions to analyze:
+{{#each questions}}
+---
+Question: "{{this.questionText}}"
+Answer: "{{this.userAnswer}}"
+Mode: {{this.evaluationMode}}
+---
+{{/each}}
+`
+});
+
+const generateBulkAnswerAnalysisFlow = ai.defineFlow(
+  {
+    name: 'generateBulkAnswerAnalysisFlow',
+    inputSchema: BulkAnalysisInputSchema,
+    outputSchema: BulkAnalysisOutputSchema,
+  },
+  async (input) => {
+    const { output } = await bulkAnalysisPrompt(input);
     return output!;
   }
 );

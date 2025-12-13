@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase";
 import type { InterviewExperience, InterviewQuestion } from "@/lib/types";
 import { toSerializableInterviewExperience } from "@/lib/types";
 import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, where, serverTimestamp, getDoc } from "firebase/firestore";
-import { generateAnswerAnalysis } from '@/ai/flows/generate-answer-analysis';
+import { generateBulkAnswerAnalysis } from '@/ai/flows/generate-answer-analysis';
 
 const experiencesCollection = collection(db, "interview-experiences");
 
@@ -57,24 +57,29 @@ export async function addInterviewExperience(experience: NewExperienceData) {
         throw new Error("Authentication required to add an experience.");
     }
     
-    const analyzedQuestions = await Promise.all(
-        experience.questions.map(async (q) => {
-            const analysisResult = await generateAnswerAnalysis({
-                questionText: q.questionText,
-                userAnswer: q.userAnswer,
-                evaluationMode: q.evaluationMode,
-            });
-            return {
-                ...q,
-                id: crypto.randomUUID(), // Generate a client-side UUID for the sub-object
-                analysis: {
-                    aiRating: analysisResult.aiRating,
-                    idealAnswer: analysisResult.idealAnswer,
-                    shortcut: analysisResult.shortcut,
-                },
-            };
-        })
-    );
+    // Prepare questions for bulk analysis
+    const questionsToAnalyze = experience.questions.map(q => ({
+        questionText: q.questionText,
+        userAnswer: q.userAnswer,
+        evaluationMode: q.evaluationMode,
+    }));
+
+    // Call the new bulk analysis flow once
+    const bulkAnalysisResult = await generateBulkAnswerAnalysis({ questions: questionsToAnalyze });
+
+    // Map results back to questions
+    const analyzedQuestions = experience.questions.map((q, index) => {
+        const analysis = bulkAnalysisResult.analyses[index];
+        return {
+            ...q,
+            id: crypto.randomUUID(), // Generate a client-side UUID for the sub-object
+            analysis: analysis ? {
+                aiRating: analysis.aiRating,
+                idealAnswer: analysis.idealAnswer,
+                shortcut: analysis.shortcut,
+            } : undefined,
+        };
+    });
 
     const finalExperience = {
         ...experience,
@@ -92,32 +97,48 @@ export async function updateInterviewExperience(experienceId: string, updates: N
     throw new Error("User does not have permission to update this document.");
   }
   
-  const analyzedQuestions = await Promise.all(
-        updates.questions.map(async (q: any) => {
-            // If analysis already exists, keep it. Otherwise, generate it.
-            if (q.analysis) {
-                return q;
-            }
-            const analysisResult = await generateAnswerAnalysis({
-                questionText: q.questionText,
-                userAnswer: q.userAnswer,
-                evaluationMode: q.evaluationMode,
-            });
-            return {
-                ...q,
-                id: q.id || crypto.randomUUID(),
-                analysis: {
-                    aiRating: analysisResult.aiRating,
-                    idealAnswer: analysisResult.idealAnswer,
-                    shortcut: analysisResult.shortcut,
-                },
-            };
-        })
-    );
+  const questionsToAnalyze = updates.questions
+    .filter((q: any) => !q.analysis) // Only analyze questions that don't have one
+    .map((q: any) => ({
+      questionText: q.questionText,
+      userAnswer: q.userAnswer,
+      evaluationMode: q.evaluationMode,
+    }));
+
+  let analysisMap = new Map<string, any>();
+
+  if (questionsToAnalyze.length > 0) {
+    const bulkAnalysisResult = await generateBulkAnswerAnalysis({ questions: questionsToAnalyze });
+    questionsToAnalyze.forEach((q, index) => {
+      // Create a key to map original question to its analysis
+      const key = `${q.questionText}-${q.userAnswer}`;
+      analysisMap.set(key, bulkAnalysisResult.analyses[index]);
+    });
+  }
+
+  const finalQuestions = updates.questions.map((q: any) => {
+    // If it already has an analysis, keep it.
+    if (q.analysis) return q;
+
+    // Otherwise, find its new analysis from the map
+    const key = `${q.questionText}-${q.userAnswer}`;
+    const analysis = analysisMap.get(key);
+    
+    return {
+      ...q,
+      id: q.id || crypto.randomUUID(),
+      analysis: analysis ? {
+          aiRating: analysis.aiRating,
+          idealAnswer: analysis.idealAnswer,
+          shortcut: analysis.shortcut,
+      } : undefined,
+    };
+  });
+
 
   const finalUpdates = {
       ...updates,
-      questions: analyzedQuestions,
+      questions: finalQuestions,
   }
   
   const experienceRef = doc(db, "interview-experiences", experienceId);
