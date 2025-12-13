@@ -9,37 +9,44 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Explicitly match all the collections for clarity
     match /job-applications/{jobId} {
-      allow create, read, update, delete: if request.auth.uid == resource.data.userId;
+      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
     
     match /daily_tasks/{taskId} {
-       allow create, read, update, delete: if request.auth.uid == resource.data.userId;
+       allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
 
     match /interview_plans/{planId} {
-       allow create, read, update, delete: if request.auth.uid == resource.data.userId;
+       allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
     
     match /interview_sessions/{sessionId} {
-      allow create, read, update, delete: if request.auth.uid == resource.data.userId;
+      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
     
     match /learning_roadmaps/{roadmapId} {
-       allow create, read, update, delete: if request.auth.uid == resource.data.userId;
+       allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
     
     match /redeemed_rewards/{rewardId} {
-       allow create, read, update, delete: if request.auth.uid == resource.data.userId;
+       allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
 
     match /interview-experiences/{experienceId} {
-      allow create, read, update, delete: if request.auth.uid == resource.data.userId;
+      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
 
     match /chat_sessions/{sessionId} {
-      allow create, read, update, delete: if request.auth.uid == resource.data.userId;
+      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
   }
 }
