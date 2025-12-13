@@ -28,8 +28,11 @@ const questionSchema = z.object({
   questionText: z.string().min(1, 'Question is required.'),
   topic: z.string().min(1, 'Topic is required.'),
   userAnswer: z.string().min(1, 'Your answer is required.'),
-  idealAnswer: z.string().min(1, 'Ideal answer is required.'),
   userRating: z.coerce.number().min(1).max(10),
+  analysis: z.object({
+      aiRating: z.number(),
+      idealAnswer: z.string(),
+  }).optional(),
 });
 
 const experienceSchema = z.object({
@@ -86,6 +89,7 @@ export default function EditInterviewExperiencePage() {
         try {
             await updateInterviewExperience(experienceId, {
                 ...data,
+                userId: user.uid,
                 interviewDate: data.interviewDate.toISOString(),
             }, user.uid);
             toast({ title: "Success!", description: "Interview experience updated." });
@@ -188,10 +192,12 @@ export default function EditInterviewExperiencePage() {
                                         />
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div><Label>My Answer</Label><Textarea {...form.register(`questions.${index}.userAnswer`)} rows={5}/></div>
-                                    <div><Label>Ideal Answer</Label><Textarea {...form.register(`questions.${index}.idealAnswer`)} rows={5}/></div>
-                                </div>
+                                <div><Label>My Answer</Label><Textarea {...form.register(`questions.${index}.userAnswer`)} rows={5}/></div>
+                                
+                                {field.analysis?.idealAnswer && (
+                                     <div><Label>Ideal Answer (from AI)</Label><Textarea value={field.analysis.idealAnswer} rows={5} readOnly className="bg-muted/50" /></div>
+                                )}
+                               
                                 <div>
                                     <Label>My Rating: {form.watch(`questions.${index}.userRating`)}/10</Label>
                                      <Controller control={form.control} name={`questions.${index}.userRating`}
@@ -201,7 +207,7 @@ export default function EditInterviewExperiencePage() {
                                 <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="absolute top-2 right-2 text-destructive"><Trash2 /></Button>
                             </div>
                         ))}
-                         <Button type="button" variant="outline" onClick={() => append({ id: crypto.randomUUID(), questionText: '', topic: 'C#', userAnswer: '', idealAnswer: '', userRating: 5 })}>
+                         <Button type="button" variant="outline" onClick={() => append({ id: crypto.randomUUID(), questionText: '', topic: 'C#', userAnswer: '', userRating: 5 })}>
                             <PlusCircle className="mr-2"/> Add Question
                         </Button>
                     </CardContent>

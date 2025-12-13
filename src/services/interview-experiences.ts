@@ -1,8 +1,9 @@
 
+
 'use server';
 
 import { db } from "@/lib/firebase";
-import type { InterviewExperience, InterviewExperienceFormValues } from "@/lib/types";
+import type { InterviewExperience } from "@/lib/types";
 import { toSerializableInterviewExperience } from "@/lib/types";
 import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, where, serverTimestamp, getDoc } from "firebase/firestore";
 import { generateAnswerAnalysis } from '@/ai/flows/generate-answer-analysis';
@@ -47,7 +48,11 @@ export async function getInterviewExperience(experienceId: string): Promise<Inte
     return null;
 }
 
-export async function addInterviewExperience(experience: Omit<InterviewExperience, 'id' | 'createdAt' | 'questions'> & { questions: (Omit<InterviewExperience['questions'][0], 'id' | 'analysis'>)[] }) {
+type NewExperienceData = Omit<InterviewExperience, 'id' | 'createdAt' | 'questions'> & {
+  questions: Array<Omit<InterviewExperience['questions'][number], 'id' | 'analysis'>>
+};
+
+export async function addInterviewExperience(experience: NewExperienceData) {
     if (!experience.userId) {
         throw new Error("Authentication required to add an experience.");
     }
@@ -60,7 +65,7 @@ export async function addInterviewExperience(experience: Omit<InterviewExperienc
             });
             return {
                 ...q,
-                id: crypto.randomUUID(),
+                id: crypto.randomUUID(), // Generate a client-side UUID for the sub-object
                 analysis: {
                     aiRating: analysisResult.aiRating,
                     idealAnswer: analysisResult.idealAnswer,
@@ -71,7 +76,6 @@ export async function addInterviewExperience(experience: Omit<InterviewExperienc
 
     const finalExperience = {
         ...experience,
-        interviewDate: experience.interviewDate, // Already a string
         questions: analyzedQuestions,
         createdAt: serverTimestamp(),
     };
@@ -81,15 +85,16 @@ export async function addInterviewExperience(experience: Omit<InterviewExperienc
 }
 
 
-export async function updateInterviewExperience(experienceId: string, updates: Omit<InterviewExperience, 'id' | 'userId' | 'createdAt' | 'questions'> & { questions: (Omit<InterviewExperience['questions'][0], 'id' | 'analysis'>)[] }, userId: string) {
+export async function updateInterviewExperience(experienceId: string, updates: NewExperienceData, userId: string) {
   if (!await checkOwnership(experienceId, userId)) {
     throw new Error("User does not have permission to update this document.");
   }
   
   const analyzedQuestions = await Promise.all(
         updates.questions.map(async (q: any) => {
+            // If analysis already exists, keep it. Otherwise, generate it.
             if (q.analysis) {
-                return q; // Keep existing analysis if present
+                return q;
             }
             const analysisResult = await generateAnswerAnalysis({
                 questionText: q.questionText,
@@ -109,11 +114,10 @@ export async function updateInterviewExperience(experienceId: string, updates: O
   const finalUpdates = {
       ...updates,
       questions: analyzedQuestions,
-      interviewDate: updates.interviewDate
   }
   
   const experienceRef = doc(db, "interview-experiences", experienceId);
-  await updateDoc(experienceRef, finalUpdates);
+  await updateDoc(experienceRef, finalUpdates as any);
 }
 
 export async function deleteInterviewExperience(experienceId: string, userId: string) {

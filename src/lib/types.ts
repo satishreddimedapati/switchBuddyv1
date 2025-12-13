@@ -1,5 +1,4 @@
 
-
 import {z} from 'zod';
 import type { Timestamp } from 'firebase/firestore';
 
@@ -776,13 +775,18 @@ export const InterviewExperienceSchema = z.object({
   userId: z.string(),
   companyName: z.string(),
   role: z.string(),
-  interviewDate: z.string(),
+  interviewDate: z.string(), // Stored as ISO string
   roundType: z.enum(['HR', 'Technical', 'Managerial']),
   overallRating: z.number().min(1).max(10),
   questions: z.array(InterviewQuestionSchema),
   createdAt: z.any(),
 });
 export type InterviewExperience = z.infer<typeof InterviewExperienceSchema>;
+
+export type InterviewExperienceFormValues = z.infer<typeof InterviewExperienceSchema> & {
+    interviewDate: Date; // Use Date object in forms
+};
+
 
 export function toSerializableInterviewExperience(docData: any): InterviewExperience {
   const { createdAt, ...rest } = docData;

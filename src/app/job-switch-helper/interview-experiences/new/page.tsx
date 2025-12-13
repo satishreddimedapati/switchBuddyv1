@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
@@ -75,6 +76,7 @@ export default function NewInterviewExperiencePage() {
             await addInterviewExperience({
                 ...data,
                 userId: user.uid,
+                interviewDate: data.interviewDate.toISOString(),
             });
             toast({ title: "Success!", description: "Interview experience logged and analyzed." });
             router.push('/job-switch-helper?tab=interview-experiences');
