@@ -3,7 +3,7 @@
 'use server';
 
 import { db } from "@/lib/firebase";
-import type { InterviewExperience } from "@/lib/types";
+import type { InterviewExperience, InterviewQuestion } from "@/lib/types";
 import { toSerializableInterviewExperience } from "@/lib/types";
 import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, where, serverTimestamp, getDoc } from "firebase/firestore";
 import { generateAnswerAnalysis } from '@/ai/flows/generate-answer-analysis';
@@ -49,7 +49,7 @@ export async function getInterviewExperience(experienceId: string): Promise<Inte
 }
 
 type NewExperienceData = Omit<InterviewExperience, 'id' | 'createdAt' | 'questions'> & {
-  questions: Array<Omit<InterviewExperience['questions'][number], 'id' | 'analysis'>>
+  questions: Array<Omit<InterviewQuestion, 'id' | 'analysis'>>
 };
 
 export async function addInterviewExperience(experience: NewExperienceData) {
@@ -62,6 +62,7 @@ export async function addInterviewExperience(experience: NewExperienceData) {
             const analysisResult = await generateAnswerAnalysis({
                 questionText: q.questionText,
                 userAnswer: q.userAnswer,
+                evaluationMode: q.evaluationMode,
             });
             return {
                 ...q,
@@ -100,6 +101,7 @@ export async function updateInterviewExperience(experienceId: string, updates: N
             const analysisResult = await generateAnswerAnalysis({
                 questionText: q.questionText,
                 userAnswer: q.userAnswer,
+                evaluationMode: q.evaluationMode,
             });
             return {
                 ...q,

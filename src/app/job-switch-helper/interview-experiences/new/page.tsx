@@ -21,12 +21,14 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
+import { EvaluationModeSchema } from '@/lib/types';
 
 const questionSchema = z.object({
   questionText: z.string().min(1, 'Question is required.'),
   topic: z.string().min(1, 'Topic is required.'),
   userAnswer: z.string().min(1, 'Your answer is required.'),
   userRating: z.coerce.number().min(1).max(10),
+  evaluationMode: EvaluationModeSchema.default('Friendly'),
 });
 
 const experienceSchema = z.object({
@@ -55,7 +57,7 @@ export default function NewInterviewExperiencePage() {
             interviewDate: new Date(),
             roundType: 'Technical',
             overallRating: 5,
-            questions: [{ questionText: '', topic: 'C#', userAnswer: '', userRating: 5 }],
+            questions: [{ questionText: '', topic: 'C#', userAnswer: '', userRating: 5, evaluationMode: 'Friendly' }],
         },
     });
 
@@ -162,14 +164,14 @@ export default function NewInterviewExperiencePage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Questions & Answers</CardTitle>
-                        <CardDescription>Log each question you were asked. The AI will generate the "ideal answer" for you upon saving.</CardDescription>
+                        <CardDescription>Log each question. The AI will generate the "ideal answer" and a rating for you upon saving.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         {fields.map((field, index) => (
                             <div key={field.id} className="p-4 border rounded-lg space-y-4 relative">
                                 <h4 className="font-semibold">Question {index + 1}</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
+                                    <div className="space-y-2">
                                         <Label>Question</Label>
                                         <Textarea {...form.register(`questions.${index}.questionText`)} />
                                         {form.formState.errors.questions?.[index]?.questionText && <p className="text-destructive text-sm mt-1">{form.formState.errors.questions[index]?.questionText?.message}</p>}
@@ -193,22 +195,39 @@ export default function NewInterviewExperiencePage() {
                                         )}
                                     </div>
                                 </div>
-                                <div>
+                                <div className="space-y-2">
                                     <Label>My Answer (What I said)</Label>
                                     <Textarea {...form.register(`questions.${index}.userAnswer`)} rows={5}/>
                                 </div>
-                                <div>
-                                    <Label>My Self-Rating for this question: {form.watch(`questions.${index}.userRating`)}/10</Label>
-                                     <Controller
-                                        control={form.control}
-                                        name={`questions.${index}.userRating`}
-                                        render={({ field }) => <input type="range" min="1" max="10" value={field.value} onChange={field.onChange} className="w-full" />}
-                                    />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>My Self-Rating: {form.watch(`questions.${index}.userRating`)}/10</Label>
+                                         <Controller
+                                            control={form.control}
+                                            name={`questions.${index}.userRating`}
+                                            render={({ field }) => <input type="range" min="1" max="10" value={field.value} onChange={field.onChange} className="w-full" />}
+                                        />
+                                    </div>
+                                     <div className="space-y-2">
+                                        <Label>Evaluation Mode</Label>
+                                        <Controller control={form.control} name={`questions.${index}.evaluationMode`}
+                                            render={({ field: modeField }) => (
+                                                <Select onValueChange={modeField.onChange} value={modeField.value}>
+                                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Friendly">Friendly</SelectItem>
+                                                        <SelectItem value="Easy">Easy</SelectItem>
+                                                        <SelectItem value="Strict">Strict</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        />
+                                    </div>
                                 </div>
                                 <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="absolute top-2 right-2 text-destructive"><Trash2 /></Button>
                             </div>
                         ))}
-                         <Button type="button" variant="outline" onClick={() => append({ questionText: '', topic: 'C#', userAnswer: '', userRating: 5 })}>
+                         <Button type="button" variant="outline" onClick={() => append({ questionText: '', topic: 'C#', userAnswer: '', userRating: 5, evaluationMode: 'Friendly' })}>
                             <PlusCircle className="mr-2"/> Add Question
                         </Button>
                     </CardContent>

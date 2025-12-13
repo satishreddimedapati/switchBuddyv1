@@ -742,9 +742,13 @@ export const GenerateQuickRoadmapOutputSchema = RoadmapGenerationOutputSchema;
 export type GenerateQuickRoadmapOutput = z.infer<typeof GenerateQuickRoadmapOutputSchema>;
 
 // Interview Experiences
+export const EvaluationModeSchema = z.enum(['Friendly', 'Easy', 'Strict']);
+export type EvaluationMode = z.infer<typeof EvaluationModeSchema>;
+
 export const AnswerAnalysisInputSchema = z.object({
   questionText: z.string(),
   userAnswer: z.string(),
+  evaluationMode: EvaluationModeSchema.optional().describe("The evaluation mode to use for rating the answer."),
 });
 export type AnswerAnalysisInput = z.infer<typeof AnswerAnalysisInputSchema>;
 
@@ -770,6 +774,7 @@ export const InterviewQuestionSchema = z.object({
   userAnswer: z.string(),
   userRating: z.number().min(1).max(10),
   analysis: InterviewQuestionAnalysisSchema.optional(),
+  evaluationMode: EvaluationModeSchema.optional(),
 });
 export type InterviewQuestion = z.infer<typeof InterviewQuestionSchema>;
 

@@ -45,7 +45,7 @@ function LoadingState() {
   );
 }
 
-function QuestionCard({ question }: { question: InterviewQuestion }) {
+function QuestionCard({ question, qNo }: { question: InterviewQuestion, qNo: number }) {
     const selfRatingColor = question.userRating >= 7 ? 'text-green-600' : question.userRating >= 4 ? 'text-yellow-600' : 'text-red-600';
     const aiRatingColor = question.analysis?.aiRating && (question.analysis.aiRating >= 7 ? 'text-green-600' : question.analysis.aiRating >= 4 ? 'text-yellow-600' : 'text-red-600');
 
@@ -53,9 +53,16 @@ function QuestionCard({ question }: { question: InterviewQuestion }) {
         <Card className="border-l-4" style={{borderColor: `hsl(var(--primary)) / 0.5`}}>
             <AccordionItem value={question.id}>
                 <AccordionTrigger className="p-4 text-left hover:no-underline">
-                     <div className="flex justify-between items-start w-full pr-4">
-                        <h4 className="font-semibold flex-1">{question.questionText}</h4>
-                        <Badge variant="outline" className="ml-4">{question.topic}</Badge>
+                     <div className="flex justify-between items-center w-full pr-4">
+                        <h4 className="font-semibold flex items-center gap-2 flex-1">
+                            <span className="text-primary font-mono">Q{qNo}.</span>
+                            <span className="truncate">{question.questionText}</span>
+                        </h4>
+                        {question.analysis?.aiRating && (
+                            <Badge variant="outline" className={`text-base ml-4 ${aiRatingColor}`}>
+                                {question.analysis.aiRating}/10
+                            </Badge>
+                        )}
                     </div>
                 </AccordionTrigger>
                 <AccordionContent className="p-4 pt-0 space-y-4">
@@ -152,6 +159,7 @@ export default function InterviewExperiencePage() {
 
     const doc = new jsPDF();
     const pageHeight = doc.internal.pageSize.height;
+    const pageWidth = doc.internal.pageSize.width;
     const margin = 15;
     let yPos = margin;
 
@@ -171,20 +179,17 @@ export default function InterviewExperiencePage() {
     yPos += 15;
 
     experience.questions.forEach((q, index) => {
-        if (index > 0 && index % 3 === 0) {
-            doc.addPage();
-            yPos = margin;
-        }
+        addPageIfNeeded(80); // Estimate for a question block
         
-        const questionLines = doc.splitTextToSize(`Q${index + 1}: ${q.questionText}`, 180);
-        addPageIfNeeded(questionLines.length * 5 + 50); // Rough estimate
         doc.setDrawColor(230, 230, 230);
-        doc.roundedRect(margin - 2, yPos - 5, 184, 1, 0, 0, 'F');
-        yPos += 5;
+        doc.setLineWidth(0.5);
+        doc.roundedRect(margin - 5, yPos - 5, pageWidth - (margin * 2) + 10, 1, 1, 1, 'F');
+        yPos += 5
 
         doc.setFontSize(11);
         doc.setTextColor(0);
         doc.setFont(undefined, 'bold');
+        const questionLines = doc.splitTextToSize(`Q${index + 1}: ${q.questionText}`, pageWidth - (margin * 2));
         doc.text(questionLines, margin, yPos);
         yPos += questionLines.length * 5 + 5;
 
@@ -192,13 +197,19 @@ export default function InterviewExperiencePage() {
         doc.setTextColor(80);
         
         if (q.analysis?.idealAnswer) {
-             const idealAnswerLines = doc.splitTextToSize(`Ideal Answer: ${q.analysis.idealAnswer}`, 170);
+             const idealAnswerLines = doc.splitTextToSize(`Ideal Answer: ${q.analysis.idealAnswer}`, pageWidth - (margin * 2) - 5);
              addPageIfNeeded(idealAnswerLines.length * 5);
              doc.text(idealAnswerLines, margin + 5, yPos);
              yPos += idealAnswerLines.length * 5 + 5;
         }
 
         yPos += 10;
+        
+        // Add a page break after every 3 questions
+        if ((index + 1) % 3 === 0 && index < experience.questions.length - 1) {
+            doc.addPage();
+            yPos = margin;
+        }
     });
 
 
@@ -257,8 +268,8 @@ export default function InterviewExperiencePage() {
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
             <Accordion type="single" collapsible className="w-full space-y-4" defaultValue={experience.questions[0]?.id}>
-                 {experience.questions.map((q) => (
-                    <QuestionCard key={q.id} question={q} />
+                 {experience.questions.map((q, index) => (
+                    <QuestionCard key={q.id} question={q} qNo={index + 1} />
                 ))}
             </Accordion>
         </div>

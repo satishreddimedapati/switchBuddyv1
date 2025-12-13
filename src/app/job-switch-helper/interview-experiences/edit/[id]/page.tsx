@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EvaluationModeSchema } from '@/lib/types';
 
 const questionSchema = z.object({
   id: z.string(),
@@ -29,6 +30,7 @@ const questionSchema = z.object({
   topic: z.string().min(1, 'Topic is required.'),
   userAnswer: z.string().min(1, 'Your answer is required.'),
   userRating: z.coerce.number().min(1).max(10),
+  evaluationMode: EvaluationModeSchema.default('Friendly'),
   analysis: z.object({
       aiRating: z.number(),
       idealAnswer: z.string(),
@@ -182,7 +184,10 @@ export default function EditInterviewExperiencePage() {
                             <div key={field.id} className="p-4 border rounded-lg space-y-4 relative">
                                 <h4 className="font-semibold">Question {index + 1}</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div><Label>Question</Label><Textarea {...form.register(`questions.${index}.questionText`)} /></div>
+                                    <div className="space-y-2">
+                                        <Label>Question</Label>
+                                        <Textarea {...form.register(`questions.${index}.questionText`)} />
+                                    </div>
                                     <div className="space-y-2">
                                         <Label>Topic</Label>
                                         <Controller control={form.control} name={`questions.${index}.topic`}
@@ -205,22 +210,45 @@ export default function EditInterviewExperiencePage() {
                                         )}
                                     </div>
                                 </div>
-                                <div><Label>My Answer</Label><Textarea {...form.register(`questions.${index}.userAnswer`)} rows={5}/></div>
+                                <div className="space-y-2">
+                                    <Label>My Answer</Label>
+                                    <Textarea {...form.register(`questions.${index}.userAnswer`)} rows={5}/>
+                                </div>
                                 
                                 {field.analysis?.idealAnswer && (
-                                     <div><Label>Ideal Answer (from AI)</Label><Textarea value={field.analysis.idealAnswer} rows={5} readOnly className="bg-muted/50" /></div>
+                                     <div className="space-y-2">
+                                        <Label>Ideal Answer (from AI)</Label>
+                                        <Textarea value={field.analysis.idealAnswer} rows={5} readOnly className="bg-muted/50" />
+                                     </div>
                                 )}
                                
-                                <div>
-                                    <Label>My Rating: {form.watch(`questions.${index}.userRating`)}/10</Label>
-                                     <Controller control={form.control} name={`questions.${index}.userRating`}
-                                        render={({ field }) => <input type="range" min="1" max="10" value={field.value} onChange={field.onChange} className="w-full" />}
-                                    />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                     <div className="space-y-2">
+                                        <Label>My Rating: {form.watch(`questions.${index}.userRating`)}/10</Label>
+                                        <Controller control={form.control} name={`questions.${index}.userRating`}
+                                            render={({ field }) => <input type="range" min="1" max="10" value={field.value} onChange={field.onChange} className="w-full" />}
+                                        />
+                                    </div>
+                                     <div className="space-y-2">
+                                        <Label>Evaluation Mode</Label>
+                                        <Controller control={form.control} name={`questions.${index}.evaluationMode`}
+                                            render={({ field: modeField }) => (
+                                                <Select onValueChange={modeField.onChange} value={modeField.value}>
+                                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Friendly">Friendly</SelectItem>
+                                                        <SelectItem value="Easy">Easy</SelectItem>
+                                                        <SelectItem value="Strict">Strict</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        />
+                                    </div>
                                 </div>
                                 <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="absolute top-2 right-2 text-destructive"><Trash2 /></Button>
                             </div>
                         ))}
-                         <Button type="button" variant="outline" onClick={() => append({ id: crypto.randomUUID(), questionText: '', topic: 'C#', userAnswer: '', userRating: 5 })}>
+                         <Button type="button" variant="outline" onClick={() => append({ id: crypto.randomUUID(), questionText: '', topic: 'C#', userAnswer: '', userRating: 5, evaluationMode: 'Friendly' })}>
                             <PlusCircle className="mr-2"/> Add Question
                         </Button>
                     </CardContent>
