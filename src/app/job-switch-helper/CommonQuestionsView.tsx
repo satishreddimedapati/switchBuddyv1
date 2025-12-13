@@ -52,7 +52,8 @@ export function CommonQuestionsView({ experiences }: CommonQuestionsViewProps) {
                 });
             });
         });
-
+        
+        // Filter to only include topics that have questions from more than one interview
         const filtered = Array.from(topicMap.values())
             .filter(t => t.occurrences.length > 1);
             
