@@ -742,11 +742,21 @@ export const GenerateQuickRoadmapOutputSchema = RoadmapGenerationOutputSchema;
 export type GenerateQuickRoadmapOutput = z.infer<typeof GenerateQuickRoadmapOutputSchema>;
 
 // Interview Experiences
+export const AnswerAnalysisInputSchema = z.object({
+  questionText: z.string(),
+  userAnswer: z.string(),
+});
+export type AnswerAnalysisInput = z.infer<typeof AnswerAnalysisInputSchema>;
+
+export const AnswerAnalysisOutputSchema = z.object({
+    aiRating: z.number().min(1).max(10).describe("The AI's rating of the user's answer."),
+    idealAnswer: z.string().describe("A concise, smart, and interview-ready answer to the question."),
+});
+export type AnswerAnalysisOutput = z.infer<typeof AnswerAnalysisOutputSchema>;
+
 export const InterviewQuestionAnalysisSchema = z.object({
   aiRating: z.number().min(1).max(10),
-  feedback: z.string(),
-  suggestions: z.string(),
-  refinedAnswer: z.string(),
+  idealAnswer: z.string(),
 });
 export type InterviewQuestionAnalysis = z.infer<typeof InterviewQuestionAnalysisSchema>;
 
@@ -756,7 +766,6 @@ export const InterviewQuestionSchema = z.object({
   questionText: z.string(),
   topic: z.string(),
   userAnswer: z.string(),
-  idealAnswer: z.string(),
   userRating: z.number().min(1).max(10),
   analysis: InterviewQuestionAnalysisSchema.optional(),
 });

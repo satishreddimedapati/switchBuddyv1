@@ -31,3 +31,4 @@ import '@/ai/flows/generate-interactive-lesson.ts';
 import '@/ai/flows/generate-follow-up-question.ts';
 import '@/ai/flows/parse-job-details.ts';
 import '@/ai/flows/generate-quick-roadmap.ts';
+import '@/ai/flows/generate-answer-analysis.ts';

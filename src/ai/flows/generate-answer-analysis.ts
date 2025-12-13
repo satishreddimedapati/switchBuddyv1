@@ -1,0 +1,49 @@
+
+'use server';
+
+/**
+ * @fileOverview An AI flow to analyze a user's answer to an interview question.
+ */
+
+import { ai } from '@/ai/genkit';
+import { z } from 'zod';
+import { AnswerAnalysisInputSchema, AnswerAnalysisOutputSchema } from '@/lib/types';
+
+export type AnswerAnalysisInput = z.infer<typeof AnswerAnalysisInputSchema>;
+export type AnswerAnalysisOutput = z.infer<typeof AnswerAnalysisOutputSchema>;
+
+export async function generateAnswerAnalysis(input: AnswerAnalysisInput): Promise<AnswerAnalysisOutput> {
+  return generateAnswerAnalysisFlow(input);
+}
+
+const prompt = ai.definePrompt({
+  name: 'generateAnswerAnalysisPrompt',
+  input: { schema: AnswerAnalysisInputSchema },
+  output: { schema: AnswerAnalysisOutputSchema },
+  prompt: `You are an expert technical interviewer and career coach.
+
+Your task is to analyze a user's answer to a specific interview question and provide a concise, actionable evaluation.
+
+Question:
+"{{{questionText}}}"
+
+User's Answer:
+"{{{userAnswer}}}"
+
+Based on this, you must generate:
+1.  **aiRating**: A numerical rating from 1 to 10 of the user's answer, considering technical accuracy, clarity, and depth.
+2.  **idealAnswer**: A concise, well-structured, and "smart" answer to the original question. This should be the kind of response expected from a top candidate. It should be practical and ready for a real-world interview.
+`,
+});
+
+const generateAnswerAnalysisFlow = ai.defineFlow(
+  {
+    name: 'generateAnswerAnalysisFlow',
+    inputSchema: AnswerAnalysisInputSchema,
+    outputSchema: AnswerAnalysisOutputSchema,
+  },
+  async (input) => {
+    const { output } = await prompt(input);
+    return output!;
+  }
+);

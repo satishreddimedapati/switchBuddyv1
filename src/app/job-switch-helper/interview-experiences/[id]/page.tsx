@@ -141,15 +141,25 @@ export default function InterviewExperiencePage() {
                         <div>
                             <h4 className="font-semibold mb-2">My Answer</h4>
                             <p className="text-muted-foreground whitespace-pre-wrap p-3 bg-muted/50 rounded-md">{q.userAnswer || 'No answer logged.'}</p>
-                            <div className="flex items-center gap-2 mt-2">
-                                <span className="text-sm font-medium">My Rating:</span>
-                                <Badge variant="secondary">{q.userRating}/10</Badge>
+                             <div className="flex items-center gap-4 mt-2">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium">My Rating:</span>
+                                    <Badge variant="secondary">{q.userRating}/10</Badge>
+                                </div>
+                                {q.analysis && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium">AI Rating:</span>
+                                        <Badge variant="default" className="bg-primary/90">{q.analysis.aiRating}/10</Badge>
+                                    </div>
+                                )}
                             </div>
                         </div>
-                        <div>
-                            <h4 className="font-semibold mb-2">Ideal Answer</h4>
-                            <p className="text-muted-foreground whitespace-pre-wrap p-3 bg-muted/50 rounded-md">{q.idealAnswer || 'No ideal answer logged.'}</p>
-                        </div>
+                        {q.analysis?.idealAnswer && (
+                            <div>
+                                <h4 className="font-semibold mb-2 flex items-center gap-2"><Bot className="h-4 w-4 text-primary"/>Ideal Answer (from AI)</h4>
+                                <p className="text-muted-foreground whitespace-pre-wrap p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">{q.analysis.idealAnswer}</p>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             ))}

@@ -26,7 +26,6 @@ const questionSchema = z.object({
   questionText: z.string().min(1, 'Question is required.'),
   topic: z.string().min(1, 'Topic is required.'),
   userAnswer: z.string().min(1, 'Your answer is required.'),
-  idealAnswer: z.string().min(1, 'Ideal answer is required.'),
   userRating: z.coerce.number().min(1).max(10),
 });
 
@@ -56,7 +55,7 @@ export default function NewInterviewExperiencePage() {
             interviewDate: new Date(),
             roundType: 'Technical',
             overallRating: 5,
-            questions: [{ questionText: '', topic: 'C#', userAnswer: '', idealAnswer: '', userRating: 5 }],
+            questions: [{ questionText: '', topic: 'C#', userAnswer: '', userRating: 5 }],
         },
     });
 
@@ -71,14 +70,13 @@ export default function NewInterviewExperiencePage() {
             return;
         }
         setIsSubmitting(true);
+        toast({ title: "Processing...", description: "Logging your experience and generating AI analysis." });
         try {
             await addInterviewExperience({
                 ...data,
                 userId: user.uid,
-                interviewDate: data.interviewDate.toISOString(),
-                questions: data.questions.map(q => ({...q, id: crypto.randomUUID()}))
             });
-            toast({ title: "Success!", description: "Interview experience logged." });
+            toast({ title: "Success!", description: "Interview experience logged and analyzed." });
             router.push('/job-switch-helper?tab=interview-experiences');
         } catch (error) {
             console.error("Failed to log experience", error);
@@ -161,7 +159,7 @@ export default function NewInterviewExperiencePage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Questions & Answers</CardTitle>
-                        <CardDescription>Log each question you were asked.</CardDescription>
+                        <CardDescription>Log each question you were asked. The AI will generate the "ideal answer" for you upon saving.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         {fields.map((field, index) => (
@@ -187,15 +185,9 @@ export default function NewInterviewExperiencePage() {
                                         />
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <Label>My Answer (What I said)</Label>
-                                        <Textarea {...form.register(`questions.${index}.userAnswer`)} rows={5}/>
-                                    </div>
-                                    <div>
-                                        <Label>Best / Smart Answer</Label>
-                                        <Textarea {...form.register(`questions.${index}.idealAnswer`)} rows={5}/>
-                                    </div>
+                                <div>
+                                    <Label>My Answer (What I said)</Label>
+                                    <Textarea {...form.register(`questions.${index}.userAnswer`)} rows={5}/>
                                 </div>
                                 <div>
                                     <Label>My Self-Rating for this question: {form.watch(`questions.${index}.userRating`)}/10</Label>
@@ -208,7 +200,7 @@ export default function NewInterviewExperiencePage() {
                                 <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="absolute top-2 right-2 text-destructive"><Trash2 /></Button>
                             </div>
                         ))}
-                         <Button type="button" variant="outline" onClick={() => append({ questionText: '', topic: 'C#', userAnswer: '', idealAnswer: '', userRating: 5 })}>
+                         <Button type="button" variant="outline" onClick={() => append({ questionText: '', topic: 'C#', userAnswer: '', userRating: 5 })}>
                             <PlusCircle className="mr-2"/> Add Question
                         </Button>
                     </CardContent>
@@ -217,7 +209,7 @@ export default function NewInterviewExperiencePage() {
                 <div className="flex justify-end">
                     <Button type="submit" disabled={isSubmitting}>
                         {isSubmitting ? <Loader2 className="animate-spin" /> : <Save />}
-                        Save Experience
+                        Save & Analyze
                     </Button>
                 </div>
             </form>
