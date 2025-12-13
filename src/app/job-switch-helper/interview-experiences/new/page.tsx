@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
@@ -22,6 +21,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
+import { highImpactSkills } from '@/lib/types';
 
 const questionSchema = z.object({
   questionText: z.string().min(1, 'Question is required.'),
@@ -40,7 +40,7 @@ const experienceSchema = z.object({
 });
 
 type ExperienceFormValues = z.infer<typeof experienceSchema>;
-const interviewTopics = ["C#", ".NET", "SQL", "Angular", "System Design", "HR", "Behavioral"];
+const interviewTopics = highImpactSkills.slice(0, 15); // Use a subset of high-impact skills as topics
 
 export default function NewInterviewExperiencePage() {
     const { user } = useAuth();
@@ -56,7 +56,7 @@ export default function NewInterviewExperiencePage() {
             interviewDate: new Date(),
             roundType: 'Technical',
             overallRating: 5,
-            questions: [{ questionText: '', topic: 'C#', userAnswer: '', userRating: 5 }],
+            questions: [{ questionText: '', topic: 'React', userAnswer: '', userRating: 5 }],
         },
     });
 
@@ -202,7 +202,7 @@ export default function NewInterviewExperiencePage() {
                                 <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="absolute top-2 right-2 text-destructive"><Trash2 /></Button>
                             </div>
                         ))}
-                         <Button type="button" variant="outline" onClick={() => append({ questionText: '', topic: 'C#', userAnswer: '', userRating: 5 })}>
+                         <Button type="button" variant="outline" onClick={() => append({ questionText: '', topic: 'React', userAnswer: '', userRating: 5 })}>
                             <PlusCircle className="mr-2"/> Add Question
                         </Button>
                     </CardContent>
