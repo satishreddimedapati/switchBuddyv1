@@ -32,6 +32,7 @@ const questionSchema = z.object({
   analysis: z.object({
       aiRating: z.number(),
       idealAnswer: z.string(),
+      shortcut: z.string(),
   }).optional(),
 });
 
@@ -45,7 +46,7 @@ const experienceSchema = z.object({
 });
 
 type ExperienceFormValues = z.infer<typeof experienceSchema>;
-const interviewTopics = ["C#", ".NET", "SQL", "Angular", "System Design", "HR", "Behavioral"];
+const interviewTopics = ["C#", ".NET", "SQL", "Angular", "Other"];
 
 export default function EditInterviewExperiencePage() {
     const { user } = useAuth();
@@ -82,6 +83,8 @@ export default function EditInterviewExperiencePage() {
         control: form.control,
         name: "questions"
     });
+
+    const watchedQuestions = form.watch('questions');
 
     const onSubmit = async (data: ExperienceFormValues) => {
         if (!user) return;
@@ -180,16 +183,26 @@ export default function EditInterviewExperiencePage() {
                                 <h4 className="font-semibold">Question {index + 1}</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div><Label>Question</Label><Textarea {...form.register(`questions.${index}.questionText`)} /></div>
-                                    <div>
+                                    <div className="space-y-2">
                                         <Label>Topic</Label>
                                         <Controller control={form.control} name={`questions.${index}.topic`}
-                                            render={({ field }) => (
-                                                <Select onValueChange={field.onChange} value={field.value}>
+                                            render={({ field: topicField }) => (
+                                                 <Select 
+                                                    onValueChange={topicField.onChange} 
+                                                    value={interviewTopics.includes(topicField.value) ? topicField.value : 'Other'}
+                                                >
                                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                                     <SelectContent>{interviewTopics.map(topic => <SelectItem key={topic} value={topic}>{topic}</SelectItem>)}</SelectContent>
                                                 </Select>
                                             )}
                                         />
+                                        {watchedQuestions[index]?.topic && !interviewTopics.includes(watchedQuestions[index]?.topic) && (
+                                            <Input
+                                                placeholder="Enter custom topic"
+                                                defaultValue={watchedQuestions[index]?.topic}
+                                                onBlur={(e) => form.setValue(`questions.${index}.topic`, e.target.value)}
+                                            />
+                                        )}
                                     </div>
                                 </div>
                                 <div><Label>My Answer</Label><Textarea {...form.register(`questions.${index}.userAnswer`)} rows={5}/></div>

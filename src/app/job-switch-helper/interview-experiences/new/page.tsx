@@ -21,7 +21,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
-import { highImpactSkills } from '@/lib/types';
 
 const questionSchema = z.object({
   questionText: z.string().min(1, 'Question is required.'),
@@ -40,7 +39,7 @@ const experienceSchema = z.object({
 });
 
 type ExperienceFormValues = z.infer<typeof experienceSchema>;
-const interviewTopics = highImpactSkills.slice(0, 15); // Use a subset of high-impact skills as topics
+const interviewTopics = ["C#", ".NET", "SQL", "Angular", "Other"];
 
 export default function NewInterviewExperiencePage() {
     const { user } = useAuth();
@@ -56,7 +55,7 @@ export default function NewInterviewExperiencePage() {
             interviewDate: new Date(),
             roundType: 'Technical',
             overallRating: 5,
-            questions: [{ questionText: '', topic: 'React', userAnswer: '', userRating: 5 }],
+            questions: [{ questionText: '', topic: 'C#', userAnswer: '', userRating: 5 }],
         },
     });
 
@@ -64,6 +63,8 @@ export default function NewInterviewExperiencePage() {
         control: form.control,
         name: "questions"
     });
+
+    const watchedQuestions = form.watch('questions');
 
     const onSubmit = async (data: ExperienceFormValues) => {
         if (!user) {
@@ -173,18 +174,23 @@ export default function NewInterviewExperiencePage() {
                                         <Textarea {...form.register(`questions.${index}.questionText`)} />
                                         {form.formState.errors.questions?.[index]?.questionText && <p className="text-destructive text-sm mt-1">{form.formState.errors.questions[index]?.questionText?.message}</p>}
                                     </div>
-                                    <div>
+                                    <div className="space-y-2">
                                         <Label>Topic</Label>
                                         <Controller control={form.control} name={`questions.${index}.topic`}
-                                            render={({ field }) => (
-                                                <Select onValueChange={field.onChange} value={field.value}>
+                                            render={({ field: topicField }) => (
+                                                <Select onValueChange={topicField.onChange} value={topicField.value === 'Other' || !interviewTopics.includes(topicField.value) ? 'Other' : topicField.value}>
                                                     <SelectTrigger><SelectValue /></SelectTrigger>
-                                                    <SelectContent>
-                                                        {interviewTopics.map(topic => <SelectItem key={topic} value={topic}>{topic}</SelectItem>)}
-                                                    </SelectContent>
+                                                    <SelectContent>{interviewTopics.map(topic => <SelectItem key={topic} value={topic}>{topic}</SelectItem>)}</SelectContent>
                                                 </Select>
                                             )}
                                         />
+                                        {(watchedQuestions[index]?.topic === 'Other' || !interviewTopics.includes(watchedQuestions[index]?.topic)) && (
+                                            <Input
+                                                placeholder="Enter custom topic"
+                                                defaultValue={interviewTopics.includes(watchedQuestions[index]?.topic) ? '' : watchedQuestions[index]?.topic}
+                                                onBlur={(e) => form.setValue(`questions.${index}.topic`, e.target.value)}
+                                            />
+                                        )}
                                     </div>
                                 </div>
                                 <div>
@@ -202,7 +208,7 @@ export default function NewInterviewExperiencePage() {
                                 <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="absolute top-2 right-2 text-destructive"><Trash2 /></Button>
                             </div>
                         ))}
-                         <Button type="button" variant="outline" onClick={() => append({ questionText: '', topic: 'React', userAnswer: '', userRating: 5 })}>
+                         <Button type="button" variant="outline" onClick={() => append({ questionText: '', topic: 'C#', userAnswer: '', userRating: 5 })}>
                             <PlusCircle className="mr-2"/> Add Question
                         </Button>
                     </CardContent>

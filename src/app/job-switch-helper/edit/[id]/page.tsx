@@ -219,10 +219,10 @@ export default function EditInterviewPlanPage() {
                                     className="grid grid-cols-2 md:grid-cols-4 gap-4"
                                 >
                                     {personas.map((persona) => (
-                                        <ToggleGroupItem key={persona.name} value={persona.name} className="h-auto" asChild>
+                                        <ToggleGroupItem key={persona.name} value={persona.name} className="h-auto p-0" asChild>
                                            <div className={cn(
-                                                "p-4 border rounded-lg cursor-pointer transition-all text-center space-y-2",
-                                                field.value === persona.name && "ring-2 ring-primary bg-primary/10"
+                                                "p-4 border rounded-lg cursor-pointer transition-all text-center space-y-2 data-[state=on]:ring-2 data-[state=on]:ring-primary data-[state=on]:bg-primary/10",
+                                                form.getValues("persona") === persona.name && "ring-2 ring-primary bg-primary/10"
                                             )}>
                                                 <persona.icon className="h-8 w-8 mx-auto" />
                                                 <p className="font-semibold">{persona.name}</p>
