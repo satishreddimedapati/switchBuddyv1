@@ -5,7 +5,7 @@ import { googleAI } from '@genkit-ai/google-genai';
 // -----------------------------
 // Load API Keys
 // -----------------------------
-const apiKey = "AIzaSyD-xTG54wOmrQWpIJ3cigoyngbzwqG759c";
+const apiKey = "AIzaSyA4hfxytdyEj5DQ5jrxAgWbp1oYxsZ1gV8";
 
 if (!apiKey) {
   throw new Error("Gemini API key not found. Please set GEMINI_API_KEY in your environment.");
