@@ -8,7 +8,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { GenerateInteractiveLessonInputSchema, InteractiveLessonSchema } from '@/lib/types';
-import { googleAI } from '@genkit-ai/googleai';
+import { googleAI } from '@genkit-ai/google-genai';
 
 export type GenerateInteractiveLessonInput = z.infer<typeof GenerateInteractiveLessonInputSchema>;
 export type InteractiveLesson = z.infer<typeof InteractiveLessonSchema>;
