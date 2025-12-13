@@ -15,13 +15,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
-import { Briefcase, Cpu, Video, MoreHorizontal } from "lucide-react";
+import { Briefcase, Cpu, Video, MoreHorizontal, History } from "lucide-react";
+import { InterviewExperiences } from "./InterviewExperiences";
 
 
 const sections = [
     { value: 'tracker', label: 'Job Tracker', icon: Briefcase },
     { value: 'intelligence', label: 'Job Intelligence', icon: Cpu },
     { value: 'interview-prep', label: 'Interview Prep', icon: Video },
+    { value: 'interview-experiences', label: 'Interview Experiences', icon: History },
 ]
 
 export default function JobSwitchHelperPage() {
@@ -46,6 +48,8 @@ export default function JobSwitchHelperPage() {
                 return <JobIntelligence />;
             case 'interview-prep':
                 return <InterviewPrep />;
+            case 'interview-experiences':
+                return <InterviewExperiences />;
             default:
                 return <JobTracker />;
         }
@@ -89,7 +93,7 @@ export default function JobSwitchHelperPage() {
                 </div>
             ) : (
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
+                    <TabsList className="grid w-full grid-cols-4">
                         {sections.map(section => (
                             <TabsTrigger key={section.value} value={section.value}>
                                <section.icon className="mr-2 h-4 w-4" />
@@ -105,6 +109,9 @@ export default function JobSwitchHelperPage() {
                     </TabsContent>
                     <TabsContent value="interview-prep">
                         <InterviewPrep />
+                    </TabsContent>
+                    <TabsContent value="interview-experiences">
+                        <InterviewExperiences />
                     </TabsContent>
                 </Tabs>
             )}

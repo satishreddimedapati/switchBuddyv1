@@ -551,7 +551,7 @@ export const LessonCardSchema = z.object({
         'company_use_cases',
     ]),
     title: z.string(),
-    content: z.string().describe("Main text content, analogy, or question. For 'interview_qa', use 'Q: ... A: ...' format. For 'pros_cons', use 'Pros:\\n- ...\\n\\nCons:\\n- ...' format."),
+    content: z.string().describe("Main text content, analogy, or question. For 'interview_qa', use 'Q: ... A: ...' format. For 'pros_cons', use 'Pros:\n- ...\n\nCons:\n- ...' format."),
     visual: z.string().describe("A single, relevant emoji."),
 });
 export type LessonCard = z.infer<typeof LessonCardSchema>;
@@ -740,3 +740,45 @@ export type GenerateQuickRoadmapInput = z.infer<typeof GenerateQuickRoadmapInput
 // The AI will just be instructed to generate a day-by-day plan without weekly themes.
 export const GenerateQuickRoadmapOutputSchema = RoadmapGenerationOutputSchema;
 export type GenerateQuickRoadmapOutput = z.infer<typeof GenerateQuickRoadmapOutputSchema>;
+
+// Interview Experiences
+export const InterviewQuestionAnalysisSchema = z.object({
+  aiRating: z.number().min(1).max(10),
+  feedback: z.string(),
+  suggestions: z.string(),
+  refinedAnswer: z.string(),
+});
+export type InterviewQuestionAnalysis = z.infer<typeof InterviewQuestionAnalysisSchema>;
+
+
+export const InterviewQuestionSchema = z.object({
+  id: z.string(),
+  questionText: z.string(),
+  topic: z.string(),
+  userAnswer: z.string(),
+  idealAnswer: z.string(),
+  userRating: z.number().min(1).max(10),
+  analysis: InterviewQuestionAnalysisSchema.optional(),
+});
+export type InterviewQuestion = z.infer<typeof InterviewQuestionSchema>;
+
+export const InterviewExperienceSchema = z.object({
+  id: z.string().optional(),
+  userId: z.string(),
+  companyName: z.string(),
+  role: z.string(),
+  interviewDate: z.string(),
+  roundType: z.enum(['HR', 'Technical', 'Managerial']),
+  overallRating: z.number().min(1).max(10),
+  questions: z.array(InterviewQuestionSchema),
+  createdAt: z.any(),
+});
+export type InterviewExperience = z.infer<typeof InterviewExperienceSchema>;
+
+export function toSerializableInterviewExperience(docData: any): InterviewExperience {
+  const { createdAt, ...rest } = docData;
+  return {
+    ...rest,
+    createdAt: (createdAt as Timestamp)?.toDate()?.toISOString() || new Date().toISOString(),
+  } as InterviewExperience;
+}
