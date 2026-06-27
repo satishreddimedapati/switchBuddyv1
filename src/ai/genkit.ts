@@ -18,7 +18,7 @@ export const ai = genkit({
   model: 'googleai/gemini-2.5-flash',
 });
 
-export function createAI(dynamicApiKey, provider = 'gemini') {
+export function createAI(dynamicApiKey?: string, provider: 'gemini' | 'groq' = 'gemini') {
   if (provider === 'gemini') {
     return genkit({
       plugins: [
@@ -31,7 +31,7 @@ export function createAI(dynamicApiKey, provider = 'gemini') {
   } else {
     // For Groq we return a mock Genkit-like object that proxies generation to Groq REST API
     return {
-      generate: async (options) => {
+      generate: async (options: { prompt: string, output?: { schema: any } }) => {
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -69,6 +69,6 @@ export function createAI(dynamicApiKey, provider = 'gemini') {
           text: outputText
         };
       }
-    }
+    } as any;
   }
 }
