@@ -1,4 +1,5 @@
-import { genkit } from 'genkit';
+const fs = require('fs');
+const content = `import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 
 // -----------------------------
@@ -35,7 +36,7 @@ export function createAI(dynamicApiKey, provider = 'gemini') {
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${dynamicApiKey}`,
+            'Authorization': \`Bearer \${dynamicApiKey}\`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
@@ -52,7 +53,7 @@ export function createAI(dynamicApiKey, provider = 'gemini') {
         
         if (options.output && options.output.schema) {
           try {
-            const jsonMatch = outputText.match(/```json\n([\s\S]*?)\n```/) || outputText.match(/{[\s\S]*}/);
+            const jsonMatch = outputText.match(/\`\`\`json\\n([\\s\\S]*?)\\n\`\`\`/) || outputText.match(/{[\\s\\S]*}/);
             if (jsonMatch) {
               const parsed = JSON.parse(jsonMatch[1] || jsonMatch[0]);
               outputData = parsed;
@@ -72,3 +73,5 @@ export function createAI(dynamicApiKey, provider = 'gemini') {
     }
   }
 }
+`;
+fs.writeFileSync('src/ai/genkit.ts', content, 'utf8');

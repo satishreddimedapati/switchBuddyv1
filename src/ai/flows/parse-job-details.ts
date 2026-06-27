@@ -1,11 +1,11 @@
-
 'use server';
 
 /**
  * @fileOverview An AI flow to parse company, role, and tech stack from a resume and job description.
  */
 
-import { ai } from '@/ai/genkit';
+import { createAI } from '@/ai/genkit';
+import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { ParseJobDetailsInputSchema, ParseJobDetailsOutputSchema } from '@/lib/types';
 
@@ -13,14 +13,14 @@ export type ParseJobDetailsInput = z.infer<typeof ParseJobDetailsInputSchema>;
 export type ParseJobDetailsOutput = z.infer<typeof ParseJobDetailsOutputSchema>;
 
 export async function parseJobDetails(input: ParseJobDetailsInput): Promise<ParseJobDetailsOutput> {
-  return parseJobDetailsFlow(input);
-}
+  const cookieStore = await cookies();
+  const provider = (cookieStore.get('ai_provider')?.value || 'gemini') as 'gemini' | 'groq';
+  const apiKey = cookieStore.get('ai_api_key')?.value;
+  if (!apiKey) throw new Error("API Key is missing. Please configure it in AI Settings.");
+  
+  const ai = createAI(apiKey, provider);
 
-const prompt = ai.definePrompt({
-  name: 'parseJobDetailsPrompt',
-  input: { schema: ParseJobDetailsInputSchema },
-  output: { schema: ParseJobDetailsOutputSchema },
-  prompt: `You are an expert at parsing job-related documents. Analyze the provided resume and job description.
+  let finalPrompt = `You are an expert at parsing job-related documents. Analyze the provided resume and job description.
 
 Your task is to extract the following information:
 1.  **company**: The name of the company from the job description.
@@ -34,17 +34,15 @@ Resume:
 Job Description:
 {{{jobDescription}}}
 ---
-`,
-});
-
-const parseJobDetailsFlow = ai.defineFlow(
-  {
-    name: 'parseJobDetailsFlow',
-    inputSchema: ParseJobDetailsInputSchema,
-    outputSchema: ParseJobDetailsOutputSchema,
-  },
-  async (input) => {
-    const { output } = await prompt(input);
-    return output!;
+`;
+  for (const key of Object.keys(input)) {
+    finalPrompt = finalPrompt.replace(new RegExp('{{{\\s*' + key + '\\s*}}}', 'g'), (input as any)[key]);
   }
-);
+
+  const result = await ai.generate({
+    prompt: finalPrompt,
+    output: { schema: ParseJobDetailsOutputSchema },
+  });
+
+  return result.output as ParseJobDetailsOutput;
+}

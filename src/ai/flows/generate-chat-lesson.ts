@@ -5,22 +5,24 @@
  * @fileOverview A flow to generate a conversational, chat-based lesson on a given topic.
  */
 
-import { ai } from '@/ai/genkit';
+import { createAI } from '@/ai/genkit';
+import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { GenerateChatLessonInputSchema, GenerateChatLessonOutputSchema } from '@/lib/types';
 
 export type GenerateChatLessonInput = z.infer<typeof GenerateChatLessonInputSchema>;
 export type GenerateChatLessonOutput = z.infer<typeof GenerateChatLessonOutputSchema>;
 
-export async function generateChatLesson(input: GenerateChatLessonInput): Promise<GenerateChatLessonOutput> {
-    return generateChatLessonFlow(input);
-}
 
-const prompt = ai.definePrompt({
-  name: 'generateChatLessonPrompt',
-  input: { schema: GenerateChatLessonInputSchema },
-  output: { schema: GenerateChatLessonOutputSchema },
-  prompt: `You are an expert, friendly tutor explaining a technical concept. Your goal is to sound like a knowledgeable friend messaging on WhatsApp.
+export async function generateChatLesson(input: GenerateChatLessonInput): Promise<GenerateChatLessonOutput> {
+  const cookieStore = await cookies();
+  const provider = (cookieStore.get('ai_provider')?.value || 'gemini') as 'gemini' | 'groq';
+  const apiKey = cookieStore.get('ai_api_key')?.value;
+  if (!apiKey) throw new Error("API Key is missing. Please configure it in AI Settings.");
+  
+  const ai = createAI(apiKey, provider);
+
+  let finalPrompt = `You are an expert, friendly tutor explaining a technical concept. Your goal is to sound like a knowledgeable friend messaging on WhatsApp.
 
 You are having a conversation about the topic: "{{topic}}"
 
@@ -59,17 +61,21 @@ Conversation History:
 {{#each history}}
 - {{this.role}}: {{{this.content}}}
 {{/each}}
-`,
-});
-
-const generateChatLessonFlow = ai.defineFlow(
-  {
-    name: 'generateChatLessonFlow',
-    inputSchema: GenerateChatLessonInputSchema,
-    outputSchema: GenerateChatLessonOutputSchema,
-  },
-  async (input) => {
-    const { output } = await prompt(input);
-    return output!;
+`;
+  for (const key of Object.keys(input)) {
+    finalPrompt = finalPrompt.replace(new RegExp('{{{\s*' + key + '\s*}}}', 'g'), (input as any)[key]);
+    finalPrompt = finalPrompt.replace(new RegExp('{{' + key + '}}', 'g'), (input as any)[key]);
   }
-);
+
+  const result = await ai.generate({
+    prompt: finalPrompt,
+    output: { schema: GenerateChatLessonOutputSchema },
+  });
+
+  return result.output as GenerateChatLessonOutput;
+}
+
+
+
+
+

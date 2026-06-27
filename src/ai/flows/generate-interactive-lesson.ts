@@ -1,25 +1,26 @@
-
 'use server';
 
 /**
  * @fileOverview A flow to generate an interactive, card-based lesson dynamically.
  */
 
-import { ai } from '@/ai/genkit';
+import { createAI } from '@/ai/genkit';
+import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { GenerateInteractiveLessonInputSchema, InteractiveLessonSchema } from '@/lib/types';
-import { googleAI } from '@genkit-ai/google-genai';
 
 export type GenerateInteractiveLessonInput = z.infer<typeof GenerateInteractiveLessonInputSchema>;
 export type InteractiveLesson = z.infer<typeof InteractiveLessonSchema>;
 
-async function generateInteractiveLessonFlow(input: GenerateInteractiveLessonInput): Promise<InteractiveLesson> {
-  const prompt = ai.definePrompt({
-    name: 'generateInteractiveLessonPrompt',
-    model: 'googleai/gemini-2.0-flash',
-    input: { schema: GenerateInteractiveLessonInputSchema },
-    // We remove the output schema here to get the raw text, which we will parse manually.
-    prompt: `You are an expert curriculum designer creating engaging, interactive micro-learning experiences.
+export async function generateInteractiveLesson(input: GenerateInteractiveLessonInput): Promise<InteractiveLesson> {
+  const cookieStore = await cookies();
+  const provider = (cookieStore.get('ai_provider')?.value || 'gemini') as 'gemini' | 'groq';
+  const apiKey = cookieStore.get('ai_api_key')?.value;
+  if (!apiKey) throw new Error("API Key is missing. Please configure it in AI Settings.");
+  
+  const ai = createAI(apiKey, provider);
+
+  let finalPrompt = `You are an expert curriculum designer creating engaging, interactive micro-learning experiences.
 
 Your task is to generate a complete, 7-8 card interactive learning deck for the given topic.
 
@@ -42,51 +43,36 @@ The card types should follow a logical flow and can include:
 For EVERY card:
 - "card_type", "title", "content", and "visual" (a single emoji) are required.
 - Do not include any text, markdown, or formatting outside of the single, final JSON object.
-`,
+`;
+  for (const key of Object.keys(input)) {
+    finalPrompt = finalPrompt.replace(new RegExp('{{{\\s*' + key + '\\s*}}}', 'g'), (input as any)[key]);
+  }
+
+  const result = await ai.generate({
+    prompt: finalPrompt
   });
 
   try {
-    // Get the raw text response from the prompt
-    const response = await prompt(input);
-    const rawText = response.text;
-    
-    // Find the start and end of the JSON object
+    let rawText = result.text;
     const startIndex = rawText.indexOf('{');
     const endIndex = rawText.lastIndexOf('}');
-    
     if (startIndex === -1 || endIndex === -1) {
       throw new Error("Could not find a valid JSON object in the AI response.");
     }
-    
     const jsonString = rawText.substring(startIndex, endIndex + 1);
-    
-    // Parse the extracted JSON string
     const parsedJson = JSON.parse(jsonString);
-
-    // Validate the parsed JSON against our Zod schema
     const validationResult = InteractiveLessonSchema.safeParse(parsedJson);
 
     if (validationResult.success) {
-      // If the title is missing but cards are present, add a default title.
       if (!validationResult.data.title && validationResult.data.cards) {
           validationResult.data.title = `Interactive Lesson: ${input.topic}`;
       }
       return validationResult.data;
     } else {
-      // Throw the Zod validation error if parsing failed
       throw new Error(`Parsed JSON failed validation: ${validationResult.error.message}`);
     }
-
   } catch (e: any) {
-    console.error("Error in generateInteractiveLessonFlow:", e);
-    // Construct a helpful error message
-    const finalError = new Error(
-      `Failed to generate a valid lesson. The AI returned malformed JSON that could not be repaired. Original error: ${e.message}`
-    );
-    throw finalError;
+    console.error("Error in generateInteractiveLesson:", e);
+    throw new Error(`Failed to generate a valid lesson. Original error: ${e.message}`);
   }
-}
-
-export async function generateInteractiveLesson(input: GenerateInteractiveLessonInput): Promise<InteractiveLesson> {
-    return generateInteractiveLessonFlow(input);
 }

@@ -8,7 +8,8 @@
  * - generateDailySummary - Summarizes daily progress and suggests next-day priorities.
  */
 
-import {ai} from '@/ai/genkit';
+import { createAI } from '@/ai/genkit';
+import { cookies } from 'next/headers';
 import {
   DailyTask,
   GenerateDailyPlanInput,
@@ -22,11 +23,20 @@ import {
   MissedTask,
 } from '@/lib/types';
 
-const generatePlanPrompt = ai.definePrompt({
-  name: 'generateDailyPlanPrompt',
-  input: {schema: GenerateDailyPlanInputSchema},
-  output: {schema: GenerateDailyPlanOutputSchema},
-  prompt: `You are a no-nonsense AI mission commander for a high-stakes operation.
+
+
+
+
+
+export async function generateDailyPlan(input: GenerateDailyPlanInput): Promise<GenerateDailyPlanOutput> {
+  const cookieStore = await cookies();
+  const provider = (cookieStore.get('ai_provider')?.value || 'gemini') as 'gemini' | 'groq';
+  const apiKey = cookieStore.get('ai_api_key')?.value;
+  if (!apiKey) throw new Error("API Key is missing. Please configure it in AI Settings.");
+  
+  const ai = createAI(apiKey, provider);
+
+  let finalPrompt = `You are a no-nonsense AI mission commander for a high-stakes operation.
 
 User profile:
 - Lazy by default
@@ -61,32 +71,35 @@ Example:
   },
   ...
 ]
-`,
-});
-
-const generateDailyPlanFlow = ai.defineFlow(
-  {
-    name: 'generateDailyPlanFlow',
-    inputSchema: GenerateDailyPlanInputSchema,
-    outputSchema: GenerateDailyPlanOutputSchema,
-  },
-  async (input) => {
-    const {output} = await generatePlanPrompt(input);
-    return output!;
+`;
+  for (const key of Object.keys(input)) {
+    finalPrompt = finalPrompt.replace(new RegExp('{{{\s*' + key + '\s*}}}', 'g'), (input as any)[key]);
+    finalPrompt = finalPrompt.replace(new RegExp('{{' + key + '}}', 'g'), (input as any)[key]);
   }
-);
 
-export async function generateDailyPlan(
-  input: GenerateDailyPlanInput
-): Promise<GenerateDailyPlanOutput> {
-  return generateDailyPlanFlow(input);
+  const result = await ai.generate({
+    prompt: finalPrompt,
+    output: { schema: GenerateDailyPlanOutputSchema },
+  });
+
+  return result.output as GenerateDailyPlanOutput;
 }
 
-const generateSummaryPrompt = ai.definePrompt({
-  name: 'generateDailySummaryPrompt',
-  input: {schema: GenerateDailySummaryInputSchema},
-  output: {schema: GenerateDailySummaryOutputSchema},
-  prompt: `You are an encouraging and insightful productivity coach. Your goal is to help the user reflect on their day and prepare for the next one.
+
+
+
+
+
+
+export async function generateDailySummary(input: GenerateDailySummaryInput): Promise<GenerateDailySummaryOutput> {
+  const cookieStore = await cookies();
+  const provider = (cookieStore.get('ai_provider')?.value || 'gemini') as 'gemini' | 'groq';
+  const apiKey = cookieStore.get('ai_api_key')?.value;
+  if (!apiKey) throw new Error("API Key is missing. Please configure it in AI Settings.");
+  
+  const ai = createAI(apiKey, provider);
+
+  let finalPrompt = `You are an encouraging and insightful productivity coach. Your goal is to help the user reflect on their day and prepare for the next one.
 
 You will be given a list of tasks and their completion status for today.
 
@@ -102,23 +115,17 @@ Today's Tasks:
 {{#each tasks}}
 - {{this.title}} (Completed: {{this.completed}})
 {{/each}}
-`,
-});
-
-const generateDailySummaryFlow = ai.defineFlow(
-  {
-    name: 'generateDailySummaryFlow',
-    inputSchema: GenerateDailySummaryInputSchema,
-    outputSchema: GenerateDailySummaryOutputSchema,
-  },
-  async (input) => {
-    const {output} = await generateSummaryPrompt(input);
-    return output!;
+`;
+  for (const key of Object.keys(input)) {
+    finalPrompt = finalPrompt.replace(new RegExp('{{{\s*' + key + '\s*}}}', 'g'), (input as any)[key]);
+    finalPrompt = finalPrompt.replace(new RegExp('{{' + key + '}}', 'g'), (input as any)[key]);
   }
-);
 
-export async function generateDailySummary(
-  input: GenerateDailySummaryInput
-): Promise<GenerateDailySummaryOutput> {
-  return generateDailySummaryFlow(input);
+  const result = await ai.generate({
+    prompt: finalPrompt,
+    output: { schema: GenerateDailySummaryOutputSchema },
+  });
+
+  return result.output as GenerateDailySummaryOutput;
 }
+

@@ -44,6 +44,7 @@ import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from './ui/button';
 import { ViewModeToggle } from './ViewModeToggle';
+import { SettingsModal } from './SettingsModal';
 
 const navItems = [
   { href: '/', icon: Home, label: 'Dashboard' },
@@ -87,6 +88,11 @@ function AppHeader() {
                             </Link>
                         </DropdownMenuItem>
                     ))}
+                    <DropdownMenuItem asChild>
+                         <div className="w-full flex items-center">
+                            <SettingsModal />
+                         </div>
+                    </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
             <div className="w-full flex-1">
@@ -153,6 +159,9 @@ function AppSidebar() {
           <SidebarFooter>
              <div className="w-full">
                  <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SettingsModal />
+                    </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton onClick={handleLogout}>
                             <LogOut className="h-5 w-5" />

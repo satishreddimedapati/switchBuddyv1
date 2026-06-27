@@ -8,7 +8,8 @@
  * - GenerateInterviewTopicScheduleOutput - The return type.
  */
 
-import {ai} from '@/ai/genkit';
+import { createAI } from '@/ai/genkit';
+import { cookies } from 'next/headers';
 import {z} from 'genkit';
 import { GenerateInterviewTopicScheduleInputSchema, GenerateInterviewTopicScheduleOutputSchema } from '@/lib/types';
 import { format } from 'date-fns';
@@ -16,15 +17,16 @@ import { format } from 'date-fns';
 export type GenerateInterviewTopicScheduleInput = z.infer<typeof GenerateInterviewTopicScheduleInputSchema>;
 export type GenerateInterviewTopicScheduleOutput = z.infer<typeof GenerateInterviewTopicScheduleOutputSchema>;
 
-export async function generateInterviewTopicSchedule(input: GenerateInterviewTopicScheduleInput): Promise<GenerateInterviewTopicScheduleOutput> {
-  return generateInterviewTopicScheduleFlow(input);
-}
 
-const prompt = ai.definePrompt({
-  name: 'generateInterviewTopicSchedulePrompt',
-  input: {schema: GenerateInterviewTopicScheduleInputSchema},
-  output: {schema: GenerateInterviewTopicScheduleOutputSchema},
-  prompt: `You are an expert technical interviewer and productivity coach.
+export async function generateInterviewTopicSchedule(input: GenerateInterviewTopicScheduleInput): Promise<GenerateInterviewTopicScheduleOutput> {
+  const cookieStore = await cookies();
+  const provider = (cookieStore.get('ai_provider')?.value || 'gemini') as 'gemini' | 'groq';
+  const apiKey = cookieStore.get('ai_api_key')?.value;
+  if (!apiKey) throw new Error("API Key is missing. Please configure it in AI Settings.");
+  
+  const ai = createAI(apiKey, provider);
+
+  let finalPrompt = `You are an expert technical interviewer and productivity coach.
 
 Purpose:
 Generate a day-by-day interview preparation schedule for a user-selected topic.
@@ -51,18 +53,22 @@ JSON Output Format (inside the 'schedule' key):
     "subtopic": "string - one specific interview prep subtopic"
   }
 ]
-`,
-});
-
-
-const generateInterviewTopicScheduleFlow = ai.defineFlow(
-  {
-    name: 'generateInterviewTopicScheduleFlow',
-    inputSchema: GenerateInterviewTopicScheduleInputSchema,
-    outputSchema: GenerateInterviewTopicScheduleOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+`;
+  for (const key of Object.keys(input)) {
+    finalPrompt = finalPrompt.replace(new RegExp('{{{\s*' + key + '\s*}}}', 'g'), (input as any)[key]);
+    finalPrompt = finalPrompt.replace(new RegExp('{{' + key + '}}', 'g'), (input as any)[key]);
   }
-);
+
+  const result = await ai.generate({
+    prompt: finalPrompt,
+    output: { schema: GenerateInterviewTopicScheduleOutputSchema },
+  });
+
+  return result.output as GenerateInterviewTopicScheduleOutput;
+}
+
+
+
+
+
+

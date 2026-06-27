@@ -1,16 +1,15 @@
-
-
 'use server';
 
 /**
  * @fileOverview AI flows for conducting mock interviews.
  *
- * - generateInterviewQuestion: Creates a single interview question.
- * - evaluateAnswer: Evaluates a user's answer to a question.
+ * - generateInterviewQuestions: Creates interview questions.
+ * - evaluateInterviewAnswers: Evaluates a user's answer to questions.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'zod';
+import { createAI } from '@/ai/genkit';
+import { cookies } from 'next/headers';
+import { z } from 'zod';
 import { 
     InterviewQuestionRequestSchema,
     GenerateInterviewQuestionsRequestSchema,
@@ -29,13 +28,17 @@ export type AnswerEvaluationResponse = z.infer<typeof AnswerEvaluationResponseSc
 export type EvaluateInterviewAnswersRequest = z.infer<typeof EvaluateInterviewAnswersRequestSchema>;
 export type EvaluateInterviewAnswersResponse = z.infer<typeof EvaluateInterviewAnswersResponseSchema>;
 
+export async function generateInterviewQuestions(
+  input: GenerateInterviewQuestionsRequest
+): Promise<GenerateInterviewQuestionsResponse> {
+  const cookieStore = await cookies();
+  const provider = (cookieStore.get('ai_provider')?.value || 'gemini') as 'gemini' | 'groq';
+  const apiKey = cookieStore.get('ai_api_key')?.value;
+  if (!apiKey) throw new Error("API Key is missing. Please configure it in AI Settings.");
+  
+  const ai = createAI(apiKey, provider);
 
-// Flow to generate a list of interview questions
-const generateQuestionsPrompt = ai.definePrompt({
-  name: 'generateInterviewQuestionsPrompt',
-  input: {schema: GenerateInterviewQuestionsRequestSchema},
-  output: {schema: GenerateInterviewQuestionsResponseSchema},
-  prompt: `You are an expert interviewer for a top tech company. You must adopt one of the following personas based on the user's selection.
+  let finalPrompt = `You are an expert interviewer for a top tech company. You must adopt one of the following personas based on the user's selection.
 
 Your selected persona is: "{{persona}}"
 
@@ -61,34 +64,46 @@ Past Questions:
 {{/if}}
 
 Do not add any preamble or explanation, just the questions.
-`,
-});
-
-export const generateInterviewQuestionsFlow = ai.defineFlow(
-  {
-    name: 'generateInterviewQuestionsFlow',
-    inputSchema: GenerateInterviewQuestionsRequestSchema,
-    outputSchema: GenerateInterviewQuestionsResponseSchema,
-  },
-  async (input) => {
-    const {output} = await generateQuestionsPrompt(input);
-    return output!;
+`;
+  for (const key of Object.keys(input)) {
+    finalPrompt = finalPrompt.replace(new RegExp('{{{\\s*' + key + '\\s*}}}', 'g'), (input as any)[key]);
+    finalPrompt = finalPrompt.replace(new RegExp('{{\\s*' + key + '\\s*}}', 'g'), (input as any)[key]);
   }
-);
+  
+  if (input.pastQuestions && input.pastQuestions.length > 0) {
+    let pastQList = '';
+    for (const pq of input.pastQuestions) {
+        pastQList += `- ${pq}\n`;
+    }
+    finalPrompt = finalPrompt.replace('{{#each pastQuestions}}\n- {{{this}}}\n{{/each}}', pastQList);
+    finalPrompt = finalPrompt.replace('{{#if allowRepetition}}', '');
+    finalPrompt = finalPrompt.replace('{{else}}', '');
+    finalPrompt = finalPrompt.replace('{{/if}}', '');
+  } else {
+    // If no past questions, assume we can repeat
+    finalPrompt = finalPrompt.replace(/{{#if allowRepetition}}[\s\S]*?{{else}}/, '');
+    finalPrompt = finalPrompt.replace(/{{#each pastQuestions}}[\s\S]*?{{\/if}}/, '');
+  }
 
-export async function generateInterviewQuestions(
-  input: GenerateInterviewQuestionsRequest
-): Promise<GenerateInterviewQuestionsResponse> {
-  return generateInterviewQuestionsFlow(input);
+  const result = await ai.generate({
+    prompt: finalPrompt,
+    output: { schema: GenerateInterviewQuestionsResponseSchema },
+  });
+
+  return result.output as GenerateInterviewQuestionsResponse;
 }
 
+export async function evaluateInterviewAnswers(
+    input: EvaluateInterviewAnswersRequest
+): Promise<EvaluateInterviewAnswersResponse> {
+  const cookieStore = await cookies();
+  const provider = (cookieStore.get('ai_provider')?.value || 'gemini') as 'gemini' | 'groq';
+  const apiKey = cookieStore.get('ai_api_key')?.value;
+  if (!apiKey) throw new Error("API Key is missing. Please configure it in AI Settings.");
+  
+  const ai = createAI(apiKey, provider);
 
-// Flow to evaluate a list of answers
-const evaluateAnswersPrompt = ai.definePrompt({
-    name: 'evaluateInterviewAnswersPrompt',
-    input: {schema: EvaluateInterviewAnswersRequestSchema},
-    output: {schema: EvaluateInterviewAnswersResponseSchema},
-    prompt: `You are an expert interviewer providing feedback on a series of mock interview questions.
+  let finalPrompt = `You are an expert interviewer providing feedback on a series of mock interview questions.
 
 Evaluate each question and answer pair provided in the input. For each pair:
 1.  Provide constructive, specific feedback on the candidate's answer. If a whiteboard answer is provided, interpret it as a logical explanation (pseudocode, flowchart, etc.) and give feedback on the approach, not just syntax.
@@ -98,35 +113,27 @@ Evaluate each question and answer pair provided in the input. For each pair:
 5.  Return an array of evaluations in the exact same order as the questions were provided.
 
 Here is the interview session:
-{{#each qa_pairs}}
----
-Question {{this.qNo}}:
-"{{{this.question}}}"
+`;
+  if (input.qa_pairs) {
+      for (const pair of input.qa_pairs) {
+          finalPrompt += `---
+Question ${pair.qNo}:
+"${pair.question}"
 
 Candidate's Text Answer:
-"{{{this.answer}}}"
+"${pair.answer}"
 
 Candidate's Whiteboard Explanation:
-"{{{this.whiteboard}}}"
+"${pair.whiteboard || ''}"
 ---
-{{/each}}
-`
-});
+`;
+      }
+  }
 
-export const evaluateInterviewAnswersFlow = ai.defineFlow(
-    {
-        name: 'evaluateInterviewAnswersFlow',
-        inputSchema: EvaluateInterviewAnswersRequestSchema,
-        outputSchema: EvaluateInterviewAnswersResponseSchema,
-    },
-    async (input) => {
-        const {output} = await evaluateAnswersPrompt(input);
-        return output!;
-    }
-);
+  const result = await ai.generate({
+    prompt: finalPrompt,
+    output: { schema: EvaluateInterviewAnswersResponseSchema },
+  });
 
-export async function evaluateInterviewAnswers(
-    input: EvaluateInterviewAnswersRequest
-): Promise<EvaluateInterviewAnswersResponse> {
-    return evaluateInterviewAnswersFlow(input);
+  return result.output as EvaluateInterviewAnswersResponse;
 }

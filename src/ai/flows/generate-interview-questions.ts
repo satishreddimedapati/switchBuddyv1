@@ -2,14 +2,11 @@
 
 /**
  * @fileOverview A flow to generate interview questions based on a job description.
- *
- * - generateInterviewQuestions - A function that generates interview questions.
- * - GenerateInterviewQuestionsInput - The input type for the generateInterviewQuestions function.
- * - GenerateInterviewQuestionsOutput - The return type for the generateInterviewQuestions function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { createAI } from '@/ai/genkit';
+import { cookies } from 'next/headers';
+import { z } from 'zod';
 
 const GenerateInterviewQuestionsInputSchema = z.object({
   jobDescription: z.string().describe('The job description for which to generate interview questions.'),
@@ -22,31 +19,29 @@ const GenerateInterviewQuestionsOutputSchema = z.object({
 export type GenerateInterviewQuestionsOutput = z.infer<typeof GenerateInterviewQuestionsOutputSchema>;
 
 export async function generateInterviewQuestions(input: GenerateInterviewQuestionsInput): Promise<GenerateInterviewQuestionsOutput> {
-  return generateInterviewQuestionsFlow(input);
-}
+  const cookieStore = await cookies();
+  const provider = (cookieStore.get('ai_provider')?.value || 'gemini') as 'gemini' | 'groq';
+  const apiKey = cookieStore.get('ai_api_key')?.value;
+  if (!apiKey) throw new Error("API Key is missing. Please configure it in AI Settings.");
+  
+  const ai = createAI(apiKey, provider);
 
-const prompt = ai.definePrompt({
-  name: 'generateInterviewQuestionsPrompt',
-  input: {schema: GenerateInterviewQuestionsInputSchema},
-  output: {schema: GenerateInterviewQuestionsOutputSchema},
-  prompt: `You are an expert career coach specializing in helping candidates prepare for job interviews.
+  let finalPrompt = `You are an expert career coach specializing in helping candidates prepare for job interviews.
 
   Based on the job description provided, generate a list of potential interview questions that the candidate is likely to be asked. The questions should be tailored to assess the candidate's suitability for the role based on the job requirements and responsibilities.
 
   Job Description: {{{jobDescription}}}
 
   Interview Questions:
-  `, // Ensure the output is an array of strings.
-});
-
-const generateInterviewQuestionsFlow = ai.defineFlow(
-  {
-    name: 'generateInterviewQuestionsFlow',
-    inputSchema: GenerateInterviewQuestionsInputSchema,
-    outputSchema: GenerateInterviewQuestionsOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  `;
+  for (const key of Object.keys(input)) {
+    finalPrompt = finalPrompt.replace(new RegExp('{{{\\s*' + key + '\\s*}}}', 'g'), (input as any)[key]);
   }
-);
+
+  const result = await ai.generate({
+    prompt: finalPrompt,
+    output: { schema: GenerateInterviewQuestionsOutputSchema },
+  });
+
+  return result.output as GenerateInterviewQuestionsOutput;
+}

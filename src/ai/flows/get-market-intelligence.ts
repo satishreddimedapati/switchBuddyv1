@@ -7,24 +7,24 @@
  * - GetMarketIntelligenceOutput - The return type.
  */
 
-import {ai} from '@/ai/genkit';
+import { createAI } from '@/ai/genkit';
+import { cookies } from 'next/headers';
 import { GetMarketIntelligenceInputSchema, GetMarketIntelligenceOutputSchema } from '@/lib/types';
 import {z} from 'zod';
 
 export type GetMarketIntelligenceInput = z.infer<typeof GetMarketIntelligenceInputSchema>;
 export type GetMarketIntelligenceOutput = z.infer<typeof GetMarketIntelligenceOutputSchema>;
 
-export async function getMarketIntelligence(
-  input: GetMarketIntelligenceInput
-): Promise<GetMarketIntelligenceOutput> {
-  return getMarketIntelligenceFlow(input);
-}
 
-const prompt = ai.definePrompt({
-  name: 'getMarketIntelligencePrompt',
-  input: {schema: GetMarketIntelligenceInputSchema},
-  output: {schema: GetMarketIntelligenceOutputSchema},
-  prompt: `You are a world-class career analyst and job market expert for the tech industry in India.
+export async function getMarketIntelligence(input: GetMarketIntelligenceInput): Promise<GetMarketIntelligenceOutput> {
+  const cookieStore = await cookies();
+  const provider = (cookieStore.get('ai_provider')?.value || 'gemini') as 'gemini' | 'groq';
+  const apiKey = cookieStore.get('ai_api_key')?.value;
+  if (!apiKey) throw new Error("API Key is missing. Please configure it in AI Settings.");
+  
+  const ai = createAI(apiKey, provider);
+
+  let finalPrompt = `You are a world-class career analyst and job market expert for the tech industry in India.
 
 Provide a comprehensive set of insights for the job role of "{{jobRole}}" at company "{{companyName}}" in location(s) "{{location}}".
 
@@ -37,17 +37,21 @@ Generate detailed, actionable insights for ALL of the following categories based
 - Alumni Insights: What is the typical tenure and what are the common next steps or company switches for alumni from this role/company? Provide 1-2 examples.
 - Interview Prep: How hard is the interview process? What are 2-3 common question categories they should prepare for?
 - Application Strategy: What is the best time to apply? What are the estimated success rates for different application methods (Referral, Direct Apply, etc.)?
-`,
-});
-
-const getMarketIntelligenceFlow = ai.defineFlow(
-  {
-    name: 'getMarketIntelligenceFlow',
-    inputSchema: GetMarketIntelligenceInputSchema,
-    outputSchema: GetMarketIntelligenceOutputSchema,
-  },
-  async (input) => {
-    const {output} = await prompt(input);
-    return output!;
+`;
+  for (const key of Object.keys(input)) {
+    finalPrompt = finalPrompt.replace(new RegExp('{{{\s*' + key + '\s*}}}', 'g'), (input as any)[key]);
+    finalPrompt = finalPrompt.replace(new RegExp('{{' + key + '}}', 'g'), (input as any)[key]);
   }
-);
+
+  const result = await ai.generate({
+    prompt: finalPrompt,
+    output: { schema: GetMarketIntelligenceOutputSchema },
+  });
+
+  return result.output as GetMarketIntelligenceOutput;
+}
+
+
+
+
+

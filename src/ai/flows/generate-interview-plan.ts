@@ -9,22 +9,24 @@
  * - GenerateInterviewPlanOutput - The return type for the function.
  */
 
-import {ai} from '@/ai/genkit';
+import { createAI } from '@/ai/genkit';
+import { cookies } from 'next/headers';
 import {z} from 'genkit';
 import { GenerateInterviewPlanInputSchema, GenerateInterviewPlanOutputSchema } from '@/lib/types';
 
 export type GenerateInterviewPlanInput = z.infer<typeof GenerateInterviewPlanInputSchema>;
 export type GenerateInterviewPlanOutput = z.infer<typeof GenerateInterviewPlanOutputSchema>;
 
-export async function generateInterviewPlan(input: GenerateInterviewPlanInput): Promise<GenerateInterviewPlanOutput> {
-  return generateInterviewPlanFlow(input);
-}
 
-const prompt = ai.definePrompt({
-  name: 'generateInterviewPlanPrompt',
-  input: {schema: GenerateInterviewPlanInputSchema},
-  output: {schema: GenerateInterviewPlanOutputSchema},
-  prompt: `You are an expert career coach and technical interviewer.
+export async function generateInterviewPlan(input: GenerateInterviewPlanInput): Promise<GenerateInterviewPlanOutput> {
+  const cookieStore = await cookies();
+  const provider = (cookieStore.get('ai_provider')?.value || 'gemini') as 'gemini' | 'groq';
+  const apiKey = cookieStore.get('ai_api_key')?.value;
+  if (!apiKey) throw new Error("API Key is missing. Please configure it in AI Settings.");
+  
+  const ai = createAI(apiKey, provider);
+
+  let finalPrompt = `You are an expert career coach and technical interviewer.
 
 Your task is to analyze the user's resume and the provided job description to create a comprehensive and actionable interview practice plan.
 
@@ -40,35 +42,23 @@ Resume:
 Job Description:
 {{{jobDescription}}}
 ---
-`,
-});
-
-const generateInterviewPlanFlow = ai.defineFlow(
-  {
-    name: 'generateInterviewPlanFlow',
-    inputSchema: GenerateInterviewPlanInputSchema,
-    outputSchema: GenerateInterviewPlanOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    
-    // The schema expects an array, but the prompt returns a string. Let's fix that.
-    if (output && typeof output.questions === 'string') {
-        const questionsArray = output.questions.split('\n').filter(q => q.trim() !== '');
-        
-        // This is a temporary workaround until we can get the model to return an array directly
-        // We will create a new object that conforms to the output schema.
-        const conformingOutput: GenerateInterviewPlanOutput = {
-            ...output,
-            questions: questionsArray,
-        };
-        // The above doesn't work because the schema on the prompt is expecting a string.
-        // We will adjust the prompt output schema to expect a string
-    }
-
-
-    return output!;
+`;
+  for (const key of Object.keys(input)) {
+    finalPrompt = finalPrompt.replace(new RegExp('{{{\s*' + key + '\s*}}}', 'g'), (input as any)[key]);
+    finalPrompt = finalPrompt.replace(new RegExp('{{' + key + '}}', 'g'), (input as any)[key]);
   }
-);
+
+  const result = await ai.generate({
+    prompt: finalPrompt,
+    output: { schema: GenerateInterviewPlanOutputSchema },
+  });
+
+  return result.output as GenerateInterviewPlanOutput;
+}
+
+
+
+
+
 
     

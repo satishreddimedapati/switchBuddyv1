@@ -8,22 +8,24 @@
  * - GenerateRecruiterMessageOutput - The return type for the function.
  */
 
-import {ai} from '@/ai/genkit';
+import { createAI } from '@/ai/genkit';
+import { cookies } from 'next/headers';
 import { GenerateRecruiterMessageInputSchema, GenerateRecruiterMessageOutputSchema } from '@/lib/types';
 import { z } from 'zod';
 
 export type GenerateRecruiterMessageInput = z.infer<typeof GenerateRecruiterMessageInputSchema>;
 export type GenerateRecruiterMessageOutput = z.infer<typeof GenerateRecruiterMessageOutputSchema>;
 
-export async function generateRecruiterMessage(input: GenerateRecruiterMessageInput): Promise<GenerateRecruiterMessageOutput> {
-  return generateRecruiterMessageFlow(input);
-}
 
-const prompt = ai.definePrompt({
-  name: 'generateRecruiterMessagePrompt',
-  input: {schema: GenerateRecruiterMessageInputSchema},
-  output: {schema: GenerateRecruiterMessageOutputSchema},
-  prompt: `You are an expert career coach helping a job seeker draft a professional cover letter.
+export async function generateRecruiterMessage(input: GenerateRecruiterMessageInput): Promise<GenerateRecruiterMessageOutput> {
+  const cookieStore = await cookies();
+  const provider = (cookieStore.get('ai_provider')?.value || 'gemini') as 'gemini' | 'groq';
+  const apiKey = cookieStore.get('ai_api_key')?.value;
+  if (!apiKey) throw new Error("API Key is missing. Please configure it in AI Settings.");
+  
+  const ai = createAI(apiKey, provider);
+
+  let finalPrompt = `You are an expert career coach helping a job seeker draft a professional cover letter.
 
 Based on the provided resume and job description, generate a comprehensive, well-structured cover letter.
 
@@ -59,17 +61,21 @@ Resume:
 Job Description:
 {{{jobDescription.fullText}}}
 ---
-`,
-});
-
-const generateRecruiterMessageFlow = ai.defineFlow(
-  {
-    name: 'generateRecruiterMessageFlow',
-    inputSchema: GenerateRecruiterMessageInputSchema,
-    outputSchema: GenerateRecruiterMessageOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+`;
+  for (const key of Object.keys(input)) {
+    finalPrompt = finalPrompt.replace(new RegExp('{{{\s*' + key + '\s*}}}', 'g'), (input as any)[key]);
+    finalPrompt = finalPrompt.replace(new RegExp('{{' + key + '}}', 'g'), (input as any)[key]);
   }
-);
+
+  const result = await ai.generate({
+    prompt: finalPrompt,
+    output: { schema: GenerateRecruiterMessageOutputSchema },
+  });
+
+  return result.output as GenerateRecruiterMessageOutput;
+}
+
+
+
+
+
