@@ -77,7 +77,7 @@ Rules:
     weeks: [
       {
         week: 1,
-        theme: \`Your \${input.daysToPrepare}-Day Interview Prep Plan\`,
+        theme: `Your ${input.daysToPrepare}-Day Interview Prep Plan`,
         daily_tasks: datedTasks,
       },
     ],
