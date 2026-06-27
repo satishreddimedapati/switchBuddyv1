@@ -2,33 +2,26 @@ import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 
 // -----------------------------
-// Load API Keys
+// AI helper without server-side fallback key
 // -----------------------------
-const apiKey = "AIzaSyA4hfxytdyEj5DQ5jrxAgWbp1oYxsZ1gV8";
-
-if (!apiKey && !process.env.GEMINI_API_KEY) {
-  console.warn("Gemini API key not found.");
-}
-
-// Primary AI instance (fallback)
-export const ai = genkit({
-  plugins: [
-    googleAI({ apiKey: apiKey || process.env.GEMINI_API_KEY || 'dummy_key' }),
-  ],
-  model: 'googleai/gemini-2.5-flash',
-});
-
 export function createAI(dynamicApiKey?: string, provider: 'gemini' | 'groq' = 'gemini') {
   if (provider === 'gemini') {
+    const apiKey = dynamicApiKey?.trim();
+    if (!apiKey) {
+      throw new Error('Gemini API key is missing. Please configure it in AI Settings.');
+    }
+
     return genkit({
       plugins: [
-        googleAI({
-          apiKey: dynamicApiKey || apiKey || process.env.GEMINI_API_KEY || '',
-        }),
+        googleAI({ apiKey }),
       ],
       model: 'googleai/gemini-2.5-flash',
     });
   } else {
+    if (!dynamicApiKey?.trim()) {
+      throw new Error('Groq API key is missing. Please configure it in AI Settings.');
+    }
+
     // For Groq we return a mock Genkit-like object that proxies generation to Groq REST API
     return {
       generate: async (options: { prompt: string, output?: { schema: any } }) => {
@@ -39,17 +32,17 @@ export function createAI(dynamicApiKey?: string, provider: 'gemini' | 'groq' = '
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            model: 'llama3-8b-8192', // default Groq model
+            model: 'llama3-8b-8192',
             messages: [{ role: 'user', content: options.prompt }]
           })
         });
-        
+
         const data = await response.json();
         if (data.error) throw new Error(data.error.message);
-        
+
         let outputText = data.choices[0].message.content;
         let outputData = outputText;
-        
+
         if (options.output && options.output.schema) {
           try {
             const jsonMatch = outputText.match(/```json\n([\s\S]*?)\n```/) || outputText.match(/{[\s\S]*}/);
@@ -60,10 +53,10 @@ export function createAI(dynamicApiKey?: string, provider: 'gemini' | 'groq' = '
               outputData = JSON.parse(outputText);
             }
           } catch (e) {
-            console.warn("Could not parse Groq JSON output into schema", e);
+            console.warn('Could not parse Groq JSON output into schema', e);
           }
         }
-        
+
         return {
           output: outputData,
           text: outputText

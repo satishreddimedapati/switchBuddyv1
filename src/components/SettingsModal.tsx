@@ -15,17 +15,36 @@ export function SettingsModal() {
 
   useEffect(() => {
     if (!open) return;
-    const cookies = document.cookie.split(';');
-    for (const cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === 'ai_provider' && value) setProvider(value);
-      if (name === 'ai_api_key' && value) setApiKey(decodeURIComponent(value));
+
+    const savedProvider = window.localStorage.getItem('ai_provider');
+    const savedApiKey = window.localStorage.getItem('ai_api_key');
+
+    if (savedProvider) {
+      setProvider(savedProvider);
+    } else {
+      const cookies = document.cookie.split(';');
+      for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'ai_provider' && value) setProvider(value);
+      }
+    }
+
+    if (savedApiKey) {
+      setApiKey(savedApiKey);
+    } else {
+      const cookies = document.cookie.split(';');
+      for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'ai_api_key' && value) setApiKey(decodeURIComponent(value));
+      }
     }
   }, [open]);
 
   const saveSettings = () => {
     const expires = new Date();
     expires.setTime(expires.getTime() + 365 * 24 * 60 * 60 * 1000);
+    window.localStorage.setItem('ai_provider', provider);
+    window.localStorage.setItem('ai_api_key', apiKey);
     document.cookie = `ai_provider=${provider};expires=${expires.toUTCString()};path=/`;
     document.cookie = `ai_api_key=${encodeURIComponent(apiKey)};expires=${expires.toUTCString()};path=/`;
     setOpen(false);

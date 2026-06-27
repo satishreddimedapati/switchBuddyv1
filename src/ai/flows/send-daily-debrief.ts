@@ -4,7 +4,6 @@
  * @fileOverview A flow to send a daily debrief message to Telegram.
  */
 
-import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { GenerateDailySummaryOutputSchema, SendDailyDebriefInputSchema, SendDailyDebriefOutputSchema } from '@/lib/types';
 
